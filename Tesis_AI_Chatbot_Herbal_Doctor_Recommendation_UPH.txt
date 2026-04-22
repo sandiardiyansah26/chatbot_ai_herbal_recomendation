@@ -1,0 +1,449 @@
+TESIS
+
+RANCANG BANGUN CHATBOT LLM UNTUK REKOMENDASI RAMUAN HERBAL PADA PENYAKIT RINGAN BERBASIS HUMANIZING ANAMNESIS
+
+Ditulis untuk memenuhi sebagian persyaratan akademik
+
+guna memperoleh gelar Magister Komputer
+
+Oleh:
+
+NAMA MAHASISWA
+
+NPM: [ISI NPM]
+
+PROGRAM STUDI INFORMATIKA PROGRAM MAGISTER
+
+FAKULTAS ILMU KOMPUTER
+
+UNIVERSITAS PELITA HARAPAN
+
+JAKARTA
+
+2026
+
+ABSTRACT
+
+NAMA MAHASISWA ([ISI NPM]). DESIGN AND DEVELOPMENT OF AN LLM CHATBOT FOR HERBAL FORMULA RECOMMENDATION IN MILD AILMENTS BASED ON HUMANIZING ANAMNESIS .
+
+Traditional and herbal medicine is increasingly used as an alternative health practice due to affordability, accessibility, and public familiarity with household herbal remedies. However, knowledge about herbal formulas is often fragmented, orally transmitted, inconsistent, and separated across sources. Information about suitable symptoms, preparation methods, dosage, and warning conditions is not always available in a structured and accessible form.
+
+This research proposes an LLM chatbot application that provides herbal formula recommendations for mild ailments. Before providing recommendations, the chatbot performs a humanizing anamnesis process, a staged conversational interview that explores the user's symptoms, duration, severity, accompanying symptoms, and warning signs. The system is limited to mild ailments and provides herbal formula recommendations, dosage ranges, and preparation methods based on a curated knowledge base.
+
+The proposed technical approach adapts retrieval-augmented generation principles by indexing curated herbal knowledge, retrieving relevant formula entries based on the anamnesis result, and constraining LLM responses to retrieved context. The expected result is a focused design of an accessible chatbot that digitalizes herbal knowledge and connects symptom exploration with herbal recommendation. The contribution of this research lies in integrating humanizing anamnesis, structured herbal knowledge, mild ailment boundaries, retrieval-based grounding, and safety guardrails into a single chatbot design.
+
+Keywords: LLM chatbot, herbal formula, humanizing anamnesis, mild ailments, retrieval-augmented generation, knowledge base.
+
+ABSTRAK
+
+NAMA MAHASISWA ([ISI NPM]). RANCANG BANGUN CHATBOT LLM UNTUK REKOMENDASI RAMUAN HERBAL PADA PENYAKIT RINGAN BERBASIS HUMANIZING ANAMNESIS .
+
+Pengobatan tradisional/herbal pada masa sekarang menunjukkan peningkatan peminat sebagai alternatif karena dianggap lebih murah, mudah diperoleh, dan dekat dengan praktik kesehatan keluarga. Sebagian masyarakat juga memiliki kekhawatiran terhadap penggunaan obat modern karena persepsi adanya kandungan kimia dan risiko efek samping tertentu. Namun, pengetahuan tentang ramuan herbal yang telah hidup di masyarakat sejak lama masih sering tersebar, simpang siur, dan banyak ditemukan hanya secara lisan. Informasi mengenai gejala yang sesuai, cara pengolahan, dosis penggunaan, dan kondisi yang perlu diwaspadai belum selalu tersedia secara terstruktur dan mudah diakses.
+
+Penelitian ini mengusulkan aplikasi chatbot LLM yang mudah diakses masyarakat sebagai media informasi rekomendasi pemanfaatan ramuan herbal untuk penyakit atau keluhan ringan. Agar chatbot dapat merekomendasikan ramuan dan dosis yang relevan, sistem melakukan proses medical interview atau humanizing anamnesis untuk menggali keadaan pengguna melalui pertanyaan bertahap. Aplikasi dibatasi pada pendeteksi keluhan ringan dan pemberian rekomendasi ramuan herbal beserta dosis atau cara pengolahan.
+
+Pendekatan teknis yang diusulkan mengadaptasi prinsip retrieval-augmented generation dengan mengindeks pengetahuan herbal terkurasi, mengambil entri ramuan yang relevan berdasarkan hasil anamnesis, dan membatasi jawaban LLM pada konteks yang berhasil diambil dari knowledge base. Hasil yang diharapkan adalah rancangan chatbot yang fokus pada digitalisasi pengetahuan ramuan herbal, humanizing anamnesis, dan rekomendasi penanganan mandiri awal untuk keluhan ringan. Kontribusi penelitian ini terletak pada penyatuan proses wawancara gejala, knowledge base ramuan herbal, batasan penyakit ringan, retrieval-based grounding, dan guardrail keselamatan dalam satu rancangan sistem.
+
+Kata Kunci: chatbot LLM, ramuan herbal, humanizing anamnesis, penyakit ringan, retrieval-augmented generation, knowledge base.
+
+KATA PENGANTAR
+
+Puji dan syukur penulis panjatkan kepada Tuhan Yang Maha Esa karena tesis ini dapat disusun sebagai bagian dari pemenuhan persyaratan akademik pada Program Studi Informatika Program Magister, Fakultas Ilmu Komputer, Universitas Pelita Harapan.
+
+Tesis ini membahas rancangan chatbot LLM untuk rekomendasi ramuan herbal pada penyakit ringan. Fokus penelitian dipersempit pada digitalisasi pengetahuan ramuan herbal dan proses humanizing anamnesis agar sistem dapat menggali keluhan pengguna sebelum memberikan rekomendasi ramuan, dosis, dan cara pengolahan.
+
+Penulis menyadari bahwa tesis ini masih berupa rancangan awal yang memerlukan validasi lebih lanjut dari ahli kesehatan dan ahli herbal. Semoga tesis ini dapat menjadi dasar pengembangan sistem informasi herbal yang lebih terstruktur dan bermanfaat bagi masyarakat.
+
+BAB I
+
+PENDAHULUAN
+
+1.1 Latar Belakang
+
+Pada masa sekarang, pengobatan tradisional/herbal menunjukkan peningkatan peminat sebagai alternatif dan mulai menjadi tren di masyarakat. Banyak orang kembali memanfaatkan ramuan herbal dan pengobatan tradisional karena dianggap lebih murah, mudah diperoleh, serta dekat dengan praktik kesehatan keluarga. Selain itu, sebagian masyarakat mulai memiliki kekhawatiran terhadap penggunaan obat-obatan modern karena persepsi bahwa obat modern mengandung banyak bahan kimia dan dapat menimbulkan efek samping. Dalam penelitian ini, pernyataan tersebut diposisikan sebagai persepsi dan faktor perilaku masyarakat, bukan sebagai klaim bahwa obat modern secara umum berbahaya.
+
+Data nasional menunjukkan bahwa penggunaan pengobatan tradisional masih relevan di Indonesia. Riskesdas 2018 menunjukkan pemanfaatan pelayanan kesehatan tradisional sebesar 31,4%, upaya kesehatan tradisional sendiri sebesar 12,9%, penggunaan ramuan jadi sebesar 48%, ramuan buatan sendiri sebesar 31,8%, dan pemanfaatan TOGA sebesar 24,6% [15]. Studi Pengpid dan Peltzer berbasis Indonesia Family Life Survey 2014-2015 juga menunjukkan bahwa 24,4% responden menggunakan praktisi atau pengobatan tradisional dan 32,9% menggunakan pengobatan komplementer dalam empat minggu terakhir [1].
+
+Meskipun minat terhadap ramuan herbal meningkat, pengetahuan tentang ramuan herbal sebenarnya telah hidup di masyarakat sejak lama, tetapi sering tersebar, simpang siur, dan banyak ditemukan hanya secara lisan. Informasi tersebut juga terpisah di berbagai sumber valid dan tidak selalu disertai penjelasan mengenai cara pengolahan, dosis penggunaan, dan kondisi seperti apa yang cocok dengan ramuan herbal tersebut. Hal ini menimbulkan kesenjangan informasi atau missing information mengenai ramuan herbal yang mudah dipahami, terstruktur, dan mudah diakses.
+
+Solusi yang diusulkan dari masalah tersebut adalah membuat aplikasi chatbot yang mudah diakses oleh masyarakat sebagai media informasi rekomendasi pemanfaatan ramuan herbal. Agar chatbot LLM dapat merekomendasikan ramuan dan dosis yang tepat untuk suatu keluhan, chatbot perlu melakukan proses medical interview atau humanizing anamnesis. Proses ini dilakukan melalui tanya jawab bertahap untuk mendeteksi keadaan atau penyakit ringan yang sedang dialami pengguna.
+
+Secara global, WHO Traditional Medicine Strategy 2025-2034 menekankan pentingnya akses terhadap pengobatan tradisional, komplementer, dan integratif yang aman, people-centred, serta berbasis bukti [7]. Hal ini memperkuat relevansi penelitian yang tidak sekadar menampilkan daftar ramuan, tetapi juga berupaya menyusun pengetahuan herbal menjadi sumber informasi digital yang lebih terstruktur dan dapat ditelusuri.
+
+Pada sisi teknologi, literatur chatbot kesehatan menunjukkan bahwa chatbot dapat membantu proses medical history-taking melalui pengumpulan informasi yang lebih terstruktur, meningkatkan keterlibatan pengguna, dan mendukung akses informasi kesehatan [8]. Namun, literatur tersebut juga menekankan perlunya kehati-hatian, validasi, keamanan data, dan batasan fungsi agar chatbot tidak diperlakukan sebagai pengganti tenaga kesehatan. Oleh karena itu, penelitian ini memosisikan humanizing anamnesis sebagai mekanisme penggalian konteks keluhan ringan, bukan sebagai diagnosis medis final.
+
+Dari sisi arsitektur AI, Retrieval-Augmented Generation (RAG) relevan karena menggabungkan kemampuan generatif LLM dengan sumber pengetahuan eksternal yang dapat ditelusuri [9]. Penelitian RAG menunjukkan bahwa pendekatan ini membantu LLM menghasilkan jawaban yang lebih spesifik dan faktual dibandingkan model generatif yang hanya mengandalkan pengetahuan parametrik. Dalam domain kesehatan, RAG juga banyak digunakan untuk mengurangi risiko hallucination, meningkatkan transparansi sumber, dan membantu grounding jawaban pada pengetahuan yang lebih mutakhir atau terkurasi [10].
+
+Beberapa penelitian sebelumnya menunjukkan bahwa chatbot kesehatan dapat membantu akses informasi, sedangkan sistem pakar herbal dapat memanfaatkan knowledge base untuk memberi rekomendasi tanaman obat. Tesis pembanding mengenai chatbot RAG untuk regulasi bantuan sosial juga menunjukkan bahwa pipeline dokumen terkurasi, chunking semantik, vector database, re-ranking, dan evaluasi pakar dapat digunakan untuk membangun sistem tanya-jawab berbasis dokumen [14]. Namun, pada penelitian ini domain dan tujuannya berbeda, yaitu bukan regulasi bantuan sosial, melainkan digitalisasi pengetahuan ramuan herbal untuk keluhan ringan yang digabungkan dengan humanizing anamnesis. Gap inilah yang menjadi dasar penelitian ini, yaitu menggabungkan chatbot LLM, humanizing anamnesis, knowledge base ramuan herbal, retrieval-based grounding, rekomendasi dosis/cara pengolahan, dan batasan penyakit ringan dalam satu rancangan sistem.
+
+Aplikasi ini hanya dibatasi pada pendeteksi penyakit atau keluhan ringan dan pemberian rekomendasi ramuan herbal beserta dosis atau cara pengolahan ramuan tersebut. Dengan batasan ini, penelitian tidak diarahkan untuk menggantikan dokter, memberikan diagnosis medis final, atau menangani penyakit berat.
+
+1.2 Identifikasi Permasalahan
+
+Berdasarkan latar belakang tersebut, permasalahan yang diidentifikasi dalam penelitian ini adalah sebagai berikut.
+
+- Pengetahuan ramuan herbal yang hidup di masyarakat masih tersebar, simpang siur, dan sering hanya diwariskan secara lisan.
+
+- Informasi tentang gejala yang sesuai, cara pengolahan, dosis penggunaan, dan kondisi yang perlu diwaspadai belum tersedia secara terstruktur dan mudah diakses.
+
+- Masyarakat membutuhkan media digital yang dapat membantu mengakses informasi rekomendasi ramuan herbal secara lebih mudah.
+
+- Rekomendasi ramuan herbal tidak dapat diberikan langsung tanpa menggali keadaan pengguna, sehingga diperlukan proses humanizing anamnesis.
+
+- Sistem perlu dibatasi hanya pada penyakit atau keluhan ringan agar pembahasan dan risiko tidak melebar.
+
+1.3 Batasan Masalah
+
+Untuk menjaga agar penelitian tetap fokus dan tidak melebar, batasan masalah pada tesis ini dikelompokkan sebagai berikut.
+
+1. Batasan ruang lingkup sistem
+
+- Penelitian hanya berfokus pada perancangan dan pengembangan chatbot berbasis AI untuk rekomendasi ramuan herbal.
+
+- Sistem dirancang sebagai aplikasi berbasis web dengan interaksi teks.
+
+- Sistem hanya menggunakan Bahasa Indonesia pada tahap awal.
+
+- Sistem tidak mencakup fitur suara, gambar, video, telemedicine, atau integrasi alat kesehatan.
+
+2. Batasan model AI/LLM
+
+- LLM digunakan untuk membantu percakapan, humanizing anamnesis, dan penyusunan respons berbasis knowledge base.
+
+- LLM tidak digunakan sebagai sumber pengetahuan bebas tanpa batas, tetapi harus diarahkan oleh prompt, guardrail, dan knowledge base ramuan herbal.
+
+- Penelitian ini tidak berfokus pada pelatihan model LLM dari awal, melainkan pada rancangan pemanfaatan LLM untuk chatbot rekomendasi herbal.
+
+3. Batasan keluhan atau penyakit
+
+- Sistem hanya menangani penyakit atau keluhan ringan.
+
+- Sistem tidak menangani penyakit berat, penyakit kronis kompleks, kondisi gawat darurat, atau kondisi yang memerlukan pemeriksaan dokter.
+
+- Sistem tidak memberikan diagnosis medis final.
+
+4. Batasan ramuan tradisional/herbal
+
+- Ramuan yang digunakan dibatasi pada ramuan tradisional yang umum dikenal masyarakat dan memiliki referensi pendukung.
+
+- Ramuan awal mencakup contoh seperti jahe-madu, kunyit asam, temulawak-kencur-asem, beras kencur, serai-kayu manis-madu, dan daun jambu biji.
+
+- Penelitian tidak membahas seluruh tanaman obat Indonesia, suplemen komersial, atau produk herbal pabrikan secara luas.
+
+5. Batasan rekomendasi
+
+- Rekomendasi hanya mencakup ramuan herbal, dosis penggunaan konservatif, cara pengolahan, dan catatan kewaspadaan berdasarkan knowledge base.
+
+- Sistem tidak merekomendasikan obat modern, antibiotik, antivirus, atau tindakan medis.
+
+- Rekomendasi bersifat informasi awal dan bukan pengganti konsultasi tenaga kesehatan.
+
+6. Batasan evaluasi
+
+- Evaluasi difokuskan pada relevansi rekomendasi ramuan, kelengkapan dosis/cara pengolahan, keterlacakan referensi, kepatuhan terhadap scope penyakit ringan, dan keamanan jawaban.
+
+- Penelitian ini tidak melakukan uji klinis efektivitas ramuan herbal pada pasien.
+
+- Sistem masih memerlukan validasi ahli kesehatan dan ahli herbal sebelum digunakan secara luas.
+
+1.4 Rumusan Masalah
+
+- Bagaimana merancang chatbot LLM yang dapat melakukan humanizing anamnesis untuk menggali keluhan ringan pengguna?
+
+- Bagaimana mendigitalisasi pengetahuan ramuan herbal yang tersebar menjadi knowledge base yang terstruktur dan mudah diakses?
+
+- Bagaimana mengintegrasikan hasil humanizing anamnesis dengan retrieval knowledge base agar chatbot dapat merekomendasikan ramuan herbal, dosis penggunaan, dan cara pengolahan yang sesuai dengan keluhan ringan pengguna?
+
+- Bagaimana membatasi sistem agar hanya menangani penyakit atau keluhan ringan?
+
+- Bagaimana mengevaluasi relevansi, keterlacakan, dan keamanan rekomendasi ramuan herbal yang diberikan chatbot?
+
+1.5 Tujuan Penelitian
+
+- Merancang chatbot LLM yang dapat melakukan humanizing anamnesis untuk menggali keluhan ringan pengguna.
+
+- Menyusun knowledge base ramuan herbal yang terstruktur dan mudah diakses.
+
+- Menghasilkan rancangan mekanisme retrieval knowledge base yang menghubungkan hasil humanizing anamnesis dengan rekomendasi ramuan herbal, dosis penggunaan, dan cara pengolahan yang sesuai dengan keluhan ringan pengguna.
+
+- Menentukan batasan sistem agar hanya menangani penyakit atau keluhan ringan.
+
+- Menentukan metrik evaluasi untuk menilai relevansi, keterlacakan, dan keamanan rekomendasi ramuan herbal.
+
+1.6 Kebaruan Penelitian
+
+Kebaruan penelitian ini terletak pada integrasi humanizing anamnesis, retrieval-based grounding, dan digitalisasi knowledge base ramuan herbal untuk keluhan ringan. Sistem tidak hanya menyajikan daftar herbal, tetapi terlebih dahulu menggali kondisi pengguna melalui pertanyaan bertahap, lalu menghubungkan hasil wawancara tersebut dengan konteks ramuan yang dapat ditelusuri sebelum menghasilkan rekomendasi ramuan, dosis penggunaan, cara pengolahan, dan catatan kewaspadaan.
+
+1.7 Sistematika Penulisan
+
+Bab I membahas pendahuluan. Bab II membahas kajian teori dan landasan teknis. Bab III membahas metodologi penelitian. Bab IV membahas rancangan sistem dan pembahasan. Bab V berisi kesimpulan dan saran.
+
+BAB II
+
+KAJIAN TEORI
+
+2.1 Chatbot LLM
+
+Chatbot LLM adalah sistem percakapan yang memanfaatkan model bahasa besar untuk memahami input pengguna dan menghasilkan respons dalam bahasa natural. Dalam penelitian ini, LLM digunakan bukan untuk memberikan diagnosis medis final, tetapi untuk mendukung percakapan tanya jawab, merangkum konteks keluhan ringan, dan menyajikan rekomendasi ramuan herbal yang ditarik dari knowledge base.
+
+Karena LLM dapat menghasilkan jawaban yang terlihat meyakinkan meskipun tidak selalu tepat, penggunaannya pada konteks kesehatan harus dikendalikan melalui batasan domain, prompt, knowledge base, dan evaluasi. Oleh sebab itu, penelitian ini tidak menempatkan LLM sebagai sumber pengetahuan bebas, melainkan sebagai antarmuka bahasa natural yang bekerja di atas data ramuan herbal yang telah dikurasi.
+
+2.2 Humanizing Anamnesis
+
+Humanizing anamnesis adalah pendekatan wawancara gejala yang dibuat lebih natural dan mudah dipahami pengguna. Proses ini meniru pola dokter menggali keluhan pasien, seperti menanyakan gejala utama, durasi, intensitas, gejala penyerta, riwayat alergi, obat yang sedang digunakan, kondisi khusus, dan tanda bahaya. Dalam sistem ini, humanizing anamnesis digunakan untuk memastikan rekomendasi ramuan tidak diberikan secara generik.
+
+Literatur medical history-taking chatbot menunjukkan bahwa chatbot berpotensi membantu pengumpulan informasi kesehatan secara terstruktur dan meningkatkan keterlibatan pengguna [8]. Namun, penggunaannya tetap perlu dibatasi karena keluhan yang kompleks membutuhkan pemeriksaan klinis, penilaian konteks medis, dan tanggung jawab tenaga kesehatan. Dengan demikian, humanizing anamnesis pada penelitian ini hanya digunakan untuk memilah konteks keluhan ringan dan kebutuhan informasi herbal, bukan untuk menggantikan diagnosis dokter.
+
+2.3 Ramuan Herbal dan TOGA
+
+Ramuan herbal dan TOGA merupakan bagian dari praktik kesehatan tradisional di Indonesia. Contoh ramuan yang dekat dengan masyarakat antara lain jahe-madu, kunyit asam, temulawak-kencur-asem, beras kencur, dan daun jambu biji untuk keluhan tertentu. Pengetahuan ini perlu dikurasi agar informasi mengenai bahan, gejala target, cara pengolahan, dosis penggunaan, dan kondisi yang perlu diwaspadai dapat disajikan secara terstruktur.
+
+2.4 Retrieval-Augmented Generation untuk Knowledge Base Herbal
+
+Retrieval-Augmented Generation adalah pendekatan yang menggabungkan pencarian informasi dari sumber eksternal dengan kemampuan generatif LLM [9]. Secara umum, dokumen atau data pengetahuan dipecah menjadi potongan informasi, diubah menjadi embedding, disimpan dalam vector database, lalu diambil kembali berdasarkan kemiripan semantik dengan pertanyaan pengguna. Informasi yang diambil tersebut kemudian digunakan sebagai konteks bagi LLM saat menyusun jawaban.
+
+Pada penelitian ini, RAG diadaptasi untuk knowledge base ramuan herbal. Unit informasi yang disimpan bukan pasal hukum atau artikel panjang, melainkan entri ramuan yang memuat nama ramuan, bahan, keluhan target, cara pengolahan, dosis penggunaan, kewaspadaan, dan sumber referensi. Pendekatan ini penting karena rekomendasi herbal harus dapat ditelusuri kembali ke sumber data, bukan hanya dihasilkan dari memori umum LLM.
+
+2.5 Vector Database, Embedding, dan Re-ranking
+
+Embedding merepresentasikan teks sebagai vektor numerik sehingga potongan pengetahuan dapat dicari berdasarkan kedekatan makna. Model seperti Sentence-BERT dan turunannya digunakan secara luas untuk menghasilkan sentence embedding yang efisien dibandingkan pencocokan pasangan kalimat satu per satu [11]. Model ringan seperti MiniLM juga relevan untuk kebutuhan layanan dengan latensi rendah dan sumber daya terbatas [12].
+
+Dalam rancangan sistem ini, setiap entri ramuan atau chunk pengetahuan herbal diubah menjadi embedding dan disimpan dalam vector database. Ketika pengguna selesai melalui proses anamnesis, ringkasan keluhan dipakai sebagai query pencarian. Hasil pencarian dapat diberi peringkat ulang dengan re-ranking agar kandidat ramuan yang paling relevan terhadap gejala, durasi, dan catatan kewaspadaan berada di urutan atas.
+
+2.6 Evaluasi Chatbot Rekomendasi Herbal
+
+Evaluasi chatbot rekomendasi herbal perlu menggabungkan evaluasi manusia dan evaluasi otomatis. Evaluasi manusia diperlukan karena rekomendasi herbal menyangkut kesesuaian gejala, cara pengolahan, dosis, dan catatan kewaspadaan. Evaluator yang relevan dapat mencakup ahli herbal, tenaga kesehatan, atau penilai yang memahami keamanan penggunaan ramuan tradisional.
+
+Evaluasi otomatis dapat mengadaptasi metrik RAG seperti relevansi jawaban, faithfulness terhadap konteks, relevansi konteks, dan keterlacakan sumber [13]. Metrik seperti precision, recall, F1-score, cosine similarity, BLEU, dan ROUGE dapat dipakai sebagai pelengkap apabila tersedia jawaban acuan. Namun, karena domain ini berkaitan dengan kesehatan, metrik otomatis tidak cukup berdiri sendiri dan harus dikombinasikan dengan validasi ahli.
+
+BAB III
+
+METODOLOGI PENELITIAN
+
+3.1 Jenis Penelitian
+
+Penelitian ini menggunakan pendekatan Research and Development dengan metode prototyping. Pendekatan ini dipilih karena penelitian bertujuan merancang sistem chatbot, knowledge base ramuan herbal, dan pipeline rekomendasi yang dapat diuji serta disempurnakan secara bertahap.
+
+Secara teknis, penelitian ini mengadaptasi pola RAG yang dipelajari dari tesis pembanding mengenai chatbot regulasi bantuan sosial, yaitu pengumpulan dokumen terkurasi, pembersihan data, chunking, pembuatan embedding, penyimpanan pada vector database, retrieval, penyusunan konteks, generasi jawaban, serta evaluasi manusia dan otomatis [14]. Perbedaannya terletak pada domain pengetahuan, unit data, alur anamnesis, dan metrik keamanan rekomendasi herbal.
+
+3.2 Tahapan Penelitian
+
+- Identifikasi masalah dan pembatasan scope pada penyakit ringan.
+
+- Studi literatur tentang ramuan herbal, TOGA, chatbot, LLM, medical history-taking chatbot, dan RAG.
+
+- Pengumpulan referensi ramuan herbal, cara pengolahan, dosis penggunaan, gejala target, dan catatan kewaspadaan dengan teknik purposive sampling.
+
+- Pembersihan dan normalisasi data ramuan herbal, termasuk penyamaan istilah keluhan, bahan, satuan dosis, dan cara pengolahan.
+
+- Penyusunan knowledge base ramuan herbal dalam struktur tabular dan dokumen chunk yang siap diindeks.
+
+- Perancangan alur humanizing anamnesis untuk menggali gejala utama, durasi, tingkat keluhan, gejala penyerta, kondisi khusus, dan tanda bahaya.
+
+- Pembuatan embedding dan indeks vector database untuk entri pengetahuan herbal.
+
+- Perancangan retrieval dan re-ranking opsional untuk mengambil kandidat ramuan yang paling relevan dengan hasil anamnesis.
+
+- Perancangan prompt dan guardrail agar LLM hanya menjawab berdasarkan konteks knowledge base dan menolak permintaan di luar batasan sistem.
+
+- Perancangan arsitektur chatbot berbasis web dengan backend Python microservices.
+
+- Perancangan evaluasi manusia dan evaluasi otomatis untuk menilai relevansi, keterlacakan, kelengkapan, keamanan, dan kepatuhan scope.
+
+3.3 Sumber Data
+
+Sumber data berasal dari referensi resmi Kementerian Kesehatan, AyoSehat, repositori kebijakan kesehatan, publikasi ilmiah, artikel ilmiah tentang jamu dan tanaman obat, serta dataset internal yang disusun dari ramuan herbal yang telah dikurasi. Data mencakup nama ramuan, bahan, gejala target, cara pengolahan, dosis penggunaan, batasan penggunaan, catatan kewaspadaan, dan sumber referensi.
+
+Teknik pengumpulan data menggunakan purposive sampling, yaitu memilih ramuan yang umum dikenal masyarakat, mudah ditemukan, dapat dibudidayakan atau diperoleh secara rumah tangga, serta memiliki referensi pendukung. Pada implementasi prototype, data disimpan pada tiga kelompok utama, yaitu data referensi herbal pada folder data/referensi, data anamnesis pada folder data/anamnesis, dan data training pada folder data/traning. Data referensi mencakup 9 case keluhan ringan, 10 formula ramuan, dan 13 entri herbal. Data anamnesis mencakup 13 record pertanyaan anamnesis, 25 referensi sumber anamnesis, dan 1200 contoh SFT anamnesis. Data training mencakup 52 record training herbal, 104 contoh SFT herbal, serta 1304 contoh percakapan gabungan untuk kebutuhan supervised fine-tuning/QLoRA.
+
+Keluhan ringan yang telah dimodelkan pada prototype mencakup mual ringan, tenggorokan tidak nyaman, nafsu makan menurun, pegal ringan atau kurang fit, diare ringan tanpa darah, rasa tidak nyaman tubuh ringan, batuk ringan dan suara serak, batuk pilek ringan, serta gatal dan ruam merah ringan. Setiap keluhan ringan dipasangkan dengan pertanyaan anamnesis dan catatan kewaspadaan agar sistem tidak langsung memberikan ramuan tanpa menilai tanda bahaya.
+
+3.4 Praproses dan Struktur Knowledge Base
+
+Data yang terkumpul diproses melalui beberapa tahap. Pertama, dilakukan pembersihan teks untuk menghapus duplikasi, merapikan istilah, dan menormalkan satuan. Kedua, dilakukan normalisasi gejala agar istilah seperti "tenggorokan sakit", "tenggorokan tidak nyaman", dan "radang tenggorokan ringan" dapat dipetakan secara konsisten sesuai batasan sistem. Ketiga, setiap ramuan diberi metadata berupa kategori keluhan, bahan, cara pengolahan, dosis konservatif, larangan penggunaan, red flag, dan sumber.
+
+Chunking dilakukan berdasarkan struktur alami entri data, bukan berdasarkan panjang paragraf semata. Sistem menghasilkan lima tipe chunk. Pertama, case chunk berisi keluhan ringan, pertanyaan anamnesis, ramuan rekomendasi, bahan, cara pengolahan, dosis, kewaspadaan, dan sumber. Kedua, formula chunk berisi nama formula, komposisi, gejala target, manfaat ringkas, level evidensi, dan keamanan. Ketiga, herb chunk berisi nama lokal, nama latin, bagian digunakan, gejala target, manfaat, keamanan, dan sumber. Keempat, training chunk berisi data hasil scraping/kurasi yang dipakai untuk memperkaya konteks RAG dan data SFT. Kelima, anamnesis chunk berisi kelompok kondisi, pertanyaan wajib, pertanyaan red flag, tindakan triase, dan sumber rujukan.
+
+Pada implementasi terakhir, jumlah chunk yang diindeks adalah 97 chunk, terdiri dari 9 case chunk, 10 formula chunk, 13 herb chunk, 52 training chunk, dan 13 anamnesis chunk. Chunking ini menjaga agar konteks rekomendasi tidak terpisah dari dosis, cara pengolahan, dan kewaspadaan. Dengan demikian, ketika sistem mengambil satu chunk, respons yang dihasilkan tetap utuh dan dapat ditelusuri.
+
+Diagram chunking sistem disajikan pada file tesis/diagrams/pipeline_chunking.mmd. Diagram tersebut menunjukkan alur data dari CSV/JSONL menjadi knowledge chunk, kemudian menjadi embedding, dan akhirnya disimpan pada ChromaDB.
+
+3.5 Perancangan Sistem
+
+Sistem dirancang sebagai aplikasi web dengan backend Python berbasis microservices. Komponen utama yang telah dibuat pada prototype mencakup frontend chatbot berbasis HTML/CSS/JavaScript, API service menggunakan FastAPI, humanizing anamnesis module, herbal knowledge base loader, ChromaDB vector database, retrieval module, metadata re-ranking module, recommendation module, guardrail module, data scraping/curation script, anamnesis dataset builder, serta QLoRA training scaffold.
+
+Alur sistem dimulai ketika pengguna memasukkan keluhan pada frontend. Backend kemudian melakukan analisis pesan untuk mengekstrak gejala, durasi, permintaan rekomendasi, negasi gejala, dan tanda bahaya. Jika informasi belum cukup, sistem mengambil konteks anamnesis dari knowledge base dan mengembalikan pertanyaan lanjutan yang relevan. Jika keluhan termasuk ringan dan tidak menunjukkan red flag, sistem melakukan retrieval terhadap ChromaDB untuk mengambil kandidat case, formula, herb, training record, dan anamnesis record yang relevan. Kandidat tersebut diurutkan ulang menggunakan metadata re-ranking, lalu recommendation module menyusun respons berupa ramuan, bahan, cara pengolahan, dosis, kewaspadaan, konteks RAG, dan disclaimer.
+
+Jika keluhan berada di luar scope, memiliki tanda bahaya, atau tidak ditemukan konteks ramuan yang relevan, sistem tidak memaksakan rekomendasi. Sistem diarahkan untuk menjelaskan bahwa data tidak cukup atau kondisi memerlukan pemeriksaan lebih lanjut. Dengan cara ini, guardrail tidak melemahkan tujuan tesis, tetapi menjaga agar rekomendasi herbal tetap berada dalam batas penyakit ringan yang menjadi fokus penelitian.
+
+Diagram arsitektur sistem disajikan pada file tesis/diagrams/arsitektur_sistem.mmd. Diagram pipeline inferensi percakapan disajikan pada file tesis/diagrams/pipeline_inferensi.mmd.
+
+3.6 Rancangan RAG Herbal
+
+Rancangan RAG herbal terdiri dari tahap indexing dan tahap inferensi. Pada tahap indexing, data ramuan herbal, data anamnesis, dan data training yang telah dibersihkan diubah menjadi chunk. Setiap chunk kemudian direpresentasikan sebagai teks yang memuat informasi utama dan metadata. Prototype menggunakan LocalHashingEmbedding sebagai embedding ringan deterministik agar sistem dapat berjalan tanpa mengunduh model embedding besar. Embedding tersebut disimpan dalam ChromaDB persistent vector store dengan nama koleksi herbal_knowledge.
+
+Pada tahap inferensi, pesan pengguna dianalisis oleh modul anamnesis, kemudian query retrieval dibentuk dari keluhan, gejala, case terpilih, nama formula, dan bahan ramuan. Retriever mengambil kandidat dari ChromaDB, lalu melakukan re-ranking berdasarkan sinyal gejala, case hint, nama formula, bahan, kecocokan dengan data anamnesis, serta level evidensi. Konteks final dibatasi pada kandidat paling relevan agar jawaban tetap fokus.
+
+Pada prototype ini, generasi jawaban masih menggunakan grounded template generation, bukan LLM eksternal yang bebas menghasilkan jawaban. Keputusan ini dibuat agar demonstrasi tesis lebih aman, terkontrol, dan dapat diverifikasi. Namun, struktur data training gabungan sudah disiapkan untuk tahap integrasi LLM generatif atau QLoRA adapter pada penelitian lanjutan.
+
+3.7 Metrik Evaluasi
+
+Evaluasi dilakukan melalui dua pendekatan, yaitu evaluasi manusia dan evaluasi otomatis. Evaluasi manusia dilakukan dengan skenario uji berisi variasi keluhan ringan dan kondisi di luar scope. Penilai memberikan skor terhadap kesesuaian ramuan, kelengkapan cara pengolahan, kewajaran dosis, keterbacaan bahasa, dan ketepatan catatan kewaspadaan.
+
+Metrik evaluasi yang digunakan meliputi Herbal Recommendation Relevance, Dosage/Preparation Completeness, Reference Grounding Rate, Context Relevance, Faithfulness to Retrieved Context, Red Flag Detection Rate, Scope Compliance Rate, Disclaimer Compliance Rate, Hallucination Rate, dan User Satisfaction Score. Jika disediakan jawaban acuan, metrik tambahan seperti Precision, Recall, F1-Score, Cosine Similarity, BLEU, dan ROUGE-L dapat digunakan sebagai pelengkap, bukan sebagai satu-satunya dasar penilaian.
+
+3.8 Rancangan Teknologi
+
+Backend service menggunakan Python dan FastAPI yang dapat dikemas dalam Docker container. Frontend berupa aplikasi web berbasis teks yang memungkinkan pengguna melakukan percakapan dalam Bahasa Indonesia. Frontend telah dibuat dengan tampilan GenAI-style, yaitu respons bertahap seperti sedang diketik, quick replies, card rekomendasi, dan panel konteks RAG yang dapat dibuka/tutup.
+
+Teknologi yang digunakan pada prototype meliputi FastAPI untuk backend API, ChromaDB sebagai persistent vector database, local hashing embedding sebagai embedding ringan, Python service untuk scraping/curation dan dataset builder, serta Docker/Docker Compose sebagai rancangan deployment. Pipeline QLoRA disiapkan melalui script qlora_finetune.py, requirements-qlora.txt, dan qlora_config.example.json dengan contoh base model Qwen/Qwen2.5-1.5B-Instruct. QLoRA belum wajib dijalankan pada prototype lokal karena membutuhkan environment GPU dan dukungan bitsandbytes yang sesuai.
+
+3.9 Model dan Modul yang Dibuat
+
+Berdasarkan implementasi prototype, model atau modul yang dibuat dapat dikelompokkan sebagai berikut.
+
+- Model anamnesis, yaitu rule-based symptom hint dan dataset anamnesis yang digunakan untuk menggali gejala, durasi, tanda bahaya, dan kebutuhan follow-up.
+
+- Model chunking knowledge, yaitu skema pembentukan case chunk, formula chunk, herb chunk, training chunk, dan anamnesis chunk.
+
+- Model embedding dan retrieval, yaitu LocalHashingEmbedding yang menghasilkan representasi vektor ringan dan ChromaDB sebagai vector store.
+
+- Model re-ranking, yaitu logika scoring yang memberikan boost berdasarkan case hint, formula, bahan, level evidensi, dan kecocokan record anamnesis.
+
+- Model rekomendasi, yaitu grounded template generation yang menghasilkan ramuan, bahan, cara pengolahan, dosis, kewaspadaan, sumber, dan disclaimer.
+
+- Model guardrail, yaitu deteksi red flag, negasi gejala, pembatasan scope, dan penolakan rekomendasi pada kondisi berisiko.
+
+- Model interaksi frontend, yaitu pengalaman percakapan GenAI-style dengan typing effect, thinking indicator, quick replies, recommendation card, dan context details.
+
+- Model training QLoRA, yaitu pipeline supervised fine-tuning berbasis combined_training_sft.jsonl yang disiapkan untuk tahap integrasi LLM generatif.
+
+Diagram model/modul disajikan pada file tesis/diagrams/model_komponen.mmd. Diagram pipeline QLoRA disajikan pada file tesis/diagrams/qlora_training_pipeline.mmd.
+
+BAB IV
+
+HASIL IMPLEMENTASI DAN PEMBAHASAN
+
+4.1 Implementasi Prototype Sistem
+
+Hasil penelitian ini berupa prototype aplikasi chatbot rekomendasi ramuan herbal berbasis web. Prototype telah dibuat dengan frontend HTML/CSS/JavaScript dan backend Python FastAPI. Sistem menerima keluhan pengguna dalam Bahasa Indonesia, melakukan humanizing anamnesis untuk menggali kondisi awal, mengambil konteks dari knowledge base menggunakan ChromaDB, lalu menyusun respons rekomendasi ramuan herbal untuk keluhan ringan yang masih berada dalam batas penelitian.
+
+Implementasi sistem tidak menempatkan chatbot sebagai pengganti dokter, melainkan sebagai media digitalisasi informasi ramuan herbal dan pendamping edukasi awal. Karena itu, alur sistem dibuat agar tidak langsung memberikan ramuan ketika informasi gejala belum cukup. Pada kondisi seperti "saya gatal-gatal dan timbul ruam merah", chatbot melakukan pendalaman terlebih dahulu, misalnya menanyakan apakah ruam disertai demam, bintik merah yang tidak hilang saat ditekan, bengkak wajah/bibir, sesak, lepuh, atau riwayat alergi. Jika gejala masih mengarah ke keluhan ringan, sistem dapat memberikan rekomendasi herbal pendamping. Jika muncul tanda bahaya, sistem mengarahkan pengguna untuk mencari pemeriksaan medis.
+
+Arsitektur prototype terdiri dari empat lapisan utama. Lapisan pertama adalah frontend chatbot yang menampilkan percakapan GenAI-style dengan efek respons bertahap, quick replies, kartu rekomendasi, dan detail konteks RAG. Lapisan kedua adalah backend API FastAPI yang mengatur alur percakapan. Lapisan ketiga adalah modul AI/RAG yang terdiri dari anamnesis analyzer, retrieval, re-ranking, recommendation generator, dan guardrail. Lapisan keempat adalah knowledge base herbal dan anamnesis yang disimpan dalam file CSV/JSONL serta diindeks ke ChromaDB.
+
+Diagram arsitektur sistem disajikan pada file tesis/diagrams/arsitektur_sistem.mmd. Diagram alur inferensi percakapan disajikan pada file tesis/diagrams/pipeline_inferensi.mmd.
+
+4.2 Implementasi Knowledge Base dan System Chunking
+
+Knowledge base prototype disusun dari tiga kelompok data, yaitu data referensi herbal, data anamnesis, dan data training. Data referensi herbal mencakup case keluhan ringan, formula ramuan, dan entri bahan herbal. Data anamnesis berisi pertanyaan pendalaman gejala dan tanda bahaya. Data training berisi record hasil kurasi/scraping dan contoh percakapan untuk kebutuhan supervised fine-tuning.
+
+System chunking dirancang agar informasi ramuan tidak terlepas dari konteks penggunaannya. Sistem tidak memotong data hanya berdasarkan panjang teks, tetapi berdasarkan fungsi pengetahuan. Dengan pendekatan ini, setiap chunk tetap membawa gejala target, bahan, cara pengolahan, dosis, sumber, dan catatan kewaspadaan yang diperlukan untuk menghasilkan jawaban yang utuh.
+
+Tipe Chunk | Jumlah | Isi Utama | Fungsi
+
+Case chunk | 9 | Keluhan ringan, gejala target, pertanyaan anamnesis, ramuan rekomendasi, dosis, kewaspadaan | Menjadi kandidat utama penentuan rekomendasi
+
+Formula chunk | 10 | Nama formula, komposisi, target keluhan, cara penggunaan, level evidensi, keamanan | Memberikan konteks ramuan yang dapat direkomendasikan
+
+Herb chunk | 13 | Nama bahan, nama latin, bagian digunakan, manfaat, gejala target, keamanan, sumber | Memberikan konteks bahan penyusun ramuan
+
+Training chunk | 52 | Data hasil kurasi/scraping dan ringkasan pemanfaatan herbal | Memperkaya konteks retrieval dan dataset training
+
+Anamnesis chunk | 13 | Kondisi, pertanyaan wajib, pertanyaan red flag, aksi triase, sumber | Mengarahkan percakapan lanjutan sebelum rekomendasi
+
+Total chunk yang diindeks pada prototype adalah 97 chunk. Seluruh chunk diubah menjadi embedding menggunakan LocalHashingEmbedding, kemudian disimpan dalam ChromaDB persistent vector store dengan collection herbal_knowledge. Diagram system chunking disajikan pada file tesis/diagrams/pipeline_chunking.mmd.
+
+4.3 Model dan Modul yang Dibuat
+
+Prototype ini terdiri dari beberapa model atau modul yang bekerja secara berurutan dalam alur percakapan.
+
+- Model anamnesis, yaitu modul analisis gejala berbasis rule dan dataset anamnesis untuk mendeteksi keluhan, negasi gejala, durasi, dan kebutuhan pertanyaan lanjutan.
+
+- Model chunking knowledge, yaitu model struktur data yang membentuk case chunk, formula chunk, herb chunk, training chunk, dan anamnesis chunk.
+
+- Model embedding dan retrieval, yaitu LocalHashingEmbedding dan ChromaDB untuk mengubah teks pengetahuan menjadi vektor dan mengambil konteks paling relevan.
+
+- Model re-ranking, yaitu modul penilaian ulang kandidat retrieval berdasarkan kecocokan gejala, case hint, nama formula, bahan herbal, level evidensi, dan relevansi anamnesis.
+
+- Model rekomendasi, yaitu grounded template generation yang menyusun jawaban berupa kemungkinan keluhan ringan, rekomendasi ramuan, bahan, cara pengolahan, dosis penggunaan, catatan kewaspadaan, sumber, dan disclaimer.
+
+- Model guardrail, yaitu modul pembatas keamanan yang mendeteksi red flag, kondisi di luar scope, permintaan diagnosis final, dan situasi ketika konteks knowledge base tidak cukup.
+
+- Model interaksi frontend, yaitu modul tampilan percakapan yang membuat respons lebih natural seperti chatbot generatif melalui typing effect, thinking indicator, quick replies, recommendation card, dan context panel.
+
+- Model training QLoRA, yaitu pipeline supervised fine-tuning yang menyiapkan combined_training_sft.jsonl sebagai data pelatihan untuk adapter LLM pada tahap pengembangan berikutnya.
+
+Diagram model/modul yang dibuat disajikan pada file tesis/diagrams/model_komponen.mmd. Diagram pipeline training QLoRA disajikan pada file tesis/diagrams/qlora_training_pipeline.mmd.
+
+4.4 Contoh Skenario Hasil Implementasi
+
+Contoh pertama adalah keluhan "saya gatal-gatal dan timbul ruam merah". Pada versi awal, sistem terlalu cepat menganggap ruam sebagai tanda bahaya. Setelah diperbaiki, sistem melakukan anamnesis lanjutan terlebih dahulu. Sistem menanyakan apakah ruam disertai demam tinggi, bintik merah tidak hilang saat ditekan, lepuh, bengkak wajah/bibir/lidah, sesak napas, nyeri berat, atau riwayat alergi. Jika pengguna menjawab tidak ada tanda bahaya dan ruam bersifat ringan, sistem dapat merekomendasikan gel lidah buaya topikal sebagai pendamping keluhan ringan, disertai cara penggunaan dan catatan uji tempel.
+
+Contoh kedua adalah keluhan tenggorokan tidak nyaman. Sistem menanyakan durasi, ada tidaknya demam tinggi, sesak, sulit menelan berat, batuk berat, atau keluhan lain. Jika keluhan masih ringan, sistem dapat menampilkan ramuan jahe-madu atau serai-kayu manis-madu, cara perebusan, anjuran penggunaan saat hangat, dan peringatan madu tidak diberikan kepada bayi.
+
+Contoh ketiga adalah diare ringan tanpa darah. Sistem menanyakan frekuensi buang air besar, tanda dehidrasi, demam tinggi, darah pada tinja, dan durasi. Jika tidak ada tanda bahaya, sistem dapat merekomendasikan daun jambu biji sebagai pendamping gejala ringan, disertai penekanan hidrasi dan kewaspadaan bila diare memburuk.
+
+Contoh keempat adalah keluhan dengan tanda bahaya, misalnya ruam merah disertai demam tinggi, bintik merah tidak hilang saat ditekan, atau muntah terus-menerus. Pada kondisi tersebut, sistem tidak memberikan ramuan sebagai penanganan utama. Sistem menjelaskan bahwa gejala membutuhkan evaluasi tenaga kesehatan, lalu tetap memberikan informasi edukasi bahwa rekomendasi herbal tidak menggantikan pemeriksaan medis.
+
+4.5 Pembahasan
+
+Implementasi prototype menunjukkan bahwa konsep digitalisasi pengetahuan ramuan herbal dapat diterjemahkan menjadi sistem chatbot yang lebih terarah. Kekuatan utama sistem terletak pada penggabungan humanizing anamnesis dengan RAG. Anamnesis membantu sistem memahami konteks gejala sebelum merekomendasikan ramuan, sedangkan RAG menjaga agar jawaban tetap mengacu pada data yang tersedia di knowledge base.
+
+System chunking menjadi bagian penting karena masalah utama penelitian ini adalah missing information tentang ramuan herbal. Dengan chunk yang terstruktur, informasi tidak hanya berupa nama tanaman, tetapi juga mencakup konteks gejala, cara pengolahan, dosis konservatif, kewaspadaan, dan sumber referensi. Hal ini membuat rekomendasi lebih mudah diaudit dibandingkan chatbot yang hanya mengandalkan prompt umum.
+
+Prototype juga memperlihatkan batas yang perlu diperhatikan. Pertama, sistem saat ini masih menggunakan LocalHashingEmbedding agar ringan dan dapat berjalan lokal, sehingga kualitas semantic retrieval belum setara model embedding besar. Kedua, generasi jawaban masih menggunakan grounded template generation untuk menjaga keamanan dan keterlacakan, bukan LLM generatif penuh. Ketiga, pipeline QLoRA sudah disiapkan tetapi belum menjadi komponen inferensi utama karena membutuhkan environment GPU dan validasi model lanjutan. Keempat, rekomendasi belum dapat dianggap sebagai validasi klinis efektivitas ramuan karena penelitian ini berfokus pada sistem informasi, bukan uji klinis.
+
+BAB V
+
+KESIMPULAN DAN SARAN
+
+5.1 Kesimpulan
+
+- Penelitian ini menghasilkan prototype chatbot berbasis web yang dapat melakukan humanizing anamnesis untuk menggali keluhan ringan sebelum memberikan rekomendasi ramuan herbal.
+
+- Pengetahuan ramuan herbal yang semula tersebar dapat didigitalisasi menjadi knowledge base terstruktur yang memuat case keluhan ringan, formula ramuan, bahan herbal, pertanyaan anamnesis, cara pengolahan, dosis, kewaspadaan, dan sumber referensi.
+
+- System chunking yang dibuat berhasil membagi pengetahuan menjadi 97 chunk, terdiri dari case chunk, formula chunk, herb chunk, training chunk, dan anamnesis chunk, sehingga konteks rekomendasi tidak terlepas dari dosis dan cara pengolahan.
+
+- Integrasi RAG menggunakan LocalHashingEmbedding dan ChromaDB memungkinkan sistem mengambil konteks ramuan yang relevan sebelum menyusun jawaban, sedangkan re-ranking membantu memilih kandidat rekomendasi yang paling sesuai.
+
+- Modul guardrail dan anamnesis membuat sistem lebih fokus pada penyakit atau keluhan ringan. Sistem dapat mengajukan pertanyaan lanjutan ketika informasi belum cukup dan dapat menahan rekomendasi ketika muncul tanda bahaya atau kondisi di luar batas penelitian.
+
+- Pipeline QLoRA dan dataset combined_training_sft.jsonl telah disiapkan sebagai dasar pengembangan model LLM generatif pada tahap berikutnya, meskipun prototype saat ini masih menggunakan grounded template generation untuk menjaga keterlacakan dan keamanan.
+
+5.2 Saran
+
+Penelitian selanjutnya disarankan untuk melakukan validasi knowledge base bersama ahli herbal dan tenaga kesehatan, meningkatkan kualitas embedding dengan model multilingual/Indonesian sentence embedding, menjalankan eksperimen QLoRA pada environment GPU, serta menguji prototype kepada pengguna umum untuk menilai kemudahan penggunaan, kualitas anamnesis, dan pemahaman rekomendasi.
+
+DAFTAR PUSTAKA
+
+[1] S. Pengpid and K. Peltzer, “Utilization of traditional and complementary medicine in Indonesia: Results of a national survey in 2014-15,” 2018.
+
+[2] G. Gusmi, “Gambaran Karakteristik Pemanfaatan Pelayanan Kesehatan Tradisional,” Jurnal Ilmiah Kesehatan, 2019.
+
+[3] Kementerian Kesehatan Republik Indonesia, “Permenkes No. 9 Tahun 2016 tentang Upaya Pengembangan Kesehatan Tradisional Melalui Asuhan Mandiri Pemanfaatan Taman Obat Keluarga dan Keterampilan,” 2016.
+
+[4] Kementerian Kesehatan Republik Indonesia, “7 Jamu Herbal yang Wajib Kamu Tahu,” 2022.
+
+[5] Kementerian Kesehatan Republik Indonesia, “Manfaat Madu Bagi Kesehatan,” 2022.
+
+[6] Kementerian Kesehatan Republik Indonesia, “Takhlukan Mual Pasca Kemoterapi dengan Jahe,” 2022.
+
+[7] Y. M. A. Wong and S. Kim, “Policy implications of WHO’s Global traditional medicine strategy 2025-2034,” Bulletin of the World Health Organization, vol. 103, no. 11, pp. 715-721, 2025, doi: 10.2471/BLT.25.293414.
+
+[8] M. Hindelang, S. Sitaru, and A. Zink, “Transforming Health Care Through Chatbots for Medical History-Taking and Future Directions: Comprehensive Systematic Review,” JMIR Medical Informatics, vol. 12, e56628, 2024, doi: 10.2196/56628.
+
+[9] P. Lewis et al., “Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks,” Advances in Neural Information Processing Systems 33, 2020. [Online]. Available: https://papers.nips.cc/paper/2020/hash/6b493230205f780e1bc26945df7481e5-Abstract.html
+
+[10] L. M. Amugongo, P. Mascheroni, S. Brooks, S. Doering, and J. Seidel, “Retrieval augmented generation for large language models in healthcare: A systematic review,” PLOS Digital Health, vol. 4, no. 6, e0000877, 2025, doi: 10.1371/journal.pdig.0000877.
+
+[11] N. Reimers and I. Gurevych, “Sentence-BERT: Sentence Embeddings using Siamese BERT-Networks,” Proceedings of EMNLP-IJCNLP, pp. 3982-3992, 2019. [Online]. Available: https://aclanthology.org/D19-1410/
+
+[12] W. Wang, F. Wei, L. Dong, H. Bao, N. Yang, and M. Zhou, “MiniLM: Deep Self-Attention Distillation for Task-Agnostic Compression of Pre-Trained Transformers,” arXiv:2002.10957, 2020. [Online]. Available: https://arxiv.org/abs/2002.10957
+
+[13] S. Es, J. James, L. Espinosa-Anke, and S. Schockaert, “RAGAs: Automated Evaluation of Retrieval Augmented Generation,” Proceedings of the 18th Conference of the European Chapter of the Association for Computational Linguistics: System Demonstrations, pp. 150-158, 2024. [Online]. Available: https://aclanthology.org/2024.eacl-demo.16/
+
+[14] A. O. Setiaji, “Penerapan AI Generatif dalam Chatbot tentang Regulasi Program Bantuan Sosial bagi Kelompok Rentan,” Tesis Magister Informatika, Universitas Pelita Harapan, 2025.
+
+[15] Badan Penelitian dan Pengembangan Kesehatan, “Laporan Nasional Riskesdas 2018,” Lembaga Penerbit Badan Penelitian dan Pengembangan Kesehatan, Jakarta, 2019. [Online]. Available: https://repository.badankebijakan.kemkes.go.id/id/eprint/3514/
