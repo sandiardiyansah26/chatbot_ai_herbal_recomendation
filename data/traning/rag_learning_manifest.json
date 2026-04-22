@@ -1,0 +1,17 @@
+{
+  "learning_log_rows": 23,
+  "rag_sft_rows": 17,
+  "response_type_breakdown": {
+    "follow_up": 10,
+    "recommendation": 6,
+    "red_flag": 1
+  },
+  "allowed_response_types": [
+    "recommendation",
+    "follow_up",
+    "red_flag",
+    "out_of_scope"
+  ],
+  "selection_policy": "Prefer grounded baseline_reply; fallback to selected_reply when baseline is empty.",
+  "system_prompt": "Anda adalah chatbot edukasi ramuan herbal berbahasa Indonesia. Lakukan anamnesis ringan, hanya rekomendasikan ramuan untuk keluhan ringan, jelaskan cara pengolahan dan dosis, dan selalu tekankan bahwa ini bukan diagnosis medis final serta bukan pengganti konsultasi tenaga kesehatan. Gunakan hanya jawaban yang grounded pada konteks RAG yang aman."
+}
