@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[1]
 ANAMNESIS_DIR = ROOT / "data" / "anamnesis"
 TRAINING_DIR = ROOT / "data" / "traning"
 QUESTIONS_JSONL = ANAMNESIS_DIR / "anamnesis_questions.jsonl"
@@ -109,6 +109,31 @@ SOURCES = {
     "ayosehat_dehidrasi": {
         "title": "Dehidrasi pada Anak",
         "url": "https://ayosehat.kemkes.go.id/topik-penyakit/kesehatan-lainnya/dehidrasi-pada-anak",
+    },
+    "halodoc_nyeri_haid": {
+        "title": "Apa Itu Nyeri Haid? Gejala, Penyebab, dan Pengobatan",
+        "url": "https://www.halodoc.com/kesehatan/nyeri-haid",
+        "note": "Sumber Halodoc untuk gejala, red flag, dan komponen diagnosis awal nyeri haid.",
+    },
+    "halodoc_sakit_maag": {
+        "title": "Apa itu Sakit Maag? Gejala, Penyebab & Pengobatan - Halodoc",
+        "url": "https://www.halodoc.com/kesehatan/sakit-maag/",
+        "note": "Sumber Halodoc untuk gejala dispepsia/maag, faktor pemicu, dan tanda bahaya saluran cerna atas.",
+    },
+    "halodoc_konstipasi": {
+        "title": "Apa Itu Konstipasi (Sembelit)? Gejala, Penyebab, dan Pengobatan",
+        "url": "https://www.halodoc.com/kesehatan/konstipasi/",
+        "note": "Sumber Halodoc untuk gejala konstipasi, penilaian awal, dan tanda bahaya yang perlu dirujuk.",
+    },
+    "halodoc_sakit_kepala_bahaya": {
+        "title": "Waspada, Ini Tanda Sakit Kepala Berbahaya",
+        "url": "https://www.halodoc.com/artikel/waspada-ini-tanda-sakit-kepala-berbahaya-1",
+        "note": "Sumber Halodoc untuk red flag sakit kepala, gejala neurologis, dan kapan harus ke dokter.",
+    },
+    "scribd_anamnesis_questions_1": {
+        "title": "Anamnesis Questions for Patient Assessment",
+        "url": "https://www.scribd.com/document/912361832/Anamnesis-questions-1",
+        "note": "Kurasi manual berbasis preview hasil pencarian Scribd untuk domain anamnesis umum seperti keluhan utama, riwayat keluarga, kebiasaan, pendidikan, pekerjaan, seksual, sikap terhadap masalah, dan tidur.",
     },
 }
 
@@ -462,6 +487,122 @@ RECORDS = [
         "triage_action": "Ruam/gatal tanpa tanda bahaya dapat ditangani sebagai keluhan kulit ringan dan dapat diberi edukasi topikal terbatas. Ruam dengan demam tinggi, perdarahan, sesak/bengkak wajah, lepuh luas, atau penyebaran cepat harus dirujuk.",
         "source_keys": ["kemenkes_dbd", "cdc_dengue", "pubmed_aloe"],
     },
+    {
+        "id": "anam_014",
+        "condition_group": "skrining_umum",
+        "suspected_condition": "anamnesis umum terstruktur untuk keluhan baru atau keluhan yang belum jelas",
+        "sample_user_message": "Keluhan saya belum jelas, tapi saya ingin ditanya dulu secara lengkap sebelum diberi saran herbal.",
+        "primary_symptoms": ["keluhan belum spesifik", "butuh anamnesis lengkap", "ingin ditanya dulu"],
+        "applicable_case_ids": ["case_001", "case_002", "case_003", "case_004", "case_005", "case_006", "case_007", "case_008", "case_009"],
+        "required_questions": [
+            "Apa keluhan utama atau alasan konsultasi yang paling mengganggu saat ini?",
+            "Sejak kapan keluhan mulai, bagaimana urutannya, dan apakah keluhan memburuk atau hilang-timbul?",
+            "Di bagian tubuh mana keluhan terasa, seperti apa rasanya, dan seberapa berat keluhan dari 0 sampai 10?",
+            "Apa yang memicu, memperberat, atau justru meringankan keluhan?",
+            "Apakah ada gejala penyerta seperti demam, mual, muntah, batuk, ruam, gangguan BAB atau BAK, atau keluhan lain?",
+            "Apakah pernah mengalami keluhan serupa, punya riwayat penyakit, alergi, atau sedang minum obat, suplemen, atau jamu tertentu?",
+            "Apakah ada riwayat keluarga, kebiasaan, paparan lingkungan, perjalanan, pekerjaan, atau kondisi khusus seperti hamil yang perlu diketahui?",
+        ],
+        "red_flag_questions": [
+            "Apakah keluhan muncul mendadak sangat berat, cepat memburuk, atau mengganggu fungsi dasar seperti makan, minum, berjalan, atau bernapas?",
+            "Apakah ada sesak, perdarahan, pingsan, kejang, penurunan kesadaran, dehidrasi, lumpuh atau kelemahan satu sisi, atau nyeri hebat?",
+            "Apakah keluhan terjadi pada bayi, lansia rapuh, kehamilan, atau pengguna dengan penyakit kronis berat?",
+        ],
+        "triage_action": "Gunakan record ini sebagai kerangka anamnesis awal saat keluhan belum spesifik. Bila ada red flag atau faktor risiko tinggi, hentikan jalur herbal dan arahkan ke evaluasi tenaga kesehatan.",
+        "source_keys": ["scribd_anamnesis_questions_1", "hindelang_2024_history_chatbot"],
+    },
+    {
+        "id": "anam_015",
+        "condition_group": "nyeri_kepala",
+        "suspected_condition": "sakit kepala ringan vs sakit kepala dengan tanda bahaya neurologis",
+        "sample_user_message": "Saya sakit kepala sejak kemarin dan ingin tahu apa yang perlu ditanyakan dulu.",
+        "primary_symptoms": ["sakit kepala", "nyeri kepala", "kepala berdenyut", "pusing"],
+        "applicable_case_ids": ["case_006"],
+        "required_questions": [
+            "Sejak kapan sakit kepala muncul, seberapa sering terjadi, dan apakah berlangsung lebih dari 24 jam atau berulang sangat sering?",
+            "Di bagian mana kepala terasa nyeri dan apakah sifatnya berdenyut, menekan, satu sisi, atau menyeluruh?",
+            "Apakah sakit kepala muncul mendadak sangat hebat atau makin berat saat batuk, bersin, aktivitas berat, atau bergerak tiba-tiba?",
+            "Apakah ada demam, kaku leher, gangguan penglihatan, mata merah, mual, muntah, atau ruam?",
+            "Apakah ada kelemahan satu sisi tubuh, mati rasa, bicara pelo, kebingungan, kejang, atau penurunan kesadaran?",
+            "Apakah sakit kepala terjadi setelah cedera kepala, olahraga berat, kurang tidur, dehidrasi, atau paparan pemicu tertentu?",
+        ],
+        "red_flag_questions": [
+            "Apakah sakit kepala terjadi secara tiba-tiba dan sangat parah?",
+            "Apakah ada demam, kaku leher, gangguan penglihatan, kelemahan satu sisi, kesulitan berbicara, kejang, atau penurunan kesadaran?",
+            "Apakah sakit kepala terjadi setelah cedera kepala, tidak membaik dengan istirahat, atau terus semakin memburuk?",
+        ],
+        "triage_action": "Sakit kepala dengan tanda neurologis, demam tinggi, kaku leher, pola mendadak hebat, atau pasca-cedera harus dirujuk. Jika ringan tanpa red flag, chatbot hanya boleh memberi edukasi pendamping dan tetap menghindari klaim diagnosis pasti.",
+        "source_keys": ["halodoc_sakit_kepala_bahaya", "hindelang_2024_history_chatbot"],
+    },
+    {
+        "id": "anam_016",
+        "condition_group": "pencernaan",
+        "suspected_condition": "maag atau dispepsia ringan vs tanda bahaya saluran cerna atas",
+        "sample_user_message": "Ulu hati saya perih, agak kembung, dan mual setelah makan.",
+        "primary_symptoms": ["maag", "nyeri ulu hati", "mual", "kembung", "sendawa"],
+        "applicable_case_ids": ["case_001"],
+        "required_questions": [
+            "Keluhan utamanya apa, misalnya nyeri ulu hati, rasa perih, cepat kenyang, mual, kembung, sendawa, atau rasa panas di dada?",
+            "Sejak kapan keluhan muncul dan apakah berkaitan dengan waktu makan, makanan tertentu, kopi, soda, obat antinyeri, atau stres?",
+            "Apakah ada mual atau muntah berulang, rasa asam naik ke dada atau tenggorokan, atau cepat kenyang yang berkepanjangan?",
+            "Apakah ada muntah darah, tinja hitam seperti ter, nyeri perut hebat, atau penurunan berat badan tanpa sebab?",
+            "Apakah ada sulit menelan, nyeri dada, atau keluhan lambung yang makin mengganggu aktivitas sehari-hari?",
+            "Apakah ada riwayat maag berulang, infeksi H. pylori, penggunaan NSAID, atau penyakit lain pada lambung dan empedu?",
+        ],
+        "red_flag_questions": [
+            "Apakah ada muntah darah atau tinja hitam seperti ter?",
+            "Apakah ada nyeri perut hebat, penurunan berat badan tanpa sebab, sulit menelan, atau nyeri dada?",
+            "Apakah keluhan berat, menetap, atau makin mengganggu aktivitas sehari-hari?",
+        ],
+        "triage_action": "Keluhan lambung ringan tanpa red flag dapat diposisikan sebagai keluhan pencernaan ringan. Jika ada perdarahan, nyeri hebat, penurunan berat badan, sulit menelan, atau nyeri dada, arahkan evaluasi medis segera.",
+        "source_keys": ["halodoc_sakit_maag", "hindelang_2024_history_chatbot"],
+    },
+    {
+        "id": "anam_017",
+        "condition_group": "pencernaan",
+        "suspected_condition": "konstipasi atau sembelit ringan vs obstruksi, perdarahan, atau konstipasi bermakna klinis",
+        "sample_user_message": "Saya sudah beberapa hari sulit BAB dan perut terasa penuh.",
+        "primary_symptoms": ["sulit BAB", "konstipasi", "sembelit", "tinja keras", "perut penuh"],
+        "applicable_case_ids": [],
+        "required_questions": [
+            "Sejak kapan sulit BAB dan dalam seminggu terakhir berapa kali BAB terjadi?",
+            "Apakah tinja keras atau padat, harus mengejan, atau terasa tidak tuntas setelah BAB?",
+            "Apakah terasa seperti ada sumbatan di anus atau rektum, atau perlu bantuan khusus untuk mengeluarkan tinja?",
+            "Apakah ada nyeri perut, perut makin kembung, mual, muntah, atau perubahan kebiasaan BAB yang signifikan?",
+            "Apakah ada darah pada tinja atau perdarahan dari rektum, serta apakah berat badan turun tanpa sebab?",
+            "Apakah asupan cairan dan serat kurang, aktivitas fisik menurun, sedang hamil, lansia, atau sedang minum obat tertentu?",
+        ],
+        "red_flag_questions": [
+            "Apakah ada nyeri perut yang parah atau melilit, perut sangat kembung, atau muntah?",
+            "Apakah ada darah pada tinja, perdarahan rektum, atau berat badan turun tanpa sebab?",
+            "Apakah ada perubahan kebiasaan BAB yang baru dan signifikan atau keluhan terasa seperti sumbatan?",
+        ],
+        "triage_action": "Sembelit ringan tanpa tanda bahaya lebih aman ditangani dengan edukasi cairan, serat, dan aktivitas. Jika ada nyeri hebat, perdarahan, muntah, penurunan berat badan, atau perubahan pola BAB yang bermakna, pasien perlu dirujuk.",
+        "source_keys": ["halodoc_konstipasi", "hindelang_2024_history_chatbot"],
+    },
+    {
+        "id": "anam_018",
+        "condition_group": "kesehatan_reproduksi",
+        "suspected_condition": "nyeri haid atau dismenore ringan vs nyeri haid dengan tanda bahaya",
+        "sample_user_message": "Saya nyeri haid dan kram perut bawah cukup mengganggu.",
+        "primary_symptoms": ["nyeri haid", "kram perut bawah", "nyeri menstruasi", "nyeri punggung saat haid"],
+        "applicable_case_ids": [],
+        "required_questions": [
+            "Apakah nyeri muncul 1 sampai 3 hari sebelum haid atau saat menstruasi, dan apakah ini pola yang biasa terjadi setiap siklus?",
+            "Di mana lokasi nyeri paling terasa dan apakah menjalar ke punggung bawah, paha, atau anus?",
+            "Seberapa berat nyeri yang dirasakan dan apakah sampai mengganggu aktivitas atau membuat harus berbaring?",
+            "Apakah nyeri memuncak pada awal haid lalu mereda, atau justru berlangsung lebih dari 3 hari dan terasa makin berat?",
+            "Apakah ada gejala penyerta seperti mual, muntah, ruam, pusing, pingsan, atau perdarahan yang terasa sangat banyak?",
+            "Apakah ada riwayat menstruasi tidak teratur, nyeri haid yang makin memburuk dari waktu ke waktu, atau riwayat masalah reproduksi sebelumnya?",
+        ],
+        "red_flag_questions": [
+            "Apakah nyeri haid sangat parah, berlangsung lebih dari 3 hari, atau berbeda jelas dari pola biasanya?",
+            "Apakah nyeri muncul bersama demam, muntah, ruam, pusing, pingsan, atau perdarahan yang sangat banyak?",
+            "Apakah nyeri membuat tidak bisa beraktivitas normal atau disertai riwayat gangguan pada organ reproduksi?",
+        ],
+        "triage_action": "Nyeri haid dengan pola ringan dan biasa masih dapat diposisikan sebagai keluhan ringan. Bila nyeri sangat parah, berbeda dari pola biasa, berlangsung lama, atau disertai gejala lain seperti demam, muntah, ruam, pusing, atau pingsan, arahkan evaluasi medis.",
+        "source_keys": ["halodoc_nyeri_haid", "hindelang_2024_history_chatbot"],
+    },
 ]
 
 
@@ -490,7 +631,7 @@ def expand_sources(record: dict[str, object]) -> dict[str, object]:
     expanded = {key: value for key, value in record.items() if key != "source_keys"}
     expanded["source_titles"] = [source["title"] for source in sources]
     expanded["source_urls"] = [source["url"] for source in sources]
-    expanded["curation_method"] = "official_source_guided_manual_curation"
+    expanded["curation_method"] = "source_guided_manual_curation"
     expanded["disclaimer"] = "Anamnesis ini untuk deteksi awal dan triase edukatif, bukan diagnosis medis final."
     return expanded
 
@@ -657,7 +798,7 @@ def write_reference_sources(records: list[dict[str, object]]) -> None:
             }
         )
     for record in records:
-        for title, url in zip(record["source_titles"], record["source_urls"], strict=False):
+        for title, url in zip(record["source_titles"], record["source_urls"]):
             if url in seen_urls:
                 continue
             seen_urls.add(url)
@@ -669,7 +810,7 @@ def write_readme(records: list[dict[str, object]], sft_records: list[dict[str, o
     source_lines = []
     seen_urls: set[str] = set()
     for record in records:
-        for title, url in zip(record["source_titles"], record["source_urls"], strict=False):
+        for title, url in zip(record["source_titles"], record["source_urls"]):
             if url in seen_urls:
                 continue
             seen_urls.add(url)
@@ -711,7 +852,7 @@ def write_readme(records: list[dict[str, object]], sft_records: list[dict[str, o
                 "",
                 "## Regenerasi",
                 "```bash",
-                "python3 program/tools/build_anamnesis_dataset.py",
+                "python3 tools/build_anamnesis_dataset.py",
                 "```",
             ]
         )

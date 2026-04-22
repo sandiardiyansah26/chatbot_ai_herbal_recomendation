@@ -18,7 +18,7 @@ Folder ini berisi pertanyaan anamnesis terstruktur untuk membantu chatbot mengga
 - Rekomendasi herbal hanya boleh diberikan untuk keluhan ringan yang sesuai batas sistem.
 
 ## Ringkasan
-- Jumlah record anamnesis: 13.
+- Jumlah record anamnesis: 18.
 - Jumlah contoh SFT anamnesis: 1200.
 - Target minimum contoh SFT anamnesis: 1200.
 - Contoh SFT anamnesis diperluas menggunakan variasi terstruktur atas profil pengguna, durasi, tingkat keluhan, intent, dan urutan pertanyaan. Data ini bersifat synthetic-guided by curated references, sehingga tetap perlu review ahli sebelum produksi.
@@ -46,6 +46,11 @@ Folder ini berisi pertanyaan anamnesis terstruktur untuk membantu chatbot mengga
 - [CDC Chest Cold (Acute Bronchitis) Basics](https://www.cdc.gov/acute-bronchitis/about/index.html)
 - [CDC About Norovirus](https://www.cdc.gov/norovirus/about/index.html)
 - [Aloe vera dermatitis literature](https://pubmed.ncbi.nlm.nih.gov/?term=aloe+vera+dermatitis+review)
+- [Anamnesis Questions for Patient Assessment](https://www.scribd.com/document/912361832/Anamnesis-questions-1)
+- [Waspada, Ini Tanda Sakit Kepala Berbahaya](https://www.halodoc.com/artikel/waspada-ini-tanda-sakit-kepala-berbahaya-1)
+- [Apa itu Sakit Maag? Gejala, Penyebab & Pengobatan - Halodoc](https://www.halodoc.com/kesehatan/sakit-maag/)
+- [Apa Itu Konstipasi (Sembelit)? Gejala, Penyebab, dan Pengobatan](https://www.halodoc.com/kesehatan/konstipasi/)
+- [Apa Itu Nyeri Haid? Gejala, Penyebab, dan Pengobatan](https://www.halodoc.com/kesehatan/nyeri-haid)
 
 ## Paper Pendukung
 - [Transforming Health Care Through Chatbots for Medical History-Taking and Future Directions: Comprehensive Systematic Review](https://pmc.ncbi.nlm.nih.gov/articles/PMC11393511/)
@@ -55,5 +60,5 @@ Folder ini berisi pertanyaan anamnesis terstruktur untuk membantu chatbot mengga
 
 ## Regenerasi
 ```bash
-python3 program/tools/build_anamnesis_dataset.py
+python3 tools/build_anamnesis_dataset.py
 ```
