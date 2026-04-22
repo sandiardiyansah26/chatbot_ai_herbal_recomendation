@@ -8,9 +8,10 @@ services:
       CHROMA_DB_DIR: ${CHROMA_DB_DIR:-/app/.chroma}
       ENABLE_DUAL_LLM_COMPARISON: ${ENABLE_DUAL_LLM_COMPARISON:-true}
       OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
-      OLLAMA_MODEL_A: ${OLLAMA_MODEL_A:-deepseek-r1:1.5b}
-      OLLAMA_MODEL_B: ${OLLAMA_MODEL_B:-gemma4:e2b}
-      OLLAMA_MODEL_B_FALLBACKS: ${OLLAMA_MODEL_B_FALLBACKS:-gemma4:latest,gemma3:1b}
+      OLLAMA_MODEL_A: ${OLLAMA_MODEL_A:-deepseek-r1:7b}
+      OLLAMA_MODEL_A_FALLBACKS: ${OLLAMA_MODEL_A_FALLBACKS:-deepseek-r1:1.5b}
+      OLLAMA_MODEL_B: ${OLLAMA_MODEL_B:-gemma4:latest}
+      OLLAMA_MODEL_B_FALLBACKS: ${OLLAMA_MODEL_B_FALLBACKS:-gemma4:e2b,gemma3:1b}
       OLLAMA_TIMEOUT_SECONDS: ${OLLAMA_TIMEOUT_SECONDS:-45}
       OLLAMA_NUM_PREDICT_DEFAULT: ${OLLAMA_NUM_PREDICT_DEFAULT:-220}
       OLLAMA_NUM_PREDICT_RECOMMENDATION: ${OLLAMA_NUM_PREDICT_RECOMMENDATION:-768}
@@ -23,7 +24,7 @@ services:
       - "8000:8000"
     volumes:
       - ./.chroma:/app/.chroma
-      - ../data:/app/data
+      - ./data:/app/data
 
   frontend:
     build:

@@ -35,25 +35,27 @@ Konsep ini mengikuti prinsip Retrieval-Augmented Generation (RAG): model generat
 Install dan jalankan Ollama, lalu pull model dasar:
 
 ```bash
-ollama pull deepseek-r1:1.5b
-ollama pull gemma4:e2b
+ollama pull deepseek-r1:7b
+ollama pull gemma4:latest
 ```
 
-Jika `gemma4:e2b` belum tersedia lokal atau proses pull gagal, siapkan fallback yang tetap kompatibel:
+Jika model utama belum tersedia lokal atau proses pull gagal, siapkan fallback yang tetap kompatibel:
 
 ```bash
-ollama pull gemma4:latest
+ollama pull deepseek-r1:1.5b
+ollama pull gemma4:e2b
 ollama pull gemma3:1b
-export OLLAMA_MODEL_B_FALLBACKS=gemma4:latest,gemma3:1b
+export OLLAMA_MODEL_A_FALLBACKS=deepseek-r1:1.5b
+export OLLAMA_MODEL_B_FALLBACKS=gemma4:e2b,gemma3:1b
 ```
 
-Backend akan mencoba `OLLAMA_MODEL_B` terlebih dahulu. Jika Ollama mengembalikan `404 model not found`, backend otomatis mencoba model fallback agar komparasi tetap berjalan.
+Backend akan mencoba model utama lebih dulu. Jika Ollama mengembalikan `404 model not found`, backend otomatis mencoba fallback agar komparasi tetap berjalan. Request komparasi juga dikirim dengan `think=false` supaya model yang mendukung reasoning langsung mengembalikan jawaban final, bukan hanya trace `thinking`.
 
-Default runtime repo ini sekarang memakai `deepseek-r1:1.5b` dan `gemma4:e2b` agar latency lebih realistis untuk laptop/dev machine. Jika ingin menaikkan kualitas model pada mesin yang lebih kuat, override lewat environment variable:
+Default runtime repo ini sekarang memakai `deepseek-r1:7b` dan `gemma4:latest` sebagai titik tengah kualitas dan latency yang masih realistis untuk laptop/dev machine. Jika ingin mengubah profil model lewat environment variable:
 
 ```bash
 export OLLAMA_MODEL_A=deepseek-r1:70b
-export OLLAMA_MODEL_B=gemma4:latest
+export OLLAMA_MODEL_B=gemma4:e4b
 ```
 
 Opsional, buat wrapper model herbal berbasis `Modelfile`:

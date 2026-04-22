@@ -1,6 +1,6 @@
 model: mlx-community/Qwen2.5-0.5B-Instruct-4bit
 train: true
-data: program/training/data_mlx/herbal_chat
+data: training/data_mlx/herbal_chat
 fine_tune_type: lora
 optimizer: adam
 mask_prompt: true
@@ -12,7 +12,7 @@ learning_rate: 0.0001
 steps_per_report: 1
 steps_per_eval: 5
 grad_accumulation_steps: 4
-adapter_path: program/training/outputs/mlx-qwen25-05b-herbal-lora-smoke
+adapter_path: training/outputs/mlx-qwen25-05b-herbal-lora-smoke
 save_every: 5
 max_seq_length: 1024
 grad_checkpoint: true

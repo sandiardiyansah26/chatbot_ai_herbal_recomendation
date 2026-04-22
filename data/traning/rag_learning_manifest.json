@@ -1,8 +1,8 @@
 {
-  "learning_log_rows": 23,
-  "rag_sft_rows": 17,
+  "learning_log_rows": 29,
+  "rag_sft_rows": 19,
   "response_type_breakdown": {
-    "follow_up": 10,
+    "follow_up": 12,
     "recommendation": 6,
     "red_flag": 1
   },

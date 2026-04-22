@@ -1,23 +1,23 @@
 model: mlx-community/Qwen2.5-0.5B-Instruct-4bit
 train: true
-data: training/data_mlx/herbal_chat_rag_light
+data: training/data_mlx/herbal_chat_rag_light_current
 fine_tune_type: lora
 optimizer: adam
 mask_prompt: true
 num_layers: 12
 batch_size: 1
-iters: 180
+iters: 240
 val_batches: 10
-learning_rate: 0.0001
+learning_rate: 0.00008
 steps_per_report: 10
-steps_per_eval: 30
+steps_per_eval: 40
 grad_accumulation_steps: 8
-adapter_path: training/outputs/mlx-qwen25-05b-herbal-rag-lora-light
-save_every: 60
+adapter_path: training/outputs-local/mlx-qwen25-05b-herbal-rag-lora-m4
+save_every: 80
 max_seq_length: 1024
 grad_checkpoint: true
 seed: 42
 lora_parameters:
-  rank: 8
+  rank: 12
   dropout: 0.05
-  scale: 20.0
+  scale: 24.0

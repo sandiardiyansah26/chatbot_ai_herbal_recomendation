@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any
 
 
-DEFAULT_INPUT = Path(__file__).resolve().parents[2] / "data" / "traning" / "combined_training_sft.jsonl"
+DEFAULT_INPUT = Path(__file__).resolve().parents[1] / "data" / "traning" / "combined_training_sft.jsonl"
 DEFAULT_OUTPUT = Path(__file__).resolve().parent / "data_mlx" / "herbal_chat"
 
 

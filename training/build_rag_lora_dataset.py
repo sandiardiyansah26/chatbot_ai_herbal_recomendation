@@ -7,11 +7,11 @@ from pathlib import Path
 from typing import Any
 
 
-DEFAULT_BASE_DATASET = Path(__file__).resolve().parents[2] / "data" / "traning" / "combined_training_sft.jsonl"
-DEFAULT_LEARNING_LOG = Path(__file__).resolve().parents[2] / "data" / "learning" / "dual_llm_interactions.jsonl"
-DEFAULT_RAG_OUTPUT = Path(__file__).resolve().parents[2] / "data" / "traning" / "rag_learning_sft.jsonl"
-DEFAULT_MERGED_OUTPUT = Path(__file__).resolve().parents[2] / "data" / "traning" / "combined_training_sft_rag.jsonl"
-DEFAULT_MANIFEST = Path(__file__).resolve().parents[2] / "data" / "traning" / "rag_learning_manifest.json"
+DEFAULT_BASE_DATASET = Path(__file__).resolve().parents[1] / "data" / "traning" / "combined_training_sft.jsonl"
+DEFAULT_LEARNING_LOG = Path(__file__).resolve().parents[1] / "data" / "learning" / "dual_llm_interactions.jsonl"
+DEFAULT_RAG_OUTPUT = Path(__file__).resolve().parents[1] / "data" / "traning" / "rag_learning_sft.jsonl"
+DEFAULT_MERGED_OUTPUT = Path(__file__).resolve().parents[1] / "data" / "traning" / "combined_training_sft_rag.jsonl"
+DEFAULT_MANIFEST = Path(__file__).resolve().parents[1] / "data" / "traning" / "rag_learning_manifest.json"
 DEFAULT_ALLOWED_TYPES = ("recommendation", "follow_up", "red_flag", "out_of_scope")
 DEFAULT_SYSTEM_PROMPT = (
     "Anda adalah chatbot edukasi ramuan herbal berbahasa Indonesia. "

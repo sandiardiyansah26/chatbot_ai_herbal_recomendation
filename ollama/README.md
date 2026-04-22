@@ -5,19 +5,21 @@ Folder ini berisi contoh `Modelfile` untuk membuat wrapper model lokal yang lebi
 ## Pull Model Dasar
 
 ```bash
-ollama pull deepseek-r1:1.5b
-ollama pull gemma4:e2b
+ollama pull deepseek-r1:7b
+ollama pull gemma4:latest
 ```
 
-Jika `gemma4:e2b` belum berhasil di-pull, gunakan fallback lokal agar backend tetap bisa melakukan komparasi:
+Jika model utama belum berhasil di-pull, gunakan fallback lokal agar backend tetap bisa melakukan komparasi:
 
 ```bash
-ollama pull gemma4:latest
+ollama pull deepseek-r1:1.5b
+ollama pull gemma4:e2b
 ollama pull gemma3:1b
-export OLLAMA_MODEL_B_FALLBACKS=gemma4:latest,gemma3:1b
+export OLLAMA_MODEL_A_FALLBACKS=deepseek-r1:1.5b
+export OLLAMA_MODEL_B_FALLBACKS=gemma4:e2b,gemma3:1b
 ```
 
-Backend akan memakai fallback hanya ketika model utama mengembalikan `404 model not found`.
+Backend akan memakai fallback hanya ketika model utama mengembalikan `404 model not found`, dan request komparasi dikirim dengan `think=false` agar model reasoning mengembalikan jawaban final.
 
 Jika mesin cukup kuat, model dapat diganti melalui environment variable, misalnya `deepseek-r1:8b` atau `gemma4:e4b`.
 

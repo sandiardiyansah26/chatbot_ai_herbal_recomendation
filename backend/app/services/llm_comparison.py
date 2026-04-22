@@ -14,6 +14,7 @@ from app.config import (
     LEARNING_LOG_PATH,
     OLLAMA_BASE_URL,
     OLLAMA_MODEL_A,
+    OLLAMA_MODEL_A_FALLBACKS,
     OLLAMA_MODEL_B,
     OLLAMA_MODEL_B_FALLBACKS,
     OLLAMA_NUM_PREDICT_DEFAULT,
@@ -51,7 +52,10 @@ class DualLLMComparator:
     ):
         self.base_url = base_url.rstrip("/")
         self.models = [model for model in models if model]
-        fallback_map = fallbacks or {OLLAMA_MODEL_B: OLLAMA_MODEL_B_FALLBACKS}
+        fallback_map = fallbacks or {
+            OLLAMA_MODEL_A: OLLAMA_MODEL_A_FALLBACKS,
+            OLLAMA_MODEL_B: OLLAMA_MODEL_B_FALLBACKS,
+        }
         self.fallbacks = {
             model: [fallback for fallback in fallback_models if fallback and fallback != model]
             for model, fallback_models in fallback_map.items()
@@ -238,6 +242,7 @@ class DualLLMComparator:
         payload = {
             "model": model,
             "stream": False,
+            "think": False,
             "keep_alive": "15m",
             "messages": [
                 {"role": "system", "content": SYSTEM_PROMPT},
@@ -266,7 +271,13 @@ class DualLLMComparator:
 
         message = data.get("message") or {}
         content = str(message.get("content") or "").strip()
+        thinking = str(message.get("thinking") or "").strip()
         if not content:
+            if thinking:
+                raise RuntimeError(
+                    f"Ollama model {model} hanya mengembalikan thinking tanpa jawaban final. "
+                    "Pastikan request memakai `think=false` atau naikkan budget token bila model tetap terpotong."
+                )
             raise RuntimeError(f"Ollama model {model} tidak mengembalikan konten.")
         return strip_thinking(content)
 
