@@ -1,0 +1,23 @@
+model: mlx-community/Qwen2.5-0.5B-Instruct-4bit
+train: true
+data: program/training/data_mlx/herbal_chat_rag_light
+fine_tune_type: lora
+optimizer: adam
+mask_prompt: true
+num_layers: 12
+batch_size: 1
+iters: 180
+val_batches: 10
+learning_rate: 0.0001
+steps_per_report: 10
+steps_per_eval: 30
+grad_accumulation_steps: 8
+adapter_path: program/training/outputs/mlx-qwen25-05b-herbal-rag-lora-light
+save_every: 60
+max_seq_length: 1024
+grad_checkpoint: true
+seed: 42
+lora_parameters:
+  rank: 8
+  dropout: 0.05
+  scale: 20.0
