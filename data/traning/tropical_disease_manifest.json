@@ -1,0 +1,23 @@
+{
+  "document_dir": "/Users/sandyqx/Data/Project/tesis/ai_chatbot_herbal/applikasi/chatbot_ai_herbal_recomendation/document/disease_tropic",
+  "source_rows": 12,
+  "training_record_rows": 9,
+  "training_sft_rows": 18,
+  "included_documents": [
+    "01_dbd.docx",
+    "02_Malaria.docx",
+    "Tuberkulosis:TBC.docx",
+    "kakigajah.docx",
+    "Kusta.docx",
+    "Skistosomiasis.docx",
+    "Candidiasis.docx",
+    "Jamur kuku.docx",
+    "panu.docx"
+  ],
+  "skipped_files": [
+    ".DS_Store",
+    "01_dbd_deteksi_dini.pdf",
+    "02 02_Malaria_journal.pdf",
+    "soc_raw_mixed_3000.jsonl"
+  ]
+}

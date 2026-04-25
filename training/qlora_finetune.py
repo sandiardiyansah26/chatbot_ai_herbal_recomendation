@@ -64,7 +64,7 @@ def run_training(config: dict[str, Any]) -> None:
     except ImportError as error:  # pragma: no cover - depends on optional GPU stack.
         raise SystemExit(
             "Dependensi QLoRA belum terpasang. Jalankan:\n"
-            "  cd program/training\n"
+            "  cd training\n"
             "  python3 -m venv .venv\n"
             "  source .venv/bin/activate\n"
             "  pip install -r requirements-qlora.txt\n\n"

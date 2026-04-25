@@ -99,17 +99,31 @@ class TrainingRecord:
     source_title: str
     source_url: str
     curation_method: str
+    content_type: str = "herbal_guidance"
+    overview: str = ""
+    diagnosis_summary: str = ""
+    prevention_steps: list[str] = field(default_factory=list)
+    warning_signs: list[str] = field(default_factory=list)
+    screening_questions: list[str] = field(default_factory=list)
+    care_recommendation: str = ""
 
     @property
     def text(self) -> str:
         return " ".join(
             [
+                self.content_type,
                 self.topic,
                 self.formula_name,
                 " ".join(self.ingredients),
                 " ".join(self.symptoms),
+                self.overview,
                 self.preparation,
                 self.dosage,
+                self.diagnosis_summary,
+                " ".join(self.prevention_steps),
+                " ".join(self.warning_signs),
+                " ".join(self.screening_questions),
+                self.care_recommendation,
                 self.safety_notes,
                 self.evidence_level,
                 self.source_title,
@@ -174,7 +188,7 @@ class KnowledgeBase:
         self.cases = self._load_cases(data_dir / "focused_mild_ailment_herbal_dataset.csv")
         self.formulas = self._load_formulas(data_dir / "herbal_formulas.csv")
         self.herbs = self._load_herbs(data_dir / "herbal_references.csv")
-        self.training_records = self._load_training_records(data_dir.parent / "traning" / "herbal_training_records.jsonl")
+        self.training_records = self._load_training_records(data_dir.parent / "traning")
         self.anamnesis_records = self._load_anamnesis_records(data_dir.parent / "anamnesis" / "anamnesis_questions.jsonl")
         self.chunks = self._build_chunks()
 
@@ -279,6 +293,42 @@ class KnowledgeBase:
                 )
             )
         for record in self.training_records:
+            if record.content_type == "disease_guidance":
+                chunks.append(
+                    KnowledgeChunk(
+                        id=f"training:{record.id}",
+                        type="training",
+                        title=record.formula_name or record.topic,
+                        text=(
+                            f"Edukasi penyakit/triase: {record.formula_name or record.topic}. "
+                            f"Topik: {record.topic}. "
+                            f"Gejala kunci: {', '.join(record.symptoms)}. "
+                            f"Ringkasan: {record.overview}. "
+                            f"Pertanyaan skrining: {' | '.join(record.screening_questions)}. "
+                            f"Pemeriksaan/diagnosis ringkas: {record.diagnosis_summary}. "
+                            f"Pencegahan: {' | '.join(record.prevention_steps)}. "
+                            f"Tanda bahaya: {' | '.join(record.warning_signs)}. "
+                            f"Arahan: {record.care_recommendation or record.safety_notes}. "
+                            f"Level evidensi: {record.evidence_level}. "
+                            f"Sumber: {record.source_title} {record.source_url}. "
+                            f"Metode kurasi: {record.curation_method}."
+                        ),
+                        source=record.source_url or record.source_title,
+                        evidence_level=record.evidence_level,
+                        payload=record,
+                        metadata={
+                            "content_type": record.content_type,
+                            "topic": record.topic,
+                            "formula_name": record.formula_name,
+                            "symptoms": record.symptoms,
+                            "prevention_steps": record.prevention_steps,
+                            "warning_signs": record.warning_signs,
+                            "screening_questions": record.screening_questions,
+                            "curation_method": record.curation_method,
+                        },
+                    )
+                )
+                continue
             chunks.append(
                 KnowledgeChunk(
                     id=f"training:{record.id}",
@@ -300,6 +350,7 @@ class KnowledgeBase:
                     evidence_level=record.evidence_level,
                     payload=record,
                     metadata={
+                        "content_type": record.content_type,
                         "topic": record.topic,
                         "formula_name": record.formula_name,
                         "ingredients": record.ingredients,
@@ -404,28 +455,42 @@ class KnowledgeBase:
         if not path.exists():
             return []
 
+        if path.is_dir():
+            record_paths = sorted(path.glob("*_training_records.jsonl"))
+        else:
+            record_paths = [path]
+
         records: list[TrainingRecord] = []
-        with path.open(encoding="utf-8") as file:
-            for line_number, line in enumerate(file, start=1):
-                if not line.strip():
-                    continue
-                raw = json.loads(line)
-                records.append(
-                    TrainingRecord(
-                        id=str(raw.get("id") or f"training_{line_number:04d}"),
-                        topic=str(raw.get("topic") or "ramuan herbal"),
-                        formula_name=str(raw.get("formula_name") or raw.get("title") or "Ramuan herbal"),
-                        ingredients=self._ensure_list(raw.get("ingredients")),
-                        symptoms=self._ensure_list(raw.get("symptoms")),
-                        preparation=str(raw.get("preparation") or ""),
-                        dosage=str(raw.get("dosage") or ""),
-                        safety_notes=str(raw.get("safety_notes") or ""),
-                        evidence_level=str(raw.get("evidence_level") or "curated_training"),
-                        source_title=str(raw.get("source_title") or ""),
-                        source_url=str(raw.get("source_url") or ""),
-                        curation_method=str(raw.get("curation_method") or "scraped_and_curated"),
+        for record_path in record_paths:
+            with record_path.open(encoding="utf-8") as file:
+                for line_number, line in enumerate(file, start=1):
+                    if not line.strip():
+                        continue
+                    raw = json.loads(line)
+                    default_id = f"{record_path.stem}_{line_number:04d}"
+                    records.append(
+                        TrainingRecord(
+                            id=str(raw.get("id") or default_id),
+                            topic=str(raw.get("topic") or "ramuan herbal"),
+                            formula_name=str(raw.get("formula_name") or raw.get("title") or "Ramuan herbal"),
+                            ingredients=self._ensure_list(raw.get("ingredients")),
+                            symptoms=self._ensure_list(raw.get("symptoms")),
+                            preparation=str(raw.get("preparation") or ""),
+                            dosage=str(raw.get("dosage") or ""),
+                            safety_notes=str(raw.get("safety_notes") or ""),
+                            evidence_level=str(raw.get("evidence_level") or "curated_training"),
+                            source_title=str(raw.get("source_title") or ""),
+                            source_url=str(raw.get("source_url") or ""),
+                            curation_method=str(raw.get("curation_method") or "scraped_and_curated"),
+                            content_type=str(raw.get("content_type") or "herbal_guidance"),
+                            overview=str(raw.get("overview") or ""),
+                            diagnosis_summary=str(raw.get("diagnosis_summary") or ""),
+                            prevention_steps=self._ensure_list(raw.get("prevention_steps")),
+                            warning_signs=self._ensure_list(raw.get("warning_signs")),
+                            screening_questions=self._ensure_list(raw.get("screening_questions")),
+                            care_recommendation=str(raw.get("care_recommendation") or ""),
+                        )
                     )
-                )
         return records
 
     def _load_anamnesis_records(self, path: Path) -> list[AnamnesisEntry]:

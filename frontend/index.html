@@ -3,8 +3,9 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Cache-Control" content="no-store" />
     <title>AI Chatbot Ramuan Herbal</title>
-    <link rel="stylesheet" href="./styles.css?v=20260419-dual-llm-comparison" />
+    <link rel="stylesheet" href="./styles.css?v=20260424-inference-metrics-v1" />
   </head>
   <body>
     <div class="workspace">
@@ -29,7 +30,10 @@
               <span>Percakapan aktif</span>
               <strong id="active-chat-title">Chat baru</strong>
             </div>
-            <button id="new-chat-inline-button" type="button">+ Baru</button>
+            <div class="chat-header-actions">
+              <button id="export-conversation-button" type="button">Export Excel</button>
+              <button id="new-chat-inline-button" type="button">+ Baru</button>
+            </div>
           </div>
           <div id="messages" class="messages"></div>
           <div id="dynamic-replies" class="dynamic-replies" aria-label="Saran jawaban cepat"></div>
@@ -47,6 +51,6 @@
       </main>
     </div>
 
-    <script src="./app.js?v=20260419-dual-llm-comparison"></script>
+    <script src="./app.js?v=20260424-inference-metrics-v1"></script>
   </body>
 </html>

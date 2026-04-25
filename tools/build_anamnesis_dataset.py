@@ -775,9 +775,10 @@ def write_csv(path: Path, rows: list[dict[str, object]]) -> None:
 
 def write_combined_sft(anamnesis_sft: list[dict[str, object]]) -> None:
     combined: list[dict[str, object]] = []
-    herbal_sft = TRAINING_DIR / "herbal_training_sft.jsonl"
-    if herbal_sft.exists():
-        with herbal_sft.open(encoding="utf-8") as file:
+    for path in sorted(TRAINING_DIR.glob("*_training_sft.jsonl")):
+        if path.name in {COMBINED_SFT.name, TRAINING_SFT_COPY.name}:
+            continue
+        with path.open(encoding="utf-8") as file:
             combined.extend(json.loads(line) for line in file if line.strip())
     combined.extend(anamnesis_sft)
     write_jsonl(COMBINED_SFT, combined)

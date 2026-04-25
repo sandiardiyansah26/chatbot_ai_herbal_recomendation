@@ -1,204 +1,225 @@
 # Program AI Chatbot Rekomendasi Ramuan Herbal
 
-Prototype ini adalah implementasi awal dari tesis/BRD: chatbot web yang melakukan humanizing anamnesis ringan sebelum memberikan rekomendasi ramuan herbal, dosis/kisaran penggunaan, cara pengolahan, catatan kewaspadaan, dan disclaimer.
+Prototype ini adalah chatbot web berbasis FastAPI + Ollama/OpenAI untuk `humanizing anamnesis` dan rekomendasi ramuan herbal. Flow utama sekarang memakai `multi-LLM anamnesis-first`: keluhan user dikirim ke `deepseek-r1:7b`, `gemma4:latest`, dan opsional `gpt-4o` bila `OPENAI_API_KEY` tersedia. Hasil model di-ranking, lalu chatbot bertanya lanjutan maksimal `3` kali sebelum memberi dugaan kondisi, rekomendasi herbal, cara pengolahan, dan catatan kewaspadaan.
 
-## Fitur
-- Chatbot berbasis web dalam Bahasa Indonesia.
-- Backend Python FastAPI.
-- Knowledge base dari `../data/referensi/*.csv`, data anamnesis di `../data/anamnesis/*.jsonl`, dan data training tambahan di `../data/traning/*.jsonl`.
-- Alur humanizing anamnesis dua tahap: deteksi keluhan, pertanyaan lanjutan, lalu rekomendasi.
-- Red flag sederhana untuk kondisi di luar batas keluhan ringan.
-- RAG lokal dengan chunked knowledge base, ChromaDB persistent vector store, local hashing embedding ringan, fallback in-memory TF-IDF, dan metadata-aware re-ranking.
-- Grounded recommendation generation: respons disusun dari case dan konteks retrieval, bukan dari klaim bebas.
-- Dual LLM comparison via Ollama: prompt dikirim ke `deepseek-r1` dan model keluarga Gemma, lalu kandidat jawaban diberi skor dan pemenangnya ditampilkan.
-- Learning log: setiap prompt, konteks RAG, kandidat jawaban, skor, dan jawaban terpilih dicatat ke `../data/learning/dual_llm_interactions.jsonl` untuk bahan kurasi/fine-tuning berikutnya.
-- Quick replies dinamis agar chatbot lebih interaktif setelah anamnesis, rekomendasi, dan red flag.
-- Riwayat percakapan lokal seperti ChatGPT dengan sidebar, tombol `+ Chat Baru`, dan penyimpanan percakapan per sesi di browser.
-- Struktur training QLoRA tersedia di `training/` untuk meringankan fine-tuning model instruksional.
+## Fitur Utama
+- Frontend web Bahasa Indonesia dengan riwayat chat lokal.
+- Backend FastAPI dengan session memory percakapan.
+- RAG lokal memakai ChromaDB persistent vector store dan fallback TF-IDF.
+- Knowledge base gabungan dari data referensi herbal, data anamnesis, dan data training terkurasi.
+- Multi-model comparison untuk `follow_up` dan `recommendation`.
+- Ranking kandidat berbasis `safety`, `grounding`, `completeness`, `relevance`, `language`, plus `question_quality` atau `herbal_fit`.
+- Guardrail red flag, out-of-scope, dan referral untuk kasus `penyakit dalam` atau kondisi kritis.
+- Learning capture untuk setiap turn percakapan, kandidat model, feedback rekomendasi, dan kandidat enrichment knowledge base.
+- Pipeline training/LoRA tersedia di folder `training/`.
 
-## Pipeline Sesuai Metodologi Tesis
-1. Humanizing anamnesis mengekstrak gejala, durasi, permintaan rekomendasi, safety clearance, dan red flag.
-2. Knowledge base diubah menjadi chunk: case keluhan ringan, formula ramuan, tanaman herbal, record anamnesis, dan record training hasil scraping/kurasi.
-3. ChromaDB persistent vector store dipakai sebagai vector database lokal. Bila ChromaDB tidak tersedia, sistem fallback ke in-memory TF-IDF.
-4. Retriever mengambil kandidat case dan konteks pendukung.
-5. Re-ranker memberi boost berdasarkan kecocokan gejala, nama formula, bahan ramuan, dan evidence level.
-6. Grounded generator menyusun jawaban hanya dari case dan konteks retrieval yang terpilih.
-7. Prompt RAG dikirim ke dua model Ollama: DeepSeek-R1 dan Gemma/Gemma4.
-8. Candidate scorer menilai keamanan, grounding ke RAG, kelengkapan jawaban, dan kualitas bahasa.
-9. Jawaban dengan skor tertinggi ditampilkan sebagai respons utama, sedangkan skor kandidat bisa dilihat di panel komparasi.
-10. Guardrail menolak kondisi red flag/out-of-scope dan selalu menambahkan disclaimer.
+## Model Runtime Saat Ini
+- `Model A`: `deepseek-r1:7b`
+- `Model B`: `gemma4:latest`
+- `Model C opsional`: `gpt-4o` via OpenAI API bila `OPENAI_API_KEY` diset
+- Fallback DeepSeek: `deepseek-r1:1.5b`
+- Fallback Gemma: `gemma4:e2b`, `gemma3:1b`
 
-Konsep ini mengikuti prinsip Retrieval-Augmented Generation (RAG): model generatif tidak dibiarkan menjawab hanya dari memori internal, tetapi diberi konteks eksternal yang relevan dari knowledge base sehingga respons lebih spesifik, mudah diperbarui, dan lebih rendah risiko halusinasi.
+## Flow Sistem Saat Ini
+1. User mengirim keluhan awal ke `/api/chat`.
+2. Backend menggabungkan riwayat gejala user dalam satu sesi.
+3. Modul anamnesis mendeteksi gejala, durasi, negasi, permintaan rekomendasi, dan red flag.
+4. Jika ada red flag, sistem langsung memberi guardrail tanpa memaksa jalur herbal.
+5. Jika aman, backend melakukan retrieval ke knowledge base.
+6. Pada turn follow-up, DeepSeek, Gemma, dan GPT-4 opsional dipanggil untuk menghasilkan assessment terstruktur JSON.
+7. Output model di-ranking, lalu chatbot memilih satu pertanyaan anamnesis terbaik.
+8. Sistem mengulang langkah ini sampai informasi cukup atau jumlah pertanyaan mencapai `3`.
+9. Setelah itu backend menjalankan final recommendation comparison, memilih jawaban akhir terbaik, lalu menyusun:
+   - dugaan kondisi
+   - rekomendasi herbal
+   - bahan
+   - cara pengolahan
+   - dosis
+   - catatan kewaspadaan
+10. Semua turn, skor model, dan snapshot sesi disimpan sebagai data pembelajaran.
 
-## Dual LLM Comparison dengan Ollama
+Catatan implementasi lokal:
+- `follow_up` dijalankan secara paralel untuk kandidat model yang aktif.
+- `recommendation` dijalankan berurutan agar lebih stabil pada mesin lokal dan mengurangi timeout karena kontensi memori/model.
 
-Install dan jalankan Ollama, lalu pull model dasar:
-
-```bash
-ollama pull deepseek-r1:7b
-ollama pull gemma4:latest
-```
-
-Jika model utama belum tersedia lokal atau proses pull gagal, siapkan fallback yang tetap kompatibel:
-
-```bash
-ollama pull deepseek-r1:1.5b
-ollama pull gemma4:e2b
-ollama pull gemma3:1b
-export OLLAMA_MODEL_A_FALLBACKS=deepseek-r1:1.5b
-export OLLAMA_MODEL_B_FALLBACKS=gemma4:e2b,gemma3:1b
-```
-
-Backend akan mencoba model utama lebih dulu. Jika Ollama mengembalikan `404 model not found`, backend otomatis mencoba fallback agar komparasi tetap berjalan. Request komparasi juga dikirim dengan `think=false` supaya model yang mendukung reasoning langsung mengembalikan jawaban final, bukan hanya trace `thinking`.
-
-Default runtime repo ini sekarang memakai `deepseek-r1:7b` dan `gemma4:latest` sebagai titik tengah kualitas dan latency yang masih realistis untuk laptop/dev machine. Jika ingin mengubah profil model lewat environment variable:
-
-```bash
-export OLLAMA_MODEL_A=deepseek-r1:70b
-export OLLAMA_MODEL_B=gemma4:e4b
-```
-
-Opsional, buat wrapper model herbal berbasis `Modelfile`:
-
-```bash
-cd program
-ollama create deepseek-r1-herbal -f ollama/Modelfile.deepseek-r1-herbal
-ollama create gemma4-herbal -f ollama/Modelfile.gemma4-herbal
-export OLLAMA_MODEL_A=deepseek-r1-herbal
-export OLLAMA_MODEL_B=gemma4-herbal
-```
-
-Untuk menjaga latency tetap masuk akal, backend sekarang mengirim dua request model secara paralel dan memakai budget output yang lebih pendek untuk respons follow-up, red flag, dan out-of-scope. Budget ini bisa diatur lewat:
-
-```bash
-export OLLAMA_NUM_PREDICT_DEFAULT=220
-export OLLAMA_NUM_PREDICT_RECOMMENDATION=768
-export OLLAMA_NUM_PREDICT_FOLLOW_UP=140
-export OLLAMA_NUM_PREDICT_RED_FLAG=120
-export OLLAMA_NUM_PREDICT_OUT_OF_SCOPE=120
-```
-
-Scoring kandidat saat ini bersifat deterministik dengan bobot:
-
-- `safety`: kepatuhan pada disclaimer, tanda bahaya, dan arahan ke tenaga kesehatan.
-- `grounding`: kecocokan istilah dengan rekomendasi dan konteks RAG yang terambil.
-- `completeness`: kelengkapan anamnesis atau rekomendasi ramuan, dosis, pengolahan, dan kewaspadaan.
-- `language`: panjang dan keterbacaan jawaban Bahasa Indonesia.
-
-Catatan penting: proses chat tidak langsung mengubah bobot model secara otomatis. Interaksi disimpan sebagai learning log agar bisa dikurasi, dievaluasi, lalu dipakai untuk QLoRA/SFT pada tahap training berikutnya. Pendekatan ini lebih aman karena perubahan model tetap dapat diaudit.
+## Struktur Data
+- `data/referensi/`: dataset case herbal, formula, dan referensi herbal.
+- `data/anamnesis/`: pertanyaan anamnesis, referensi anamnesis, dan SFT anamnesis.
+- `data/traning/`: training records herbal, tropical disease guidance, combined SFT, dan dataset retraining lain.
+- `data/learning/dual_llm_interactions.jsonl`: log komparasi model aktif.
+- `data/learning/conversation_turns.jsonl`: log tiap turn user/assistant.
+- `data/learning/kb_enrichment_candidates.jsonl`: kandidat enrichment knowledge base dari percakapan.
+- `data/learning/recommendation_feedback.jsonl`: umpan balik user apakah rekomendasi membantu, belum membantu, atau cara pengolahan kurang jelas.
+- `data/traning/herbal_preparation_training_records.jsonl`: data training tambahan untuk detail cara pengolahan ramuan herbal.
+- `data/traning/herbal_preparation_training_sft.jsonl`: contoh SFT khusus pertanyaan cara membuat/mengolah ramuan.
 
 ## Menjalankan dengan Docker
 ```bash
-cd program
-cp .env.example .env
 docker compose up --build -d
 ```
-
-Saat memakai Docker di macOS/Windows, backend mengakses Ollama host melalui `http://host.docker.internal:11434`. Pastikan Ollama berjalan di host sebelum mencoba dual LLM comparison.
-
-`docker-compose.yml` sekarang me-mount seluruh folder `../data` ke `/app/data` dan menyimpan ChromaDB persisten di `program/.chroma`, jadi referensi, dataset anamnesis, training records, dan learning log semuanya ikut tersedia di container.
 
 Frontend:
 ```text
 http://localhost:5173
 ```
 
-Backend API:
+Backend docs:
 ```text
 http://localhost:8000/docs
 ```
 
 Health check:
 ```bash
-curl http://localhost:8000/health
+curl http://127.0.0.1:8000/health
 ```
 
 ## Menjalankan Backend Lokal
 ```bash
-cd program/backend
+cd backend
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 uvicorn app.main:app --reload --port 8000
 ```
 
-ChromaDB secara default disimpan di `program/.chroma`. Lokasinya bisa diganti:
+## Menyiapkan Ollama
+Pull model utama:
+
 ```bash
-CHROMA_DB_DIR=.chroma uvicorn app.main:app --reload --port 8000
+ollama pull deepseek-r1:7b
+ollama pull gemma4:latest
 ```
 
-## Mengumpulkan Data Training
-Script scraper/kurasi menggabungkan sumber web Kemenkes/AyoSehat/RISTOJA dengan dataset lokal, lalu menulis data ke `../data/traning`.
+Pull fallback:
 
 ```bash
-cd program
+ollama pull deepseek-r1:1.5b
+ollama pull gemma4:e2b
+ollama pull gemma3:1b
+```
+
+Opsional, buat wrapper model herbal dari `ollama/Modelfile.*`:
+
+```bash
+ollama create deepseek-r1-herbal -f ollama/Modelfile.deepseek-r1-herbal
+ollama create gemma4-herbal -f ollama/Modelfile.gemma4-herbal
+```
+
+## Environment Penting
+```bash
+export OLLAMA_MODEL_A=deepseek-r1:7b
+export OLLAMA_MODEL_B=gemma4:latest
+export OLLAMA_TIMEOUT_SECONDS=75
+export OLLAMA_NUM_PREDICT_DEFAULT=220
+export OLLAMA_NUM_PREDICT_FOLLOW_UP=240
+export OLLAMA_NUM_PREDICT_RECOMMENDATION=640
+export MAX_ANAMNESIS_QUESTIONS=3
+```
+
+Komparasi GPT-4/OpenAI opsional:
+
+```bash
+export ENABLE_OPENAI_COMPARISON=true
+export OPENAI_API_KEY=sk-...
+export OPENAI_MODEL=gpt-4o
+export OPENAI_BASE_URL=https://api.openai.com/v1
+export OPENAI_TIMEOUT_SECONDS=75
+```
+
+Jika `OPENAI_API_KEY` tidak diset, aplikasi tetap berjalan hanya dengan model Ollama lokal.
+
+Log learning:
+
+```bash
+export LEARNING_LOG_PATH=data/learning/dual_llm_interactions.jsonl
+export CONVERSATION_LOG_PATH=data/learning/conversation_turns.jsonl
+export KB_ENRICHMENT_LOG_PATH=data/learning/kb_enrichment_candidates.jsonl
+export RECOMMENDATION_FEEDBACK_LOG_PATH=data/learning/recommendation_feedback.jsonl
+```
+
+## Benchmark Runtime Terbaru
+Angka ini diambil dari runtime aplikasi yang sekarang:
+
+- `follow_up` turn pertama: sekitar `41.34 detik`
+  - DeepSeek: `41.09 detik`
+  - Gemma: `6.75 detik`
+  - model terpilih: `deepseek-r1:7b`
+- `final recommendation` turn akhir: sekitar `61.69 detik`
+  - DeepSeek: `23.02 detik`
+  - Gemma: `38.62 detik`
+  - model terpilih: `gemma4:latest`
+- `red_flag`: sekitar `0.14 detik`
+
+Interpretasi penting:
+- Bottleneck terbesar ada di inference model, bukan di retrieval.
+- Final recommendation memang lebih lambat karena kandidat model aktif tetap dievaluasi, lalu hasilnya di-ranking.
+- Walaupun lebih lambat, flow ini memenuhi objective penelitian untuk membandingkan performa model pada task anamnesis dan rekomendasi.
+
+## Dataset Builder
+Generate ulang dataset anamnesis:
+
+```bash
+python3 tools/build_anamnesis_dataset.py
+```
+
+Generate dataset disease tropic:
+
+```bash
+python3 tools/build_tropical_disease_dataset.py
+```
+
+Generate dataset detail cara pengolahan ramuan herbal:
+
+```bash
+python3 tools/build_herbal_preparation_dataset.py
+```
+
+Scrape/kurasi sumber herbal:
+
+```bash
 python3 tools/scrape_herbal_sources.py
 ```
 
-Output utama:
-- `../data/traning/scraped_sources.jsonl`: metadata sumber dan excerpt pendek, bukan salinan halaman penuh.
-- `../data/traning/herbal_training_records.jsonl`: record terstruktur untuk RAG dan kurasi.
-- `../data/traning/herbal_training_sft.jsonl`: contoh percakapan untuk QLoRA/SFT.
+## Training dan LoRA
+Panduan detail ada di `training/README_QLORA.md`.
 
-## Dataset Anamnesis
-Pertanyaan anamnesis terstruktur dapat digenerate dengan:
+Contoh:
 
 ```bash
-python3 program/tools/build_anamnesis_dataset.py
+cd training
+python3 qlora_finetune.py --config qlora_config.deepseek-r1.example.json --check_environment
+python3 qlora_finetune.py --config qlora_config.deepseek-r1.example.json --dry_run
 ```
 
-Output utama:
-- `../data/anamnesis/anamnesis_questions.jsonl`: pertanyaan wajib, pertanyaan red flag, tindakan triase, dan sumber.
-- `../data/anamnesis/anamnesis_training_sft.jsonl`: contoh percakapan anamnesis.
-- `../data/traning/combined_training_sft.jsonl`: gabungan data herbal + anamnesis untuk QLoRA.
-
-## QLoRA Fine-Tuning
-Pipeline QLoRA tersedia sebagai scaffolding. Disarankan dijalankan di Linux GPU dengan VRAM memadai karena `bitsandbytes` 4-bit tidak selalu stabil di Mac/CPU.
-
-```bash
-cd program/training
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements-qlora.txt
-python qlora_finetune.py --config qlora_config.deepseek-r1.example.json
-python qlora_finetune.py --config qlora_config.gemma4.example.json
-```
-
-Adapter hasil training akan tersimpan di folder `output_dir` pada config. Backend saat ini tetap memakai RAG lokal; adapter QLoRA dapat dipakai pada tahap integrasi model generatif berikutnya.
-
-Learning log dari aplikasi dapat digabungkan ke dataset SFT setelah direview:
-
-```text
-../data/learning/dual_llm_interactions.jsonl
-```
+Catatan:
+- QLoRA `bitsandbytes` tetap paling cocok di Linux + NVIDIA CUDA.
+- Di Mac Apple Silicon, repo ini lebih cocok untuk validasi data, orchestrator, evaluasi log, dan MLX/eksperimen ringan.
+- Learning logs dari aplikasi ini memang disiapkan untuk kurasi dan retraining berikutnya, tetapi tidak langsung mengubah bobot model saat chat berjalan.
 
 ## Menjalankan Test
-```bash
-cd program/backend
-PYTHONPATH=. .venv/bin/python -m unittest discover -s tests
-```
-
-Atau lewat container backend yang sedang aktif:
+Di container backend:
 
 ```bash
-cd program
-docker exec herbal-chatbot-backend python -m unittest discover -s tests
+docker compose exec -T backend python -m unittest tests.test_services
 ```
 
-## Contoh Percakapan
-Pengguna:
-```text
-saya mual ringan sejak tadi pagi, tolong rekomendasi ramuan herbal
+Atau lokal:
+
+```bash
+cd backend
+PYTHONPATH=. python -m unittest discover -s tests
 ```
 
-Sistem akan memberikan rekomendasi seperti jahe/jahe-madu bila tidak ada red flag.
+## Batasan Sistem
+- Sistem tidak memberi diagnosis medis final.
+- Scope diarahkan ke keluhan/penyakit non-kritis dan non-penyakit dalam.
+- Jika muncul red flag atau indikasi kasus berat, sistem mengarahkan ke tenaga kesehatan.
+- Knowledge base enrichment dari percakapan belum otomatis masuk ke KB final; statusnya tetap `pending_curation`.
 
-Pengguna:
-```text
-tenggorokan saya tidak nyaman
-```
+## Dokumen Tesis
+Diagram dan dokumen tesis ada di:
+- `document/tesis/Tesis_AI_Chatbot_Herbal_Doctor_Recommendation_UPH.html`
+- `document/tesis/diagrams/`
 
-Sistem akan bertanya lanjutan terlebih dahulu sebelum memberi rekomendasi.
-
-## Catatan Batasan
-Prototype ini belum melakukan diagnosis medis final. ChromaDB sudah dipakai untuk retrieval lokal, Ollama dipakai untuk komparasi dua kandidat LLM bila model tersedia, sedangkan QLoRA masih berupa pipeline training/adapter untuk tahap berikutnya. Semua rekomendasi tetap dibatasi pada keluhan ringan dan perlu review tenaga kesehatan sebelum produksi.
+Diagram workflow runtime terbaru tersimpan di:
+- `document/tesis/diagrams/workflow_runtime_respons_model_baru.mmd`

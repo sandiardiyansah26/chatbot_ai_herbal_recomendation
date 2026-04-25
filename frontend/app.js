@@ -25,6 +25,7 @@ const sendButtonEl = formEl.querySelector("button");
 const historyListEl = document.querySelector("#history-list");
 const newChatButtonEl = document.querySelector("#new-chat-button");
 const newChatInlineButtonEl = document.querySelector("#new-chat-inline-button");
+const exportConversationButtonEl = document.querySelector("#export-conversation-button");
 const clearHistoryButtonEl = document.querySelector("#clear-history-button");
 const activeChatTitleEl = document.querySelector("#active-chat-title");
 
@@ -111,66 +112,206 @@ async function renderAssistantResponse(data, options = {}) {
 }
 
 function buildResponseBlocks(data) {
-  if (data.model_comparison && data.model_comparison.selected_reply) {
-    return textToParagraphBlocks(data.reply);
-  }
-
   if (data.response_type === "follow_up") {
-    return [
-      {
-        kind: "paragraph",
-        text: `Saya menangkap keluhan ini mengarah ke ${quote(
-          (data.anamnesis_summary && data.anamnesis_summary.keluhan_ringan) || "keluhan ringan",
-        )}. Sebelum memberi rekomendasi ramuan, saya perlu memastikan dulu apakah ada tanda bahaya.`,
-      },
-      {
-        kind: "list",
-        title: "Pertanyaan anamnesis yang perlu kamu jawab:",
-        items: splitQuestions(data.follow_up_question || data.reply),
-      },
-      {
-        kind: "paragraph",
-        text: "Jawab singkat saja, misalnya: tidak demam, tidak sesak, ruam muncul sejak pagi, dan tidak ada bengkak wajah.",
-      },
-    ];
+    return buildFollowUpBlocks(data);
   }
 
-  if (data.response_type === "recommendation" && data.recommendation) {
-    return [
-      {
-        kind: "paragraph",
-        text: `Keluhan masih saya posisikan sebagai ${quote(
-          data.recommendation.keluhan_ringan,
-        )} selama tidak ada tanda bahaya.`,
-      },
-      {
-        kind: "paragraph",
-        text: "Berikut rekomendasi ramuan herbal awal yang paling relevan dari knowledge base:",
-      },
-    ];
+  if (data.response_type === "recommendation") {
+    return buildRecommendationBlocks(data);
   }
 
   if (data.response_type === "red_flag") {
+    return buildRedFlagBlocks(data);
+  }
+
+  if (data.response_type === "medical_referral") {
+    return buildMedicalReferralBlocks(data);
+  }
+
+  if (data.response_type === "out_of_scope") {
+    return buildOutOfScopeBlocks(data);
+  }
+
+  if (data.response_type === "feedback") {
     return [
       {
-        kind: "paragraph",
-        text: `Saya mendeteksi tanda yang perlu diwaspadai: ${(data.red_flags || ["tanda bahaya"]).join(", ")}.`,
-      },
-      {
-        kind: "paragraph",
-        text: "Untuk keamanan, ramuan herbal tidak saya posisikan sebagai penanganan utama pada kondisi ini. Sebaiknya segera konsultasi ke tenaga kesehatan atau fasilitas kesehatan terdekat, terutama bila gejala berat, menetap, atau memburuk.",
-      },
-      {
-        kind: "paragraph",
-        text: "Informasi ini bersifat rekomendasi awal dan edukasi, bukan diagnosis medis final.",
+        kind: "section",
+        tone: "feedback",
+        title: "Umpan balik tersimpan",
+        text: data.reply,
       },
     ];
+  }
+
+  if (data.model_comparison && data.model_comparison.selected_reply) {
+    return textToParagraphBlocks(data.reply);
   }
 
   return [
     {
       kind: "paragraph",
       text: data.reply,
+    },
+  ];
+}
+
+function buildFollowUpBlocks(data) {
+  const assessment = getSelectedAssessment(data);
+  const questions = buildFollowUpQuestions(data, assessment);
+  return [
+    {
+      kind: "field",
+      tone: "summary",
+      label: "Ringkasan anamnesis saat ini:",
+      text: buildFollowUpSummary(data, assessment),
+    },
+    {
+      kind: "field",
+      tone: "question",
+      label: "Pertanyaan anamnesis yang perlu kamu jawab:",
+      items: questions,
+      ordered: true,
+    },
+    {
+      kind: "field",
+      tone: "note",
+      label: "Jawab singkat saja, misalnya:",
+      text: buildFollowUpExample(data, assessment),
+    },
+  ];
+}
+
+function buildRecommendationBlocks(data) {
+  const assessment = getSelectedAssessment(data);
+  const recommendation = data.recommendation || null;
+  const suspected = compactList([
+    ...(data.suspected_conditions || []),
+    ...((assessment && assessment.suspected_conditions) || []),
+    recommendation && recommendation.keluhan_ringan,
+  ]).slice(0, 5);
+  const finalAnswer = (assessment && assessment.final_answer) || extractSentence(data.reply) || "Berdasarkan anamnesis, sistem sudah menyusun jawaban awal dan rekomendasi yang paling sesuai dengan knowledge base.";
+  const reasoning = (assessment && assessment.reasoning) || extractLineByPrefix(data.reply, "Pertimbangan utama") || "";
+  const selfCare = buildSelfCareItems(data, assessment);
+  const warningItems = buildWarningItems(data, assessment);
+
+  const blocks = [
+    {
+      kind: "section",
+      tone: "summary",
+      title: "Ringkasan hasil anamnesis",
+      text: finalAnswer,
+    },
+    {
+      kind: "section",
+      tone: "primary",
+      title: "Kemungkinan penyebab / dugaan kondisi",
+      text: reasoning || "Dugaan ini bersifat awal dan belum menggantikan diagnosis tenaga kesehatan.",
+      items: suspected,
+      ordered: false,
+    },
+    {
+      kind: "section",
+      tone: "action",
+      title: "Yang bisa Anda lakukan sekarang",
+      items: selfCare,
+      ordered: false,
+    },
+    {
+      kind: "section",
+      tone: "safety",
+      title: "Segera periksa ke dokter / IGD jika ada salah satu ini",
+      items: warningItems,
+      ordered: false,
+    },
+    {
+      kind: "section",
+      tone: "note",
+      title: "Catatan",
+      text: "Informasi ini adalah rekomendasi awal berbasis anamnesis dan knowledge base, bukan diagnosis medis final.",
+    },
+  ];
+
+  if (data.feedback_prompt) {
+    blocks.push({
+      kind: "section",
+      tone: "feedback",
+      title: "Umpan balik",
+      text: data.feedback_prompt,
+      items: data.feedback_options || [],
+      ordered: false,
+    });
+  }
+
+  return blocks;
+}
+
+function buildRedFlagBlocks(data) {
+  return [
+    {
+      kind: "section",
+      tone: "danger",
+      title: "Tanda bahaya terdeteksi",
+      text: "Untuk keamanan, ramuan herbal tidak diposisikan sebagai penanganan utama.",
+      items: data.red_flags || ["tanda bahaya"],
+      ordered: false,
+    },
+    {
+      kind: "section",
+      tone: "safety",
+      title: "Arahan sekarang",
+      items: [
+        "Segera konsultasi ke tenaga kesehatan atau fasilitas kesehatan terdekat.",
+        "Jangan menunda bila gejala berat, menetap, atau memburuk.",
+        "Gunakan informasi ini sebagai edukasi awal, bukan pengganti pemeriksaan medis.",
+      ],
+      ordered: false,
+    },
+  ];
+}
+
+function buildMedicalReferralBlocks(data) {
+  const assessment = getSelectedAssessment(data);
+  const suspected = compactList([
+    ...(data.suspected_conditions || []),
+    ...((assessment && assessment.suspected_conditions) || []),
+  ]);
+  return [
+    {
+      kind: "section",
+      tone: "danger",
+      title: "Keluhan perlu evaluasi medis",
+      text: (assessment && (assessment.scope_reason || assessment.reasoning)) || extractSentence(data.reply) || "Keluhan ini tidak aman ditangani sebagai keluhan ringan mandiri.",
+      items: suspected,
+      ordered: false,
+    },
+    {
+      kind: "section",
+      tone: "safety",
+      title: "Langkah aman",
+      items: buildWarningItems(data, assessment).slice(0, 5),
+      ordered: false,
+    },
+  ];
+}
+
+function buildOutOfScopeBlocks(data) {
+  return [
+    {
+      kind: "section",
+      tone: "note",
+      title: "Butuh konteks keluhan yang lebih jelas",
+      text: extractSentence(data.reply) || "Saya belum menemukan konteks keluhan yang cukup relevan dengan knowledge base saat ini.",
+    },
+    {
+      kind: "section",
+      tone: "question",
+      title: "Coba tulis dengan format ini",
+      items: [
+        "Keluhan utama yang paling terasa.",
+        "Sejak kapan muncul.",
+        "Ada atau tidak demam, sesak, nyeri berat, muntah terus, darah, atau tanda bahaya lain.",
+      ],
+      ordered: false,
     },
   ];
 }
@@ -190,6 +331,16 @@ function textToParagraphBlocks(text) {
 
 async function typeBlocks(container, blocks, animate = true) {
   for (const block of blocks) {
+    if (block.kind === "field") {
+      await renderFieldBlock(container, block, animate);
+      continue;
+    }
+
+    if (block.kind === "section") {
+      await renderStructuredSection(container, block, animate);
+      continue;
+    }
+
     if (block.kind === "list") {
       const wrapperEl = document.createElement("div");
       wrapperEl.className = "answer-section";
@@ -213,6 +364,66 @@ async function typeBlocks(container, blocks, animate = true) {
     paragraphEl.className = "assistant-paragraph";
     container.appendChild(paragraphEl);
     await typeText(paragraphEl, block.text, animate);
+  }
+}
+
+async function renderFieldBlock(container, block, animate = true) {
+  const wrapperEl = document.createElement("div");
+  wrapperEl.className = `answer-field ${block.tone ? `field-${block.tone}` : ""}`;
+  container.appendChild(wrapperEl);
+
+  const labelEl = document.createElement("strong");
+  labelEl.className = "field-label";
+  wrapperEl.appendChild(labelEl);
+  await typeText(labelEl, block.label || "", animate);
+
+  const items = compactList(block.items || []);
+  if (items.length) {
+    const listEl = document.createElement(block.ordered ? "ol" : "ul");
+    listEl.className = "field-list";
+    wrapperEl.appendChild(listEl);
+    for (const item of items) {
+      const itemEl = document.createElement("li");
+      listEl.appendChild(itemEl);
+      await typeText(itemEl, item, animate);
+    }
+    return;
+  }
+
+  const bodyEl = document.createElement("p");
+  bodyEl.className = "field-body";
+  wrapperEl.appendChild(bodyEl);
+  await typeText(bodyEl, block.text || "-", animate);
+}
+
+async function renderStructuredSection(container, block, animate = true) {
+  const wrapperEl = document.createElement("div");
+  wrapperEl.className = `answer-section structured-section ${block.tone ? `section-${block.tone}` : ""}`;
+  container.appendChild(wrapperEl);
+
+  const titleEl = document.createElement("p");
+  titleEl.className = "section-title";
+  wrapperEl.appendChild(titleEl);
+  await typeText(titleEl, block.title || "Ringkasan", animate);
+
+  if (block.text) {
+    const bodyEl = document.createElement("p");
+    bodyEl.className = "section-body";
+    wrapperEl.appendChild(bodyEl);
+    await typeText(bodyEl, block.text, animate);
+  }
+
+  const items = compactList(block.items || []);
+  if (!items.length) {
+    return;
+  }
+
+  const listEl = document.createElement(block.ordered ? "ol" : "ul");
+  wrapperEl.appendChild(listEl);
+  for (const item of items) {
+    const itemEl = document.createElement("li");
+    listEl.appendChild(itemEl);
+    await typeText(itemEl, item, animate);
   }
 }
 
@@ -335,22 +546,50 @@ function buildModelComparison(comparison) {
     const candidateEl = document.createElement("div");
     candidateEl.className = `candidate-item ${candidate.status === "ok" ? "ok" : "error"}`;
     const breakdown = candidate.scoring_breakdown || {};
+    const breakdownEntries = Object.entries(breakdown);
     const score = Number(candidate.score || 0).toFixed(3);
-    const latency = candidate.latency_ms ? `${candidate.latency_ms} ms` : "-";
+    const latency = formatLatency(candidate.latency_ms);
+    const answer = formatCandidateAnswer(candidate);
+    const assessment = candidate.assessment || {};
+    const suspected = compactList(assessment.suspected_conditions || []).slice(0, 3);
+    const headMeta = compactList([
+      candidate.provider ? `provider ${candidate.provider}` : "",
+      candidate.status || "",
+      `score ${score}`,
+      `waktu respons ${latency}`,
+    ]).join(" | ");
+    const inferenceMetricsHtml = buildInferenceMetricsMarkup(candidate);
     candidateEl.innerHTML = `
       <div class="candidate-head">
         <strong>${escapeHtml(candidate.model)}</strong>
-        <span>${escapeHtml(candidate.status)} | score ${score} | ${escapeHtml(latency)}</span>
+        <span>${escapeHtml(headMeta)}</span>
       </div>
       ${candidate.error ? `<p class="candidate-error">${escapeHtml(candidate.error)}</p>` : ""}
       ${
         candidate.status === "ok"
-          ? `<div class="score-breakdown">
-              <span>Safety ${formatScore(breakdown.safety)}</span>
-              <span>Grounding ${formatScore(breakdown.grounding)}</span>
-              <span>Completeness ${formatScore(breakdown.completeness)}</span>
-              <span>Language ${formatScore(breakdown.language)}</span>
-            </div>`
+          ? `
+            <div class="candidate-answer">
+              <strong>Jawaban model:</strong>
+              <p>${escapeHtml(answer)}</p>
+            </div>
+            ${
+              suspected.length || assessment.reasoning || assessment.scope
+                ? `<div class="candidate-assessment">
+                    ${assessment.scope ? `<span>Scope: ${escapeHtml(formatScopeLabel(assessment.scope))}</span>` : ""}
+                    ${suspected.length ? `<span>Dugaan: ${escapeHtml(suspected.join(", "))}</span>` : ""}
+                    ${assessment.reasoning ? `<p>${escapeHtml(assessment.reasoning)}</p>` : ""}
+                  </div>`
+                : ""
+            }
+            <div class="score-breakdown">
+              ${breakdownEntries
+                .map(
+                  ([key, value]) =>
+                    `<span>${escapeHtml(formatMetricLabel(key))} ${formatScore(value)}</span>`,
+                )
+                .join("")}
+            </div>
+            ${inferenceMetricsHtml}`
           : ""
       }
     `;
@@ -552,6 +791,407 @@ function renderWelcomeState(fresh = false) {
 function renderActiveTitle() {
   const conversation = conversations.find((item) => item.id === activeConversationId);
   activeChatTitleEl.textContent = (conversation && conversation.title) || "Chat baru";
+  updateConversationActionState();
+}
+
+function updateConversationActionState() {
+  const conversation = conversations.find((item) => item.id === activeConversationId);
+  const hasMessages = Boolean(conversation && conversation.messages.length);
+  exportConversationButtonEl.disabled = isResponding || !hasMessages;
+}
+
+function exportActiveConversation() {
+  if (isResponding) return;
+
+  const conversation = getActiveConversation();
+  if (!conversation.messages.length) {
+    window.alert("Belum ada percakapan untuk diexport.");
+    return;
+  }
+
+  const workbookXml = buildConversationWorkbookXml(conversation);
+  const fileName = `${sanitizeFileName(conversation.title || "percakapan-herbal")}-${formatExportTimestamp(new Date())}.xls`;
+  const blob = new Blob([workbookXml], {
+    type: "application/vnd.ms-excel;charset=utf-8;",
+  });
+  downloadBlob(blob, fileName);
+}
+
+function buildConversationWorkbookXml(conversation) {
+  const worksheets = [
+    buildWorksheetXml("Ringkasan", buildConversationSummaryRows(conversation), [180, 480]),
+    buildWorksheetXml("Percakapan", buildConversationExportRows(conversation), [
+      45,
+      130,
+      70,
+      145,
+      120,
+      380,
+      180,
+      220,
+      220,
+      160,
+      220,
+      120,
+      120,
+    ]),
+  ];
+
+  const comparisonRows = buildComparisonExportRows(conversation);
+  if (comparisonRows.length > 1) {
+    worksheets.push(
+      buildWorksheetXml("Komparasi Model", comparisonRows, [
+        40,
+        130,
+        120,
+        90,
+        120,
+        90,
+        75,
+        110,
+        110,
+        200,
+        240,
+        300,
+        380,
+      ]),
+    );
+  }
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:o="urn:schemas-microsoft-com:office:office"
+ xmlns:x="urn:schemas-microsoft-com:office:excel"
+ xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:html="http://www.w3.org/TR/REC-html40">
+  <DocumentProperties xmlns="urn:schemas-microsoft-com:office:office">
+    <Author>Herbal Chat</Author>
+    <Created>${escapeXml(new Date().toISOString())}</Created>
+    <Company>AI Chatbot Rekomendasi Ramuan Herbal</Company>
+    <Version>16.00</Version>
+  </DocumentProperties>
+  <Styles>
+    <Style ss:ID="Default" ss:Name="Normal">
+      <Alignment ss:Vertical="Top" ss:WrapText="1"/>
+      <Font ss:FontName="Calibri" ss:Size="11"/>
+    </Style>
+    <Style ss:ID="header">
+      <Alignment ss:Vertical="Top" ss:WrapText="1"/>
+      <Borders>
+        <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1"/>
+        <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1"/>
+        <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1"/>
+        <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1"/>
+      </Borders>
+      <Font ss:FontName="Calibri" ss:Size="11" ss:Bold="1"/>
+      <Interior ss:Color="#EDE2CC" ss:Pattern="Solid"/>
+    </Style>
+    <Style ss:ID="cell">
+      <Alignment ss:Vertical="Top" ss:WrapText="1"/>
+      <Borders>
+        <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1"/>
+        <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1"/>
+        <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1"/>
+        <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1"/>
+      </Borders>
+      <Font ss:FontName="Calibri" ss:Size="11"/>
+    </Style>
+  </Styles>
+  ${worksheets.join("")}
+</Workbook>`;
+}
+
+function buildWorksheetXml(name, rows, columnWidths = []) {
+  const safeRows = rows.length ? rows : [["Belum ada data"]];
+  const columnCount = Math.max(...safeRows.map((row) => row.length), 1);
+  const columnsXml = Array.from({ length: columnCount }, (_, index) => {
+    const width = columnWidths[index] || 140;
+    return `<Column ss:AutoFitWidth="1" ss:Width="${width}"/>`;
+  }).join("");
+  const rowsXml = safeRows
+    .map((row, index) => buildWorksheetRowXml(row, index === 0 ? "header" : "cell"))
+    .join("");
+
+  return `<Worksheet ss:Name="${escapeXml(sanitizeSheetName(name))}">
+    <Table ss:ExpandedColumnCount="${columnCount}" ss:ExpandedRowCount="${safeRows.length}">
+      ${columnsXml}
+      ${rowsXml}
+    </Table>
+    <WorksheetOptions xmlns="urn:schemas-microsoft-com:office:excel">
+      <FreezePanes/>
+      <FrozenNoSplit/>
+      <SplitHorizontal>1</SplitHorizontal>
+      <TopRowBottomPane>1</TopRowBottomPane>
+      <ActivePane>2</ActivePane>
+      <ProtectObjects>False</ProtectObjects>
+      <ProtectScenarios>False</ProtectScenarios>
+    </WorksheetOptions>
+  </Worksheet>`;
+}
+
+function buildWorksheetRowXml(values, styleId) {
+  const cellsXml = values
+    .map((value) => `<Cell ss:StyleID="${styleId}"><Data ss:Type="String">${escapeXml(value)}</Data></Cell>`)
+    .join("");
+  return `<Row>${cellsXml}</Row>`;
+}
+
+function buildConversationSummaryRows(conversation) {
+  const userCount = conversation.messages.filter((message) => message.role === "user").length;
+  const assistantCount = conversation.messages.filter((message) => message.role === "assistant").length;
+  const comparisonCount = conversation.messages.filter(
+    (message) => message.role === "assistant" && message.data && message.data.model_comparison,
+  ).length;
+  return [
+    ["Field", "Value"],
+    ["Judul percakapan", conversation.title || "Chat baru"],
+    ["Session ID", conversation.sessionId || "-"],
+    ["Dibuat", formatDateTime(conversation.createdAt)],
+    ["Terakhir diperbarui", formatDateTime(conversation.updatedAt)],
+    ["Diexport pada", formatDateTime(new Date().toISOString())],
+    ["Jumlah pesan user", String(userCount)],
+    ["Jumlah respons assistant", String(assistantCount)],
+    ["Jumlah blok komparasi model", String(comparisonCount)],
+  ];
+}
+
+function buildConversationExportRows(conversation) {
+  const rows = [
+    [
+      "No",
+      "Waktu",
+      "Peran",
+      "Tahap",
+      "Tipe respons",
+      "Isi",
+      "Dugaan kondisi",
+      "Pertanyaan follow-up",
+      "Red flags",
+      "Ramuan",
+      "Bahan",
+      "Dosis",
+      "Model terpilih",
+    ],
+  ];
+
+  conversation.messages.forEach((message, index) => {
+    if (message.role === "user") {
+      rows.push([
+        String(index + 1),
+        formatDateTime(message.createdAt),
+        "User",
+        "-",
+        "-",
+        normalizeExportText(message.content),
+        "-",
+        "-",
+        "-",
+        "-",
+        "-",
+        "-",
+        "-",
+      ]);
+      return;
+    }
+
+    if (message.role !== "assistant" || !message.data) {
+      rows.push([
+        String(index + 1),
+        formatDateTime(message.createdAt),
+        capitalizeRole(message.role),
+        "-",
+        "-",
+        normalizeExportText(message.content || ""),
+        "-",
+        "-",
+        "-",
+        "-",
+        "-",
+        "-",
+        "-",
+      ]);
+      return;
+    }
+
+    const data = message.data;
+    const assessment = getSelectedAssessment(data);
+    const recommendation = data.recommendation || null;
+    const suspected = compactList([
+      ...(data.suspected_conditions || []),
+      ...((assessment && assessment.suspected_conditions) || []),
+    ]).join("; ");
+    const redFlags = compactList([
+      ...(data.red_flags || []),
+      ...((assessment && assessment.red_flags) || []),
+    ]).join("; ");
+
+    rows.push([
+      String(index + 1),
+      formatDateTime(message.createdAt),
+      "Assistant",
+      data.conversation_stage || "-",
+      responseLabel(data.response_type),
+      normalizeExportText(data.reply),
+      suspected || "-",
+      normalizeExportText(data.follow_up_question || (assessment && assessment.follow_up_question) || "-"),
+      redFlags || "-",
+      recommendation ? recommendation.ramuan : "-",
+      recommendation ? compactList(recommendation.bahan || []).join(", ") || "-" : "-",
+      recommendation ? recommendation.dosis_penggunaan || "-" : "-",
+      (data.model_comparison && data.model_comparison.selected_model) || "-",
+    ]);
+  });
+
+  return rows;
+}
+
+function buildComparisonExportRows(conversation) {
+  const rows = [
+    [
+      "No respons",
+      "Waktu",
+      "Tipe respons",
+      "Provider",
+      "Model",
+      "Status",
+      "Score",
+      "Waktu respons",
+      "Scope",
+      "Dugaan kondisi",
+      "Scoring breakdown",
+      "Metrik inferensi",
+      "Jawaban model",
+    ],
+  ];
+
+  let responseIndex = 0;
+  conversation.messages.forEach((message) => {
+    if (message.role !== "assistant" || !message.data || !message.data.model_comparison) {
+      return;
+    }
+
+    const comparison = message.data.model_comparison;
+    const candidates = Array.isArray(comparison.candidates) ? comparison.candidates : [];
+    if (!candidates.length) {
+      return;
+    }
+
+    responseIndex += 1;
+    candidates.forEach((candidate) => {
+      const assessment = candidate.assessment || {};
+      rows.push([
+        String(responseIndex),
+        formatDateTime(message.createdAt),
+        responseLabel(message.data.response_type),
+        candidate.provider || "-",
+        candidate.model || "-",
+        candidate.status || "-",
+        candidate.score === undefined || candidate.score === null ? "-" : Number(candidate.score).toFixed(3),
+        formatLatency(candidate.latency_ms),
+        assessment.scope ? formatScopeLabel(assessment.scope) : "-",
+        compactList(assessment.suspected_conditions || []).join("; ") || "-",
+        flattenBreakdown(candidate.scoring_breakdown),
+        flattenInferenceMetrics(candidate.inference_metrics),
+        normalizeExportText(formatCandidateAnswer(candidate)),
+      ]);
+    });
+  });
+
+  return rows;
+}
+
+function flattenBreakdown(breakdown) {
+  const entries = Object.entries(breakdown || {});
+  if (!entries.length) return "-";
+  return entries
+    .map(([key, value]) => `${formatMetricLabel(key)}=${formatScore(value)}`)
+    .join("; ");
+}
+
+function flattenInferenceMetrics(metrics) {
+  const entries = buildInferenceMetricEntries(metrics || {});
+  if (!entries.length) return "-";
+  return entries.map(({ label, value }) => `${label}=${value}`).join("; ");
+}
+
+function normalizeExportText(value) {
+  return String(value || "")
+    .replace(/\r/g, "")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim() || "-";
+}
+
+function downloadBlob(blob, filename) {
+  const url = window.URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => window.URL.revokeObjectURL(url), 1000);
+}
+
+function sanitizeFileName(value) {
+  const sanitized = String(value || "")
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zA-Z0-9\s-]+/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "")
+    .toLowerCase();
+  return sanitized || "percakapan-herbal";
+}
+
+function sanitizeSheetName(value) {
+  return String(value || "Sheet")
+    .replace(/[:\\/?*\[\]]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 31) || "Sheet";
+}
+
+function formatExportTimestamp(value) {
+  const date = value instanceof Date ? value : new Date(value);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+  const seconds = String(date.getSeconds()).padStart(2, "0");
+  return `${year}${month}${day}-${hours}${minutes}${seconds}`;
+}
+
+function formatDateTime(value) {
+  if (!value) return "-";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "-";
+  return date.toLocaleString("id-ID", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
+}
+
+function capitalizeRole(role) {
+  const value = String(role || "").trim();
+  if (!value) return "-";
+  return value.charAt(0).toUpperCase() + value.slice(1);
+}
+
+function escapeXml(value) {
+  return String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&apos;")
+    .replace(/\n/g, "&#10;");
 }
 
 async function sendMessage(message) {
@@ -581,10 +1221,11 @@ async function sendMessage(message) {
   const thinkingEl = appendThinkingMessage();
 
   try {
+    const sessionSync = buildSessionSyncPayload(conversation);
     const response = await fetchWithFallback("/api/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message, session_id: conversation.sessionId }),
+      body: JSON.stringify({ message, session_id: conversation.sessionId, session_sync: sessionSync }),
     });
 
     if (!response.ok) {
@@ -615,6 +1256,45 @@ async function sendMessage(message) {
   }
 }
 
+function buildSessionSyncPayload(conversation) {
+  const turns = (conversation.messages || [])
+    .map((message) => {
+      if (message.role === "assistant" && message.data) {
+        return {
+          role: "assistant",
+          content: message.data.reply || "",
+        };
+      }
+      return {
+        role: message.role || "user",
+        content: message.content || "",
+      };
+    })
+    .filter((turn) => String(turn.content || "").trim());
+
+  const followUpMessages = (conversation.messages || []).filter(
+    (message) => message.role === "assistant" && message.data && message.data.response_type === "follow_up",
+  );
+  const lastAssistantData = [...(conversation.messages || [])]
+    .reverse()
+    .find((message) => message.role === "assistant" && message.data)?.data || null;
+  const lastRecommendationData = [...(conversation.messages || [])]
+    .reverse()
+    .find((message) => message.role === "assistant" && message.data && message.data.response_type === "recommendation")?.data || null;
+
+  return {
+    turns,
+    question_count: followUpMessages.length,
+    conversation_stage: lastRecommendationData ? "final_recommendation" : (lastAssistantData && lastAssistantData.conversation_stage) || "initial",
+    completed: Boolean(lastRecommendationData),
+    suspected_conditions: (lastAssistantData && lastAssistantData.suspected_conditions) || [],
+    asked_follow_up_questions: followUpMessages
+      .map((message) => message.data.follow_up_question || "")
+      .filter((question) => String(question || "").trim()),
+    last_recommendation: lastRecommendationData ? lastRecommendationData.recommendation || null : null,
+  };
+}
+
 async function fetchWithFallback(path, options = {}) {
   const bases = [...new Set([apiBase, ...API_BASES])].filter(Boolean);
   let lastError;
@@ -637,22 +1317,188 @@ function setInputDisabled(disabled) {
   inputEl.disabled = disabled;
   sendButtonEl.disabled = disabled;
   sendButtonEl.textContent = disabled ? "Menulis..." : "Kirim";
+  updateConversationActionState();
 }
 
 function splitQuestions(text) {
-  return text
-    .split("\n")
-    .map((line) => line.replace(/^\d+\.\s*/, "").trim())
+  const normalized = String(text || "")
+    .replace(/\r/g, "\n")
+    .replace(/\s+(?=\d+[\).\s-]+\S)/g, "\n")
+    .trim();
+
+  return normalized
+    .split(/\n+/)
+    .flatMap((line) => line.split(/(?<=[?])\s+(?=[A-ZÀ-ÝA-Za-z0-9])/))
+    .map((line) =>
+      line
+        .replace(/^(pertanyaan(?: anamnesis)?(?: yang perlu (?:kamu )?jawab| yang perlu dijawab)?|pertanyaan ke-\d+[^:]*):/i, "")
+        .replace(/^\d+[\).\s-]+/, "")
+        .replace(/^[-•]\s*/, "")
+        .trim(),
+    )
+    .map((line) => {
+      const questionMarkIndex = line.indexOf("?");
+      return questionMarkIndex >= 0 ? line.slice(0, questionMarkIndex + 1).trim() : line;
+    })
     .filter(Boolean)
-    .slice(0, 7);
+    .filter((line) => line.length > 6)
+    .slice(0, 3);
+}
+
+function buildFollowUpQuestions(data, assessment) {
+  const sources = compactList([
+    data.follow_up_question,
+    assessment && assessment.follow_up_question,
+    extractQuestionSection(data.reply),
+  ]);
+
+  for (const source of sources) {
+    const questions = splitQuestions(source);
+    if (questions.length) return questions;
+  }
+
+  return ["Sejak kapan keluhan muncul, apakah memburuk, dan apakah ada demam, sesak, muntah, darah, atau tanda bahaya lain?"];
+}
+
+function extractQuestionSection(text) {
+  const normalized = String(text || "").replace(/\r/g, "\n");
+  const match = normalized.match(
+    /(?:Pertanyaan(?: anamnesis)?(?: yang perlu (?:kamu )?jawab| yang perlu dijawab)?|Pertanyaan ke-\d+[^:\n]*):\s*([\s\S]*?)(?:\n\n|Alasan pertanyaan|Jawab singkat|Informasi ini|$)/i,
+  );
+  return match ? match[1].trim() : normalized;
+}
+
+function getSelectedAssessment(data) {
+  return data && data.model_comparison ? data.model_comparison.selected_assessment || null : null;
+}
+
+function buildFollowUpSummary(data, assessment) {
+  const summary = data.anamnesis_summary || {};
+  const suspected = compactList([
+    ...(data.suspected_conditions || []),
+    ...((assessment && assessment.suspected_conditions) || []),
+    summary.keluhan_ringan,
+  ]).slice(0, 3);
+  const symptoms = compactList(summary.detected_symptoms || []).slice(0, 5);
+  const parts = [];
+  const mainCondition = summary.keluhan_ringan || suspected[0] || "keluhan yang kamu ceritakan";
+
+  parts.push(
+    `Saya menangkap keluhan ini mengarah ke "${mainCondition}". Sebelum memberi rekomendasi ramuan, saya perlu memastikan dulu apakah ada tanda bahaya dan memperjelas pola gejalanya.`,
+  );
+
+  if (symptoms.length) {
+    parts.push(`Gejala terdeteksi: ${symptoms.join(", ")}.`);
+  }
+  parts.push(`Tahap anamnesis: pertanyaan ${data.questions_asked || 1} dari maksimal ${data.max_questions || 3}.`);
+
+  const rationale = assessment && (assessment.follow_up_rationale || assessment.reasoning);
+  if (rationale) {
+    parts.push(`Alasan pertanyaan: ${rationale}`);
+  }
+
+  return parts.join(" ");
+}
+
+function buildFollowUpExample(data, assessment) {
+  const question = normalizeForMatch(data.follow_up_question || "");
+  const suspected = normalizeForMatch([...(data.suspected_conditions || []), ...((assessment && assessment.suspected_conditions) || [])].join(" "));
+
+  if (question.includes("demam") || question.includes("sesak") || question.includes("tanda bahaya")) {
+    return "Tidak ada demam, tidak sesak, tidak muntah terus, keluhan muncul sejak pagi, dan nyerinya ringan.";
+  }
+  if (question.includes("muntah") || question.includes("diare") || suspected.includes("mual")) {
+    return "Tidak muntah, tidak diare, mual sejak tadi pagi, masih bisa minum, dan tidak ada nyeri berat.";
+  }
+  if (question.includes("ulu hati") || question.includes("makan") || suspected.includes("dispepsia")) {
+    return "Perih lebih terasa saat perut kosong, tidak muntah, tidak ada tinja hitam, dan nyerinya tidak berat.";
+  }
+  if (question.includes("batuk") || question.includes("pilek")) {
+    return "Ada batuk ringan sejak kemarin, tidak sesak, tidak demam tinggi, dan tidak ada batuk darah.";
+  }
+  if (question.includes("ruam") || question.includes("gatal")) {
+    return "Ruam muncul sejak pagi, terasa gatal, tidak melepuh, tidak ada bengkak wajah, dan tidak sesak.";
+  }
+
+  return "Keluhan muncul sejak kapan, tingkat beratnya ringan/sedang/berat, ada atau tidak demam, sesak, muntah, darah, atau nyeri hebat.";
+}
+
+function compactList(items) {
+  const seen = new Set();
+  return (items || [])
+    .map((item) => String(item || "").replace(/\s+/g, " ").trim())
+    .filter(Boolean)
+    .filter((item) => {
+      const key = item.toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+}
+
+function normalizeForMatch(value) {
+  return String(value || "").toLowerCase().replace(/\s+/g, " ").trim();
+}
+
+function buildSelfCareItems(data, assessment) {
+  const recommendation = data.recommendation || null;
+  const items = [
+    "Istirahat cukup dan pantau perubahan gejala.",
+    "Cukupi cairan, terutama bila ada demam, mual, diare, atau tubuh terasa lemas.",
+    "Makan ringan dan hindari pemicu yang membuat keluhan memburuk.",
+  ];
+
+  if (recommendation) {
+    items.push(`Bila tidak ada alergi atau kondisi khusus, ramuan ${recommendation.ramuan} dapat dipertimbangkan sesuai dosis/kisaran penggunaan di kartu rekomendasi.`);
+  }
+
+  if (assessment && assessment.warning_notes) {
+    items.push(`Perhatikan kewaspadaan: ${assessment.warning_notes}`);
+  }
+
+  return compactList(items).slice(0, 6);
+}
+
+function buildWarningItems(data, assessment) {
+  const recommendation = data.recommendation || null;
+  return compactList([
+    ...((data && data.red_flags) || []),
+    ...((assessment && assessment.red_flags) || []),
+    assessment && assessment.warning_notes,
+    recommendation && recommendation.catatan_kewaspadaan,
+    "Demam tinggi lebih dari 39°C atau demam lebih dari 3 hari.",
+    "Sesak napas, nyeri hebat, pingsan, atau sangat lemas.",
+    "Muntah terus, sulit minum, jarang kencing, mulut kering, atau tanda dehidrasi.",
+    "Muncul darah, tinja hitam, ruam/bintik merah luas, atau kondisi cepat memburuk.",
+  ]).slice(0, 7);
+}
+
+function extractSentence(text) {
+  const normalized = String(text || "").replace(/\s+/g, " ").trim();
+  if (!normalized) return "";
+  const withoutLabels = normalized
+    .replace(/Ringkasan anamnesis:.*?(?=Dugaan|Pertimbangan|Berdasarkan|Untuk saat ini|$)/i, "")
+    .trim();
+  const match = withoutLabels.match(/^(.+?[.!?])(\s|$)/);
+  const sentence = match ? match[1] : withoutLabels;
+  return sentence && sentence.length < 280 ? sentence : normalized.slice(0, 260).trim();
+}
+
+function extractLineByPrefix(text, prefix) {
+  const pattern = new RegExp(`${prefix}\\s*:\\s*([^\\n]+)`, "i");
+  const match = String(text || "").match(pattern);
+  return match ? match[1].trim() : "";
 }
 
 function responseLabel(type) {
   const labels = {
     follow_up: "Anamnesis lanjutan",
     recommendation: "Rekomendasi terkurasi",
+    medical_referral: "Perlu evaluasi medis",
     red_flag: "Tanda bahaya",
     out_of_scope: "Butuh konteks tambahan",
+    feedback: "Umpan balik",
+    preparation_detail: "Detail pengolahan",
   };
   return labels[type] || "Respons";
 }
@@ -703,6 +1549,132 @@ function formatScore(value) {
   return Number(value).toFixed(2);
 }
 
+function formatMetricLabel(key) {
+  return String(key || "")
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function buildInferenceMetricsMarkup(candidate) {
+  const entries = buildInferenceMetricEntries((candidate && candidate.inference_metrics) || {});
+  if (!entries.length) {
+    return "";
+  }
+
+  return `
+    <div class="candidate-metrics">
+      <strong>Metrik inferensi:</strong>
+      <div class="inference-metrics-grid">
+        ${entries
+          .map(
+            ({ label, value }) =>
+              `<span><b>${escapeHtml(label)}</b><small>${escapeHtml(value)}</small></span>`,
+          )
+          .join("")}
+      </div>
+    </div>
+  `;
+}
+
+function buildInferenceMetricEntries(metrics) {
+  if (!metrics || typeof metrics !== "object") {
+    return [];
+  }
+
+  const entries = [];
+  const pushEntry = (key, label, formatter = (value) => String(value)) => {
+    if (!(key in metrics) || metrics[key] === undefined || metrics[key] === null || metrics[key] === "") {
+      return;
+    }
+    entries.push({ label, value: formatter(metrics[key]) });
+  };
+
+  pushEntry("total_duration", "total_duration", formatDurationFromNanoseconds);
+  pushEntry("load_duration", "load_duration", formatDurationFromNanoseconds);
+  pushEntry("prompt_eval_count", "prompt_eval_count", formatTokenCount);
+  pushEntry("prompt_eval_duration", "prompt_eval_duration", formatDurationFromNanoseconds);
+  pushEntry("prompt_eval_rate_tps", "prompt_eval_rate", formatTokenRate);
+  pushEntry("eval_count", "eval_count", formatTokenCount);
+  pushEntry("eval_duration", "eval_duration", formatDurationFromNanoseconds);
+  pushEntry("eval_rate_tps", "eval_rate", formatTokenRate);
+  pushEntry("prompt_tokens", "prompt_tokens", formatTokenCount);
+  pushEntry("completion_tokens", "completion_tokens", formatTokenCount);
+  pushEntry("total_tokens", "total_tokens", formatTokenCount);
+  pushEntry("reasoning_tokens", "reasoning_tokens", formatTokenCount);
+  pushEntry("cached_prompt_tokens", "cached_prompt_tokens", formatTokenCount);
+  pushEntry("done_reason", "done_reason");
+  pushEntry("finish_reason", "finish_reason");
+
+  return entries;
+}
+
+function formatLatency(value) {
+  if (value === undefined || value === null || Number.isNaN(Number(value))) {
+    return "-";
+  }
+  const ms = Number(value);
+  if (ms >= 1000) {
+    return `${(ms / 1000).toFixed(2)} detik (${Math.round(ms)} ms)`;
+  }
+  return `${Math.round(ms)} ms`;
+}
+
+function formatDurationFromNanoseconds(value) {
+  if (value === undefined || value === null || Number.isNaN(Number(value))) {
+    return "-";
+  }
+
+  const nanoseconds = Number(value);
+  if (nanoseconds >= 1_000_000_000) {
+    return `${(nanoseconds / 1_000_000_000).toFixed(2)} detik`;
+  }
+  if (nanoseconds >= 1_000_000) {
+    return `${(nanoseconds / 1_000_000).toFixed(2)} ms`;
+  }
+  if (nanoseconds >= 1_000) {
+    return `${(nanoseconds / 1_000).toFixed(2)} μs`;
+  }
+  return `${Math.round(nanoseconds)} ns`;
+}
+
+function formatTokenCount(value) {
+  if (value === undefined || value === null || Number.isNaN(Number(value))) {
+    return "-";
+  }
+  const count = Number(value);
+  return `${Math.round(count)} token`;
+}
+
+function formatTokenRate(value) {
+  if (value === undefined || value === null || Number.isNaN(Number(value))) {
+    return "-";
+  }
+  return `${Number(value).toFixed(2)} token/detik`;
+}
+
+function formatCandidateAnswer(candidate) {
+  if (!candidate) return "Jawaban belum tersedia.";
+  if (candidate.reply) return candidate.reply;
+  const assessment = candidate.assessment || {};
+  return (
+    assessment.final_answer ||
+    assessment.follow_up_question ||
+    assessment.scope_reason ||
+    assessment.reasoning ||
+    "Jawaban belum tersedia."
+  );
+}
+
+function formatScopeLabel(scope) {
+  const labels = {
+    supported: "Didukung",
+    internal_medicine: "Penyakit dalam / rujukan",
+    critical: "Kritis / red flag",
+    unsupported: "Di luar cakupan",
+  };
+  return labels[scope] || scope;
+}
+
 formEl.addEventListener("submit", (event) => {
   event.preventDefault();
   const message = inputEl.value.trim();
@@ -725,6 +1697,7 @@ quickPromptEls.forEach((button) => {
 
 newChatButtonEl.addEventListener("click", startNewConversation);
 newChatInlineButtonEl.addEventListener("click", startNewConversation);
+exportConversationButtonEl.addEventListener("click", exportActiveConversation);
 clearHistoryButtonEl.addEventListener("click", clearAllConversations);
 
 async function initializeApp() {

@@ -43,6 +43,13 @@ def _env_int(name: str, default: int) -> int:
     return max(parsed, 1)
 
 
+def _env_bool(name: str, default: bool) -> bool:
+    value = os.getenv(name)
+    if value is None:
+        return default
+    return value.lower() in {"1", "true", "yes", "on"}
+
+
 def _env_path(name: str, default: Path) -> Path:
     return Path(os.getenv(name) or default).resolve()
 
@@ -54,20 +61,30 @@ OLLAMA_MODEL_A = os.getenv("OLLAMA_MODEL_A", "deepseek-r1:7b")
 OLLAMA_MODEL_B = os.getenv("OLLAMA_MODEL_B", "gemma4:latest")
 OLLAMA_MODEL_A_FALLBACKS = _split_env_list(os.getenv("OLLAMA_MODEL_A_FALLBACKS", "deepseek-r1:1.5b"))
 OLLAMA_MODEL_B_FALLBACKS = _split_env_list(os.getenv("OLLAMA_MODEL_B_FALLBACKS", "gemma4:e2b,gemma3:1b"))
-OLLAMA_TIMEOUT_SECONDS = float(os.getenv("OLLAMA_TIMEOUT_SECONDS", "45"))
+OLLAMA_TIMEOUT_SECONDS = float(os.getenv("OLLAMA_TIMEOUT_SECONDS", "75"))
 OLLAMA_NUM_PREDICT_DEFAULT = _env_int("OLLAMA_NUM_PREDICT_DEFAULT", 220)
-OLLAMA_NUM_PREDICT_RECOMMENDATION = _env_int("OLLAMA_NUM_PREDICT_RECOMMENDATION", 768)
-OLLAMA_NUM_PREDICT_FOLLOW_UP = _env_int("OLLAMA_NUM_PREDICT_FOLLOW_UP", 140)
+OLLAMA_NUM_PREDICT_RECOMMENDATION = _env_int("OLLAMA_NUM_PREDICT_RECOMMENDATION", 640)
+OLLAMA_NUM_PREDICT_FOLLOW_UP = _env_int("OLLAMA_NUM_PREDICT_FOLLOW_UP", 240)
 OLLAMA_NUM_PREDICT_RED_FLAG = _env_int("OLLAMA_NUM_PREDICT_RED_FLAG", 120)
 OLLAMA_NUM_PREDICT_OUT_OF_SCOPE = _env_int("OLLAMA_NUM_PREDICT_OUT_OF_SCOPE", 120)
-ENABLE_DUAL_LLM_COMPARISON = os.getenv("ENABLE_DUAL_LLM_COMPARISON", "true").lower() in {
-    "1",
-    "true",
-    "yes",
-    "on",
-}
+MAX_ANAMNESIS_QUESTIONS = _env_int("MAX_ANAMNESIS_QUESTIONS", 3)
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
+OPENAI_BASE_URL = os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1").rstrip("/")
+OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4o")
+OPENAI_TIMEOUT_SECONDS = float(os.getenv("OPENAI_TIMEOUT_SECONDS", str(OLLAMA_TIMEOUT_SECONDS)))
+ENABLE_OPENAI_COMPARISON = _env_bool("ENABLE_OPENAI_COMPARISON", True)
+ENABLE_DUAL_LLM_COMPARISON = _env_bool("ENABLE_DUAL_LLM_COMPARISON", True)
 LEARNING_LOG_PATH = Path(
     os.getenv("LEARNING_LOG_PATH") or (DATA_DIR.parent / "learning" / "dual_llm_interactions.jsonl")
+).resolve()
+CONVERSATION_LOG_PATH = Path(
+    os.getenv("CONVERSATION_LOG_PATH") or (DATA_DIR.parent / "learning" / "conversation_turns.jsonl")
+).resolve()
+KB_ENRICHMENT_LOG_PATH = Path(
+    os.getenv("KB_ENRICHMENT_LOG_PATH") or (DATA_DIR.parent / "learning" / "kb_enrichment_candidates.jsonl")
+).resolve()
+RECOMMENDATION_FEEDBACK_LOG_PATH = Path(
+    os.getenv("RECOMMENDATION_FEEDBACK_LOG_PATH") or (DATA_DIR.parent / "learning" / "recommendation_feedback.jsonl")
 ).resolve()
 APP_NAME = "AI Chatbot Rekomendasi Ramuan Herbal"
 APP_VERSION = "0.1.1"

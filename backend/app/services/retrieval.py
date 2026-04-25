@@ -387,6 +387,56 @@ class RAGRetriever:
             deduped.setdefault(item.id, item)
         return list(deduped.values())[:limit]
 
+    def retrieve_guidance(
+        self,
+        query: str,
+        anamnesis: AnamnesisResult,
+        limit: int = 5,
+    ) -> list[RetrievedItem]:
+        candidates = self.index.search(query, limit=30)
+        reranked: list[RetrievedItem] = []
+        normalized_query = self._normalize_hint(query)
+
+        for item in candidates:
+            chunk = item.payload if isinstance(item.payload, KnowledgeChunk) else None
+            if item.type == "training":
+                if not chunk or chunk.metadata.get("content_type") != "disease_guidance":
+                    continue
+            elif item.type == "anamnesis":
+                if not chunk:
+                    continue
+            else:
+                continue
+
+            score = item.score
+            if item.type == "training" and item.evidence_level in {"clinical_guideline_reference", "medical_review_reference"}:
+                score += 0.15
+            if item.type == "anamnesis" and chunk and chunk.metadata.get("condition_group") == "penyakit_tropis":
+                score += 0.12
+            if anamnesis.detected_symptoms and any(term in item.matched_terms for term in anamnesis.detected_symptoms):
+                score += 0.12
+            title_hint = self._normalize_hint(item.title)
+            if title_hint and title_hint in normalized_query:
+                score += 0.2
+
+            reranked.append(
+                RetrievedItem(
+                    id=item.id,
+                    type=item.type,
+                    title=item.title,
+                    score=round(score, 4),
+                    source=item.source,
+                    payload=item.payload,
+                    evidence_level=item.evidence_level,
+                    matched_terms=item.matched_terms,
+                )
+            )
+
+        deduped: dict[str, RetrievedItem] = {}
+        for item in sorted(reranked, key=lambda result: result.score, reverse=True):
+            deduped.setdefault(item.id, item)
+        return list(deduped.values())[:limit]
+
     @staticmethod
     def _normalize_hint(value: str) -> str:
         return " ".join(tokenize(value))

@@ -1,6 +1,6 @@
 {
   "base_model": "google/gemma-4-E2B-it",
-  "dataset_path": "../../data/traning/combined_training_sft.jsonl",
+  "dataset_path": "../data/traning/combined_training_sft.jsonl",
   "output_dir": "./outputs/gemma4-herbal-qlora",
   "max_seq_length": 1024,
   "num_train_epochs": 3,

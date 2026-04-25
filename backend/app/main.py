@@ -1,28 +1,42 @@
 from __future__ import annotations
 
+from copy import deepcopy
 from uuid import uuid4
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.config import APP_NAME, APP_VERSION, CHROMA_DB_DIR, CORS_ORIGINS, DATA_DIR
-from app.models import ChatRequest, ChatResponse
-from app.services.anamnesis import analyze_message
-from app.services.knowledge_base import AnamnesisEntry, CaseEntry, KnowledgeBase
+from app.config import (
+    APP_NAME,
+    APP_VERSION,
+    CHROMA_DB_DIR,
+    CORS_ORIGINS,
+    DATA_DIR,
+    MAX_ANAMNESIS_QUESTIONS,
+)
+from app.models import ChatRequest, ChatResponse, ModelAssessment, ModelComparison, Recommendation, SessionSync
+from app.services.anamnesis import SYMPTOM_CONCEPTS, analyze_message
+from app.services.knowledge_base import CaseEntry, KnowledgeBase
+from app.services.learning import LearningCaptureService
 from app.services.llm_comparison import DualLLMComparator
 from app.services.recommendation import (
     DISCLAIMER,
+    build_assessment_follow_up_reply,
+    build_assessment_recommendation,
+    build_assessment_recommendation_reply,
+    build_feedback_reply,
     build_follow_up_reply,
     build_out_of_scope_reply,
+    build_preparation_detail_reply,
     build_recommendation,
     build_recommendation_reply,
     build_red_flag_reply,
+    build_scope_referral_reply,
+    enhance_recommendation_preparation,
     to_context,
 )
 from app.services.retrieval import RAGRetriever, RetrievedItem
-from app.services.text import contains_phrase, normalize
-
-
+from app.services.text import contains_phrase, normalize, tokenize
 app = FastAPI(title=APP_NAME, version=APP_VERSION)
 app.add_middleware(
     CORSMiddleware,
@@ -35,7 +49,73 @@ app.add_middleware(
 kb = KnowledgeBase(DATA_DIR)
 retriever = RAGRetriever(kb, chroma_db_dir=CHROMA_DB_DIR)
 llm_comparator = DualLLMComparator()
+learning_capture = LearningCaptureService()
 SESSIONS: dict[str, dict[str, object]] = {}
+
+FOLLOW_UP_CLINICAL_TERMS = (
+    "sejak",
+    "berapa lama",
+    "demam",
+    "sesak",
+    "nyeri",
+    "mual",
+    "muntah",
+    "darah",
+    "bengkak",
+    "memburuk",
+    "durasi",
+    "lemas",
+    "lepuh",
+    "menyebar",
+    "perdarahan",
+)
+FOLLOW_UP_RECOMMENDATION_TERMS = (
+    "bahan",
+    "dosis",
+    "gel",
+    "lidah buaya",
+    "memakai",
+    "menggunakan",
+    "minum",
+    "oles",
+    "ramuan",
+)
+FOLLOW_UP_DETAIL_TERMS = (
+    "berapa",
+    "suhu",
+    "derajat",
+    "tinggi",
+    "pola",
+    "naik turun",
+    "menetap",
+    "mendadak",
+    "seberapa",
+    "skala",
+    "parah",
+    "berat",
+    "lokasi",
+    "bagian",
+    "warna",
+    "luas",
+    "menyebar",
+    "melepuh",
+    "memburuk",
+    "terus",
+)
+FOLLOW_UP_DURATION_TERMS = (
+    "sejak kapan",
+    "berapa lama",
+    "sudah berapa",
+    "kapan mulai",
+    "mulai kapan",
+    "durasi",
+)
+FOLLOW_UP_GENERIC_SYMPTOM_TERMS = (
+    "gejala lain",
+    "gejala selain",
+    "keluhan lain",
+    "keluhan selain",
+)
 
 
 @app.get("/health")
@@ -47,16 +127,8 @@ def health() -> dict[str, object]:
         "knowledge_base": kb.health(),
         "retriever": retriever.health(),
         "llm_comparison": llm_comparator.health(),
-        "pipeline": [
-            "humanizing_anamnesis",
-            "chunked_knowledge_base",
-            retriever.health()["backend"],
-            "metadata_reranking",
-            "grounded_recommendation_generation",
-            "dual_ollama_candidate_generation",
-            "deterministic_candidate_scoring",
-            "red_flag_guardrail",
-        ],
+        "max_anamnesis_questions": MAX_ANAMNESIS_QUESTIONS,
+        "pipeline": _pipeline_steps(),
     }
 
 
@@ -98,139 +170,184 @@ def knowledge_base() -> dict[str, object]:
 @app.post("/api/chat", response_model=ChatResponse)
 def chat(request: ChatRequest) -> ChatResponse:
     session_id = request.session_id or str(uuid4())
-    session = SESSIONS.setdefault(session_id, {"turns": [], "matched_case_id": None, "asked_anamnesis": False})
-    session["turns"].append({"role": "user", "content": request.message})
+    session = SESSIONS.setdefault(session_id, _new_session())
+    _sync_session_from_client(session, request.session_sync)
+    turns = session.setdefault("turns", [])
+    if isinstance(turns, list) and not _last_turn_matches(turns, "user", request.message):
+        turns.append({"role": "user", "content": request.message})
 
-    anamnesis = analyze_message(request.message)
-    pipeline = [
-        "1. Humanizing anamnesis: ekstraksi gejala, durasi, permintaan rekomendasi, dan red flag",
-        f"2. Retrieval: query ke chunk knowledge base dengan {retriever.health()['backend']}",
-        "3. Re-ranking: boost berdasarkan sinyal gejala, formula, bahan, dan evidence level",
-        "4. Grounded generation: respons hanya memakai case dan konteks retrieval terpilih",
-        "5. Dual LLM comparison: prompt dikirim ke DeepSeek-R1 dan model Gemma/Gemma4 via Ollama",
-        "6. Candidate scoring: penilaian keamanan, grounding RAG, kelengkapan, dan bahasa",
-        "7. Guardrail: disclaimer dan penolakan untuk red flag/out-of-scope",
-    ]
+    post_recommendation_response = _post_recommendation_response(
+        session_id=session_id,
+        session=session,
+        user_message=request.message,
+        pipeline=_pipeline_steps(),
+    )
+    if post_recommendation_response:
+        return _finalize_response(session_id, session, request.message, post_recommendation_response)
+
+    combined_user_message = _combined_user_messages(session)
+    anamnesis = analyze_message(combined_user_message)
+    question_count = int(session.get("question_count", 0))
+    pipeline = _pipeline_steps()
+
     if anamnesis.red_flags:
-        reply = build_red_flag_reply(anamnesis.red_flags)
-        response = _with_model_comparison(
-            ChatResponse(
-                session_id=session_id,
-                response_type="red_flag",
-                reply=reply,
-                red_flags=anamnesis.red_flags,
-                quick_replies=_quick_replies("red_flag"),
-                anamnesis_summary=_anamnesis_summary(anamnesis),
-                pipeline=pipeline,
-            ),
-            request.message,
-        )
-        session["turns"].append({"role": "assistant", "content": response.reply})
-        return response
-
-    previous_case_id = session.get("matched_case_id")
-    top_cases = retriever.retrieve_cases(request.message, anamnesis, limit=3)
-    if previous_case_id and _should_keep_previous_case(session, str(previous_case_id), request.message):
-        previous_case = kb.case_by_id(str(previous_case_id))
-        if previous_case:
-            top_cases = [
-                RetrievedItem(
-                    id=previous_case.id,
-                    type="case",
-                    title=previous_case.keluhan_ringan,
-                    score=1.25,
-                    source=previous_case.sumber_ringkas,
-                    payload=previous_case,
-                    evidence_level="conversation_context",
-                )
-            ] + [item for item in top_cases if item.id != previous_case.id]
-    if not top_cases and previous_case_id:
-        previous_case = kb.case_by_id(str(previous_case_id))
-        if previous_case:
-            top_cases = [
-                RetrievedItem(
-                    id=previous_case.id,
-                    type="case",
-                    title=previous_case.keluhan_ringan,
-                    score=1.0,
-                    source=previous_case.sumber_ringkas,
-                    payload=previous_case,
-                )
-            ]
-
-    if not top_cases:
-        reply = build_out_of_scope_reply()
-        response = _with_model_comparison(
-            ChatResponse(
-                session_id=session_id,
-                response_type="out_of_scope",
-                reply=reply,
-                quick_replies=_quick_replies("out_of_scope"),
-                anamnesis_summary=_anamnesis_summary(anamnesis),
-                pipeline=pipeline,
-            ),
-            request.message,
-        )
-        session["turns"].append({"role": "assistant", "content": response.reply})
-        return response
-
-    best_case = top_cases[0].payload
-    session["matched_case_id"] = best_case.id
-    supporting_context = retriever.retrieve_context_for_case(request.message, best_case, anamnesis, limit=6)
-    grounded_items = [top_cases[0]] + supporting_context
-    contexts = to_context(grounded_items)
-    anamnesis_summary = _anamnesis_summary(anamnesis, best_case.keluhan_ringan)
-
-    should_ask_follow_up = _needs_more_follow_up(str(previous_case_id or ""), request.message, anamnesis) or (
-        not _is_detail_request(request.message)
-        and not session.get("asked_anamnesis")
-        and not (
-            anamnesis.has_duration_signal and anamnesis.asks_for_recommendation
-        )
-    )
-    if should_ask_follow_up:
-        session["asked_anamnesis"] = True
-        anamnesis_record = _select_anamnesis_record(best_case, request.message)
-        follow_up_questions = _follow_up_questions(best_case, anamnesis_record)
-        reply = build_follow_up_reply(
-            best_case,
-            questions=follow_up_questions,
-            source_title=anamnesis_record.suspected_condition if anamnesis_record else None,
-        )
-        response = _with_model_comparison(
-            ChatResponse(
-                session_id=session_id,
-                response_type="follow_up",
-                reply=reply,
-                retrieved_context=contexts,
-                follow_up_question="\n".join(follow_up_questions),
-                quick_replies=_quick_replies("follow_up"),
-                anamnesis_summary=anamnesis_summary,
-                pipeline=pipeline,
-            ),
-            request.message,
-        )
-        session["turns"].append({"role": "assistant", "content": response.reply})
-        return response
-
-    recommendation = build_recommendation(best_case)
-    reply = build_recommendation_reply(recommendation, grounded_items, anamnesis_summary)
-    session["asked_anamnesis"] = False
-    response = _with_model_comparison(
-        ChatResponse(
+        session["completed"] = True
+        session["conversation_stage"] = "red_flag_guardrail"
+        response = ChatResponse(
             session_id=session_id,
-            response_type="recommendation",
-            reply=reply,
-            recommendation=recommendation,
-            retrieved_context=contexts,
-            quick_replies=_quick_replies("recommendation"),
-            anamnesis_summary=anamnesis_summary,
+            response_type="red_flag",
+            reply=build_red_flag_reply(anamnesis.red_flags),
+            conversation_stage="red_flag_guardrail",
+            suspected_conditions=list(session.get("suspected_conditions", [])),
+            red_flags=anamnesis.red_flags,
+            quick_replies=_quick_replies("red_flag"),
+            anamnesis_summary=_anamnesis_summary(anamnesis, session=session),
+            questions_asked=question_count,
+            max_questions=MAX_ANAMNESIS_QUESTIONS,
             pipeline=pipeline,
-        ),
-        request.message,
+        )
+        return _finalize_response(session_id, session, request.message, response)
+
+    retrieval = _retrieve_bundle(combined_user_message, anamnesis, session)
+    best_case = retrieval["best_case"]
+    retrieved_items = retrieval["items"]
+    guidance_items = retrieval["guidance_items"]
+    if best_case:
+        session["matched_case_id"] = best_case.id
+
+    if not _supports_medical_flow(retrieval["top_cases"], guidance_items, anamnesis):
+        session["completed"] = True
+        session["conversation_stage"] = "out_of_scope"
+        response = ChatResponse(
+            session_id=session_id,
+            response_type="out_of_scope",
+            reply=build_out_of_scope_reply(),
+            conversation_stage="out_of_scope",
+            quick_replies=_quick_replies("out_of_scope"),
+            anamnesis_summary=_anamnesis_summary(anamnesis, session=session),
+            questions_asked=question_count,
+            max_questions=MAX_ANAMNESIS_QUESTIONS,
+            pipeline=pipeline,
+        )
+        return _finalize_response(session_id, session, request.message, response)
+
+    contexts = to_context(retrieved_items)
+    anamnesis_summary = _anamnesis_summary(
+        anamnesis,
+        keluhan_ringan=best_case.keluhan_ringan if best_case else (guidance_items[0].title if guidance_items else None),
+        session=session,
     )
-    session["turns"].append({"role": "assistant", "content": response.reply})
-    return response
+    conversation_history = _conversation_history(session)
+
+    if question_count >= MAX_ANAMNESIS_QUESTIONS:
+        response = _final_recommendation_response(
+            session_id=session_id,
+            session=session,
+            user_message=request.message,
+            conversation_history=conversation_history,
+            contexts=contexts,
+            anamnesis_summary=anamnesis_summary,
+            red_flags=anamnesis.red_flags,
+            best_case=best_case,
+            retrieved_items=retrieved_items,
+            pipeline=pipeline,
+        )
+        return _finalize_response(session_id, session, request.message, response)
+
+    follow_up_comparison = llm_comparator.generate_assessment(
+        session_id=session_id,
+        user_message=request.message,
+        response_type="follow_up",
+        conversation_history=conversation_history,
+        retrieved_context=contexts,
+        anamnesis_summary=anamnesis_summary,
+        red_flags=anamnesis.red_flags,
+        question_count=question_count,
+        force_final=False,
+    )
+    selected_assessment = follow_up_comparison.selected_assessment
+
+    if _needs_referral(selected_assessment):
+        response = _referral_response(
+            session_id=session_id,
+            assessment=selected_assessment,
+            comparison=follow_up_comparison,
+            anamnesis_summary=anamnesis_summary,
+            contexts=contexts,
+            question_count=question_count,
+            pipeline=pipeline,
+        )
+        session["completed"] = True
+        session["conversation_stage"] = "medical_referral"
+        return _finalize_response(session_id, session, request.message, response)
+
+    if _is_unsupported(selected_assessment):
+        session["completed"] = True
+        session["conversation_stage"] = "out_of_scope"
+        response = ChatResponse(
+            session_id=session_id,
+            response_type="out_of_scope",
+            reply=build_out_of_scope_reply(),
+            conversation_stage="out_of_scope",
+            suspected_conditions=selected_assessment.suspected_conditions if selected_assessment else [],
+            quick_replies=_quick_replies("out_of_scope"),
+            anamnesis_summary=anamnesis_summary,
+            retrieved_context=contexts,
+            model_comparison=follow_up_comparison,
+            questions_asked=question_count,
+            max_questions=MAX_ANAMNESIS_QUESTIONS,
+            pipeline=pipeline,
+        )
+        return _finalize_response(session_id, session, request.message, response)
+
+    if _should_force_final_recommendation(session, anamnesis_summary, selected_assessment):
+        response = _final_recommendation_response(
+            session_id=session_id,
+            session=session,
+            user_message=request.message,
+            conversation_history=conversation_history,
+            contexts=contexts,
+            anamnesis_summary=anamnesis_summary,
+            red_flags=anamnesis.red_flags,
+            best_case=best_case,
+            retrieved_items=retrieved_items,
+            pipeline=pipeline,
+            initial_comparison=follow_up_comparison,
+        )
+        return _finalize_response(session_id, session, request.message, response)
+
+    if _should_ask_follow_up(selected_assessment, question_count):
+        session["question_count"] = question_count + 1
+        session["suspected_conditions"] = (selected_assessment.suspected_conditions if selected_assessment else [])[:3]
+        session["conversation_stage"] = f"anamnesis_follow_up_{session['question_count']}"
+        response = _follow_up_response(
+            session_id=session_id,
+            assessment=selected_assessment,
+            comparison=follow_up_comparison,
+            anamnesis_summary=anamnesis_summary,
+            contexts=contexts,
+            question_count=int(session["question_count"]),
+            pipeline=pipeline,
+            fallback_case=best_case,
+            asked_questions=_asked_follow_up_questions(session),
+        )
+        _remember_follow_up_question(session, response.follow_up_question)
+        return _finalize_response(session_id, session, request.message, response)
+
+    response = _final_recommendation_response(
+        session_id=session_id,
+        session=session,
+        user_message=request.message,
+        conversation_history=conversation_history,
+        contexts=contexts,
+        anamnesis_summary=anamnesis_summary,
+        red_flags=anamnesis.red_flags,
+        best_case=best_case,
+        retrieved_items=retrieved_items,
+        pipeline=pipeline,
+        initial_comparison=follow_up_comparison,
+    )
+    return _finalize_response(session_id, session, request.message, response)
 
 
 @app.delete("/api/session/{session_id}")
@@ -239,160 +356,794 @@ def clear_session(session_id: str) -> dict[str, str]:
     return {"status": "cleared", "session_id": session_id}
 
 
-def _anamnesis_summary(anamnesis, keluhan_ringan: str | None = None) -> dict[str, object]:
+def _new_session() -> dict[str, object]:
+    return {
+        "turns": [],
+        "matched_case_id": None,
+        "question_count": 0,
+        "suspected_conditions": [],
+        "asked_follow_up_questions": [],
+        "conversation_stage": "initial",
+        "completed": False,
+        "last_recommendation": None,
+        "feedback": [],
+    }
+
+
+def _pipeline_steps() -> list[str]:
+    return [
+        "1. Aggregasi riwayat percakapan dan gejala user untuk humanizing anamnesis",
+        "2. Ekstraksi slot anamnesis yang sudah dijawab agar pertanyaan lanjutan tidak berulang",
+        f"3. Retrieval ke chunk knowledge base dengan {retriever.health()['backend']}",
+        "4. Grounding context gabungan dari case, formula, herbal, dan guidance record",
+        "5. Kirim prompt terstruktur ke model pembanding: DeepSeek-R1, Gemma4, dan GPT-4 bila API key tersedia",
+        "6. Ranking kandidat berbasis safety, grounding, relevance, completeness, non-repetition, dan latency",
+        f"7. Tanyakan maksimal {MAX_ANAMNESIS_QUESTIONS} follow-up sebelum jawaban akhir",
+        "8. Finalisasi dugaan kondisi, rekomendasi herbal, dan catatan kewaspadaan",
+        "9. Tanyakan feedback apakah rekomendasi membantu dan simpan sebagai evaluasi model",
+        "10. Simpan conversation turn sebagai learning log dan kandidat enrichment knowledge base",
+    ]
+
+
+def _post_recommendation_response(
+    *,
+    session_id: str,
+    session: dict[str, object],
+    user_message: str,
+    pipeline: list[str],
+) -> ChatResponse | None:
+    if not _is_post_recommendation_turn(session):
+        return None
+
+    recommendation = _last_recommendation(session)
+    if _is_preparation_detail_request(user_message):
+        if recommendation:
+            reply = build_preparation_detail_reply(recommendation)
+        else:
+            reply = (
+                "Saya belum menemukan kartu rekomendasi terakhir untuk dijelaskan lebih detail. "
+                "Silakan mulai sesi baru atau ulangi keluhan utama agar saya bisa menyusun rekomendasi ulang."
+            )
+        return ChatResponse(
+            session_id=session_id,
+            response_type="preparation_detail",
+            reply=reply,
+            conversation_stage="preparation_detail_after_recommendation",
+            recommendation=recommendation,
+            quick_replies=_quick_replies("preparation_detail"),
+            questions_asked=int(session.get("question_count", 0)),
+            max_questions=MAX_ANAMNESIS_QUESTIONS,
+            pipeline=pipeline,
+        )
+
+    feedback_label = _classify_recommendation_feedback(user_message)
+    if not feedback_label:
+        return None
+
+    feedback_log_id = learning_capture.capture_feedback(
+        session_id=session_id,
+        user_message=user_message,
+        feedback_label=feedback_label,
+        recommendation=recommendation.model_dump() if recommendation else None,
+        session_snapshot=_session_snapshot(session),
+    )
+    feedback_rows = session.setdefault("feedback", [])
+    if isinstance(feedback_rows, list):
+        feedback_rows.append(
+            {
+                "feedback_log_id": feedback_log_id,
+                "label": feedback_label,
+                "message": user_message,
+            }
+        )
+
+    return ChatResponse(
+        session_id=session_id,
+        response_type="feedback",
+        reply=f"{build_feedback_reply(feedback_label, recommendation)}\n\nFeedback log: {feedback_log_id}",
+        conversation_stage="recommendation_feedback",
+        recommendation=recommendation,
+        quick_replies=_quick_replies("feedback"),
+        questions_asked=int(session.get("question_count", 0)),
+        max_questions=MAX_ANAMNESIS_QUESTIONS,
+        pipeline=pipeline,
+    )
+
+
+def _is_post_recommendation_turn(session: dict[str, object]) -> bool:
+    return bool(session.get("completed")) and str(session.get("conversation_stage") or "") == "final_recommendation"
+
+
+def _last_recommendation(session: dict[str, object]) -> Recommendation | None:
+    raw = session.get("last_recommendation")
+    if isinstance(raw, Recommendation):
+        return raw
+    if isinstance(raw, dict):
+        try:
+            return Recommendation(**raw)
+        except Exception:
+            return None
+    return None
+
+
+def _is_preparation_detail_request(message: str) -> bool:
+    normalized = message.lower()
+    detail_terms = ("detail", "jelaskan", "rinci", "langkah", "step", "cara")
+    preparation_terms = ("pengolahan", "membuat", "buat", "rebus", "seduh", "olah", "ramuan")
+    return any(term in normalized for term in detail_terms) and any(term in normalized for term in preparation_terms)
+
+
+def _classify_recommendation_feedback(message: str) -> str | None:
+    normalized = message.lower()
+    if any(term in normalized for term in ("pengolahan kurang jelas", "cara kurang jelas", "kurang detail", "tidak jelas")):
+        return "unclear_preparation"
+    if any(
+        term in normalized
+        for term in (
+            "belum membantu",
+            "tidak membantu",
+            "kurang membantu",
+            "kurang cocok",
+            "tidak cocok",
+            "gak cocok",
+            "nggak cocok",
+            "belum membaik",
+            "tidak membaik",
+            "bahan sulit",
+            "sulit didapat",
+        )
+    ):
+        return "not_helpful"
+    if any(term in normalized for term in ("membantu", "cocok", "lebih baik", "bermanfaat", "terbantu")):
+        return "helpful"
+    return None
+
+
+def _combined_user_messages(session: dict[str, object]) -> str:
+    turns = session.get("turns", [])
+    if not isinstance(turns, list):
+        return ""
+    user_messages = [str(turn.get("content") or "").strip() for turn in turns if turn.get("role") == "user"]
+    return "\n".join(message for message in user_messages if message)
+
+
+def _conversation_history(session: dict[str, object]) -> list[dict[str, str]]:
+    turns = session.get("turns", [])
+    if not isinstance(turns, list):
+        return []
+    return [
+        {"role": str(turn.get("role") or "user"), "content": str(turn.get("content") or "")}
+        for turn in turns[-10:]
+        if turn.get("content")
+    ]
+
+
+def _retrieve_bundle(query: str, anamnesis, session: dict[str, object]) -> dict[str, object]:
+    top_cases = retriever.retrieve_cases(query, anamnesis, limit=3)
+    guidance_items = retriever.retrieve_guidance(query, anamnesis, limit=4)
+
+    best_case: CaseEntry | None = top_cases[0].payload if top_cases else None
+    previous_case_id = str(session.get("matched_case_id") or "")
+    if not best_case and previous_case_id:
+        best_case = kb.case_by_id(previous_case_id)
+
+    supporting_context: list[RetrievedItem] = []
+    if best_case:
+        supporting_context = retriever.retrieve_context_for_case(query, best_case, anamnesis, limit=6)
+
+    items: list[RetrievedItem] = []
+    items.extend(top_cases[:2])
+    items.extend(supporting_context[:6])
+    items.extend(guidance_items[:4])
+    return {
+        "top_cases": top_cases,
+        "guidance_items": guidance_items,
+        "best_case": best_case,
+        "items": _dedupe_items(items),
+    }
+
+
+def _dedupe_items(items: list[RetrievedItem]) -> list[RetrievedItem]:
+    deduped: dict[str, RetrievedItem] = {}
+    for item in sorted(items, key=lambda candidate: candidate.score, reverse=True):
+        deduped.setdefault(item.id, item)
+    return list(deduped.values())
+
+
+def _supports_medical_flow(top_cases: list[RetrievedItem], guidance_items: list[RetrievedItem], anamnesis) -> bool:
+    if not top_cases and not guidance_items:
+        return False
+    if anamnesis.detected_symptoms or anamnesis.hinted_case_ids:
+        return True
+    best_score = max(
+        [item.score for item in [*top_cases[:1], *guidance_items[:1]]],
+        default=0.0,
+    )
+    return best_score >= 0.28
+
+
+def _anamnesis_summary(anamnesis, keluhan_ringan: str | None = None, session: dict[str, object] | None = None) -> dict[str, object]:
+    question_count = int((session or {}).get("question_count", 0))
+    suspected_conditions = list((session or {}).get("suspected_conditions", []))
     return {
         "keluhan_ringan": keluhan_ringan,
         "detected_symptoms": anamnesis.detected_symptoms,
+        "present_symptoms": getattr(anamnesis, "present_symptoms", []),
+        "absent_symptoms": getattr(anamnesis, "absent_symptoms", []),
+        "duration_text": getattr(anamnesis, "duration_text", None),
+        "answered_slots": getattr(anamnesis, "answered_slots", []),
+        "has_intensity_signal": getattr(anamnesis, "has_intensity_signal", False),
+        "has_progression_signal": getattr(anamnesis, "has_progression_signal", False),
         "hinted_case_ids": anamnesis.hinted_case_ids,
         "has_duration_signal": anamnesis.has_duration_signal,
         "has_safety_clearance_signal": anamnesis.has_safety_clearance_signal,
         "asks_for_recommendation": anamnesis.asks_for_recommendation,
         "red_flags": anamnesis.red_flags,
+        "question_count": question_count,
+        "suspected_conditions": suspected_conditions,
+        "asked_follow_up_questions": _asked_follow_up_questions(session or {}),
     }
 
 
-def _with_model_comparison(response: ChatResponse, user_message: str) -> ChatResponse:
-    comparison = llm_comparator.compare(
-        session_id=response.session_id,
-        user_message=user_message,
-        response_type=response.response_type,
-        baseline_reply=response.reply,
-        recommendation=response.recommendation,
-        retrieved_context=response.retrieved_context,
-        anamnesis_summary=response.anamnesis_summary,
-        red_flags=response.red_flags,
-        follow_up_question=response.follow_up_question,
+def _needs_referral(assessment: ModelAssessment | None) -> bool:
+    if assessment is None:
+        return False
+    return assessment.scope in {"critical", "internal_medicine"} or assessment.need_medical_referral
+
+
+def _is_unsupported(assessment: ModelAssessment | None) -> bool:
+    return assessment is not None and assessment.scope == "unsupported"
+
+
+def _should_ask_follow_up(assessment: ModelAssessment | None, question_count: int) -> bool:
+    if assessment is None:
+        return question_count < MAX_ANAMNESIS_QUESTIONS
+    return (
+        assessment.scope == "supported"
+        and not assessment.enough_information
+        and bool(assessment.follow_up_question)
+        and question_count < MAX_ANAMNESIS_QUESTIONS
     )
-    response.model_comparison = comparison
-    if comparison.selected_reply:
-        response.reply = _ensure_disclaimer(comparison.selected_reply)
-    return response
 
 
-def _ensure_disclaimer(reply: str) -> str:
-    normalized = normalize(reply)
-    if "bukan diagnosis" in normalized and "bukan pengganti" in normalized:
-        return reply
-    return f"{reply.rstrip()}\n\n{DISCLAIMER}"
+def _referral_response(
+    *,
+    session_id: str,
+    assessment: ModelAssessment | None,
+    comparison: ModelComparison,
+    anamnesis_summary: dict[str, object],
+    contexts,
+    question_count: int,
+    pipeline: list[str],
+) -> ChatResponse:
+    selected = assessment or ModelAssessment(
+        scope="critical",
+        scope_reason="Kasus ini tidak aman untuk jalur herbal mandiri.",
+        need_medical_referral=True,
+        warning_notes="Prioritaskan pemeriksaan tenaga kesehatan.",
+    )
+    return ChatResponse(
+        session_id=session_id,
+        response_type="medical_referral",
+        reply=build_scope_referral_reply(selected, anamnesis_summary),
+        conversation_stage="medical_referral",
+        suspected_conditions=selected.suspected_conditions,
+        red_flags=selected.red_flags,
+        quick_replies=_quick_replies("medical_referral"),
+        anamnesis_summary=anamnesis_summary,
+        retrieved_context=contexts,
+        model_comparison=comparison,
+        questions_asked=question_count,
+        max_questions=MAX_ANAMNESIS_QUESTIONS,
+        pipeline=pipeline,
+    )
+
+
+def _follow_up_response(
+    *,
+    session_id: str,
+    assessment: ModelAssessment | None,
+    comparison: ModelComparison,
+    anamnesis_summary: dict[str, object],
+    contexts,
+    question_count: int,
+    pipeline: list[str],
+    fallback_case: CaseEntry | None,
+    asked_questions: list[str],
+) -> ChatResponse:
+    if assessment and assessment.follow_up_question:
+        assessment_for_reply = _assessment_with_better_follow_up_question(
+            assessment,
+            fallback_case,
+            anamnesis_summary,
+            asked_questions,
+        )
+        comparison = _comparison_with_selected_follow_up(comparison, assessment_for_reply)
+        reply = build_assessment_follow_up_reply(
+            assessment_for_reply,
+            anamnesis_summary,
+            question_number=question_count,
+            max_questions=MAX_ANAMNESIS_QUESTIONS,
+        )
+        follow_up_question = assessment_for_reply.follow_up_question
+        suspected_conditions = assessment.suspected_conditions
+    else:
+        if fallback_case:
+            follow_up_question = _smart_follow_up_question(anamnesis_summary, fallback_case, asked_questions)
+            reply = build_follow_up_reply(fallback_case, questions=[follow_up_question])
+        else:
+            reply = (
+                "Saya masih perlu satu klarifikasi lagi sebelum menyusun jawaban akhir. "
+                "Bisa jelaskan sejak kapan keluhan ini muncul, apakah memburuk, dan apakah ada demam atau sesak?\n\n"
+                f"{DISCLAIMER}"
+            )
+            follow_up_question = "Sejak kapan keluhan ini muncul, apakah memburuk, dan apakah ada demam atau sesak?"
+        suspected_conditions = assessment.suspected_conditions if assessment else []
+
+    return ChatResponse(
+        session_id=session_id,
+        response_type="follow_up",
+        reply=reply,
+        conversation_stage=f"anamnesis_follow_up_{question_count}",
+        suspected_conditions=suspected_conditions,
+        follow_up_question=follow_up_question,
+        quick_replies=_quick_replies("follow_up"),
+        anamnesis_summary=anamnesis_summary,
+        retrieved_context=contexts,
+        model_comparison=comparison,
+        questions_asked=question_count,
+        max_questions=MAX_ANAMNESIS_QUESTIONS,
+        pipeline=pipeline,
+    )
+
+
+def _assessment_with_better_follow_up_question(
+    assessment: ModelAssessment,
+    fallback_case: CaseEntry | None,
+    anamnesis_summary: dict[str, object],
+    asked_questions: list[str],
+) -> ModelAssessment:
+    question = assessment.follow_up_question or ""
+    needs_replacement = _is_low_quality_follow_up_question(question) or _is_repetitive_follow_up_question(
+        question,
+        anamnesis_summary,
+    ) or _is_duplicate_of_previous_follow_up_question(question, asked_questions)
+    if not needs_replacement:
+        return assessment
+
+    replacement_question = _smart_follow_up_question(anamnesis_summary, fallback_case, asked_questions)
+    suspected_conditions = assessment.suspected_conditions[:3]
+    if fallback_case:
+        suspected_conditions = list(dict.fromkeys([fallback_case.keluhan_ringan, *suspected_conditions]))[:3]
+
+    return assessment.model_copy(
+        update={
+            "follow_up_question": replacement_question,
+            "follow_up_rationale": (
+                "Pertanyaan diganti agar tidak mengulang informasi yang sudah disebut user dan tetap menyingkirkan tanda bahaya."
+            ),
+            "suspected_conditions": suspected_conditions,
+        }
+    )
+
+
+def _is_low_quality_follow_up_question(question: str) -> bool:
+    normalized = question.lower().strip()
+    if not normalized or not normalized.endswith("?"):
+        return True
+
+    has_clinical_term = any(term in normalized for term in FOLLOW_UP_CLINICAL_TERMS)
+    has_recommendation_term = any(term in normalized for term in FOLLOW_UP_RECOMMENDATION_TERMS)
+    return not has_clinical_term or (has_recommendation_term and not has_clinical_term)
+
+
+def _is_repetitive_follow_up_question(question: str, anamnesis_summary: dict[str, object]) -> bool:
+    normalized = normalize(question)
+    if not normalized:
+        return True
+
+    answered_symptoms = set(_summary_list(anamnesis_summary, "present_symptoms"))
+    answered_symptoms.update(_summary_list(anamnesis_summary, "absent_symptoms"))
+    mentioned_symptoms = _symptoms_mentioned_in_question(normalized)
+    new_symptoms = mentioned_symptoms - answered_symptoms
+
+    has_duration_answer = bool(anamnesis_summary.get("duration_text") or anamnesis_summary.get("has_duration_signal"))
+    if has_duration_answer and any(term in normalized for term in FOLLOW_UP_DURATION_TERMS):
+        return True
+
+    is_generic_symptom_question = any(term in normalized for term in FOLLOW_UP_GENERIC_SYMPTOM_TERMS)
+    if is_generic_symptom_question and not new_symptoms:
+        return True
+
+    asks_existence = any(
+        term in normalized
+        for term in ("apakah ada", "apa ada", "ada ", "terdapat", "disertai", "mengalami")
+    )
+    asks_detail = any(term in normalized for term in FOLLOW_UP_DETAIL_TERMS)
+    return asks_existence and bool(mentioned_symptoms & answered_symptoms) and not new_symptoms and not asks_detail
+
+
+def _smart_follow_up_question(
+    anamnesis_summary: dict[str, object],
+    fallback_case: CaseEntry | None,
+    asked_questions: list[str] | None = None,
+) -> str:
+    present_symptoms = set(_summary_list(anamnesis_summary, "present_symptoms"))
+    absent_symptoms = set(_summary_list(anamnesis_summary, "absent_symptoms"))
+    duration_answered = bool(anamnesis_summary.get("duration_text") or anamnesis_summary.get("has_duration_signal"))
+    safety_answered = bool(anamnesis_summary.get("has_safety_clearance_signal"))
+    candidates: list[str] = []
+
+    if {"demam", "sakit kepala"} <= present_symptoms:
+        candidates.append(
+            "Berapa suhu tertinggi, dan apakah ada nyeri belakang mata, ruam/bintik merah, muntah, kaku leher, atau sangat lemas?"
+        )
+    if {"demam", "ruam"} <= present_symptoms:
+        candidates.append("Ruamnya berupa bintik perdarahan, dan apakah ada mimisan, gusi berdarah, muntah, atau lemas berat?")
+    if {"demam", "sakit tenggorokan"} <= present_symptoms:
+        candidates.extend(
+            [
+                "Apakah menelan terasa sangat sakit, ada bercak putih di amandel, atau suara serak yang makin berat?",
+                "Apakah ada sesak, sulit menelan ludah, bengkak leher, atau demam tinggi yang masih menetap?",
+                "Apakah ada batuk, pilek, nyeri badan, atau pembesaran amandel yang terasa jelas?",
+            ]
+        )
+    if "sakit tenggorokan" in present_symptoms and "demam" not in absent_symptoms:
+        candidates.extend(
+            [
+                "Apakah sakit tenggorokan terasa lebih berat saat menelan, dan adakah bercak putih, batuk, atau pilek?",
+                "Apakah ada sesak, suara bindeng berat, sulit menelan, atau air liur terasa sulit ditelan?",
+            ]
+        )
+    if "demam" in present_symptoms:
+        candidates.append("Berapa suhu tertinggi, apakah demam naik-turun atau menetap, dan apakah ada ruam, muntah, atau sangat lemas?")
+    if "sakit kepala" in present_symptoms:
+        candidates.append("Nyeri kepala di bagian mana, seberapa berat, dan apakah ada penglihatan kabur, muntah, atau kaku leher?")
+    if {"gatal", "ruam"} & present_symptoms:
+        if not duration_answered:
+            candidates.append("Sejak kapan ruam muncul, apakah menyebar, melepuh, nyeri, atau ada bengkak wajah/bibir?")
+        candidates.append("Apakah ruam melebar, terasa nyeri/melepuh, atau ada bengkak wajah, bibir, lidah, atau sesak?")
+    if "batuk" in present_symptoms:
+        candidates.append("Batuknya kering atau berdahak, dan apakah ada sesak, nyeri dada, darah, atau demam tinggi?")
+    if not duration_answered:
+        candidates.append("Sejak kapan keluhan muncul, apakah makin berat, dan aktivitas apa yang membuatnya memburuk?")
+    if not safety_answered:
+        candidates.append("Apakah ada tanda bahaya seperti sesak, nyeri hebat, perdarahan, dehidrasi, pingsan, atau keluhan cepat memburuk?")
+    if fallback_case:
+        candidates.append(_first_non_repetitive_case_question(fallback_case, anamnesis_summary))
+    candidates.append("Gejala apa yang paling mengganggu sekarang, dan apakah ada tanda bahaya yang belum kamu sebutkan?")
+
+    return _pick_best_follow_up_candidate(candidates, anamnesis_summary, asked_questions or [])
+
+
+def _first_non_repetitive_case_question(
+    fallback_case: CaseEntry,
+    anamnesis_summary: dict[str, object],
+) -> str:
+    questions = fallback_case.pertanyaan_anamnesis
+    if isinstance(questions, str):
+        questions = [questions]
+    for question in questions:
+        if not _is_repetitive_follow_up_question(question, anamnesis_summary):
+            return question
+    return "Apakah keluhan makin berat, menyebar, atau muncul tanda bahaya yang belum kamu sebutkan?"
+
+
+def _pick_best_follow_up_candidate(
+    candidates: list[str],
+    anamnesis_summary: dict[str, object],
+    asked_questions: list[str],
+) -> str:
+    for candidate in candidates:
+        if not candidate:
+            continue
+        if _is_repetitive_follow_up_question(candidate, anamnesis_summary):
+            continue
+        if _is_duplicate_of_previous_follow_up_question(candidate, asked_questions):
+            continue
+        return candidate
+    return "Gejala apa yang paling mengganggu sekarang, dan apakah ada tanda bahaya yang belum kamu sebutkan?"
+
+
+def _symptoms_mentioned_in_question(normalized_question: str) -> set[str]:
+    symptoms = set()
+    for symptom, aliases in SYMPTOM_CONCEPTS.items():
+        if any(contains_phrase(normalized_question, alias) for alias in [symptom, *aliases]):
+            symptoms.add(symptom)
+    return symptoms
+
+
+def _summary_list(anamnesis_summary: dict[str, object], key: str) -> list[str]:
+    values = anamnesis_summary.get(key)
+    if not isinstance(values, list):
+        return []
+    return [str(value).strip() for value in values if str(value).strip()]
+
+
+def _asked_follow_up_questions(session: dict[str, object]) -> list[str]:
+    values = session.get("asked_follow_up_questions")
+    if not isinstance(values, list):
+        return []
+    return [str(value).strip() for value in values if str(value).strip()]
+
+
+def _remember_follow_up_question(session: dict[str, object], question: str | None) -> None:
+    normalized_question = str(question or "").strip()
+    if not normalized_question:
+        return
+    questions = _asked_follow_up_questions(session)
+    if _is_duplicate_of_previous_follow_up_question(normalized_question, questions):
+        session["asked_follow_up_questions"] = questions
+        return
+    session["asked_follow_up_questions"] = [*questions[-7:], normalized_question]
+
+
+def _is_duplicate_of_previous_follow_up_question(question: str, asked_questions: list[str]) -> bool:
+    normalized_question = normalize(question)
+    if not normalized_question:
+        return True
+
+    current_terms = set(tokenize(normalized_question))
+    for previous in asked_questions:
+        normalized_previous = normalize(previous)
+        if not normalized_previous:
+            continue
+        if normalized_question == normalized_previous:
+            return True
+        if normalized_question in normalized_previous or normalized_previous in normalized_question:
+            return True
+        previous_terms = set(tokenize(normalized_previous))
+        if current_terms and previous_terms:
+            overlap = len(current_terms & previous_terms) / max(1, min(len(current_terms), len(previous_terms)))
+            if overlap >= 0.72:
+                return True
+    return False
+
+
+def _should_force_final_recommendation(
+    session: dict[str, object],
+    anamnesis_summary: dict[str, object],
+    assessment: ModelAssessment | None,
+) -> bool:
+    if assessment is None or assessment.scope != "supported":
+        return False
+
+    question_count = int(session.get("question_count", 0))
+    if question_count <= 0:
+        return False
+
+    has_primary_complaint = bool(
+        _summary_list(anamnesis_summary, "present_symptoms")
+        or _summary_list(anamnesis_summary, "detected_symptoms")
+        or anamnesis_summary.get("keluhan_ringan")
+    )
+    has_duration = bool(anamnesis_summary.get("duration_text") or anamnesis_summary.get("has_duration_signal"))
+    has_safety = bool(anamnesis_summary.get("has_safety_clearance_signal"))
+    has_detail = bool(anamnesis_summary.get("has_intensity_signal") or anamnesis_summary.get("has_progression_signal"))
+    return has_primary_complaint and has_duration and has_safety and (has_detail or question_count >= 2)
+
+
+def _sync_session_from_client(session: dict[str, object], session_sync: SessionSync | None) -> None:
+    if session_sync is None:
+        return
+    turns = session.get("turns", [])
+    if isinstance(turns, list) and turns:
+        return
+
+    synced_turns = [
+        {"role": "assistant" if turn.role not in {"user", "assistant"} else turn.role, "content": turn.content}
+        for turn in session_sync.turns
+        if str(turn.content).strip()
+    ]
+    if synced_turns:
+        session["turns"] = synced_turns
+    session["question_count"] = max(int(session_sync.question_count), 0)
+    session["conversation_stage"] = str(session_sync.conversation_stage or session.get("conversation_stage") or "initial")
+    session["completed"] = bool(session_sync.completed)
+    session["suspected_conditions"] = list(session_sync.suspected_conditions[:3])
+    session["asked_follow_up_questions"] = [question for question in session_sync.asked_follow_up_questions if question.strip()]
+    if session_sync.last_recommendation:
+        session["last_recommendation"] = dict(session_sync.last_recommendation)
+
+
+def _last_turn_matches(turns: list[dict[str, str]], role: str, content: str) -> bool:
+    if not turns:
+        return False
+    last_turn = turns[-1]
+    return (
+        str(last_turn.get("role") or "") == role
+        and normalize(str(last_turn.get("content") or "")) == normalize(content)
+    )
+
+
+def _comparison_with_selected_follow_up(
+    comparison: ModelComparison,
+    assessment: ModelAssessment,
+) -> ModelComparison:
+    if not comparison.enabled or not comparison.selected_model:
+        return comparison
+
+    selected_reply = assessment.follow_up_question or comparison.selected_reply
+    updated_candidates = []
+    for candidate in comparison.candidates:
+        if candidate.model == comparison.selected_model and candidate.assessment is not None:
+            updated_candidates.append(
+                candidate.model_copy(
+                    update={
+                        "reply": selected_reply or candidate.reply,
+                        "assessment": assessment,
+                    }
+                )
+            )
+        else:
+            updated_candidates.append(candidate)
+
+    return comparison.model_copy(
+        update={
+            "selected_reply": selected_reply,
+            "selected_assessment": assessment,
+            "candidates": updated_candidates,
+        }
+    )
+
+
+def _final_recommendation_response(
+    *,
+    session_id: str,
+    session: dict[str, object],
+    user_message: str,
+    conversation_history: list[dict[str, str]],
+    contexts,
+    anamnesis_summary: dict[str, object],
+    red_flags: list[str],
+    best_case: CaseEntry | None,
+    retrieved_items: list[RetrievedItem],
+    pipeline: list[str],
+    initial_comparison: ModelComparison | None = None,
+) -> ChatResponse:
+    question_count = int(session.get("question_count", 0))
+    comparison = llm_comparator.generate_assessment(
+        session_id=session_id,
+        user_message=user_message,
+        response_type="recommendation",
+        conversation_history=conversation_history,
+        retrieved_context=contexts,
+        anamnesis_summary=anamnesis_summary,
+        red_flags=red_flags,
+        question_count=question_count,
+        force_final=True,
+    )
+    selected_assessment = comparison.selected_assessment
+
+    if _needs_referral(selected_assessment):
+        session["completed"] = True
+        session["conversation_stage"] = "medical_referral"
+        return _referral_response(
+            session_id=session_id,
+            assessment=selected_assessment,
+            comparison=comparison,
+            anamnesis_summary=anamnesis_summary,
+            contexts=contexts,
+            question_count=question_count,
+            pipeline=pipeline,
+        )
+
+    if selected_assessment and selected_assessment.suspected_conditions:
+        session["suspected_conditions"] = selected_assessment.suspected_conditions[:3]
+
+    recommendation = build_assessment_recommendation(selected_assessment, best_case) if selected_assessment else None
+    recommendation = enhance_recommendation_preparation(recommendation, retrieved_items)
+    if selected_assessment:
+        reply = build_assessment_recommendation_reply(
+            selected_assessment,
+            recommendation,
+            retrieved_items,
+            anamnesis_summary,
+        )
+    elif best_case:
+        fallback_recommendation = build_recommendation(best_case)
+        recommendation = enhance_recommendation_preparation(fallback_recommendation, retrieved_items)
+        reply = build_recommendation_reply(recommendation or fallback_recommendation, retrieved_items, anamnesis_summary)
+        comparison = initial_comparison or comparison
+    else:
+        reply = build_out_of_scope_reply()
+
+    session["completed"] = True
+    session["conversation_stage"] = "final_recommendation"
+    session["last_recommendation"] = recommendation.model_dump() if recommendation else None
+    return ChatResponse(
+        session_id=session_id,
+        response_type="recommendation",
+        reply=reply,
+        conversation_stage="final_recommendation",
+        suspected_conditions=session.get("suspected_conditions", []),
+        recommendation=recommendation,
+        quick_replies=_quick_replies("recommendation"),
+        anamnesis_summary=anamnesis_summary,
+        retrieved_context=contexts,
+        model_comparison=comparison,
+        questions_asked=question_count,
+        max_questions=MAX_ANAMNESIS_QUESTIONS,
+        pipeline=pipeline,
+        feedback_prompt="Apakah rekomendasi ini membantu keluhanmu?",
+        feedback_options=[
+            "Rekomendasi ini membantu",
+            "Belum membantu / kurang cocok",
+            "Jelaskan cara pengolahan ramuan ini lebih detail",
+        ],
+    )
 
 
 def _quick_replies(response_type: str) -> list[str]:
     options = {
         "follow_up": [
-            "Keluhan masih ringan, tidak ada tanda bahaya, sudah kurang dari 3 hari.",
-            "Ada demam tinggi, sesak, nyeri berat, atau gejala memburuk.",
-            "Saya ingin rekomendasi ramuan herbal dan dosisnya.",
+            "Tidak ada demam, tidak sesak, baru 1 hari.",
+            "Keluhan makin berat dan ada tanda bahaya.",
+            "Saya sudah jawab, lanjutkan anamnesis.",
         ],
         "recommendation": [
-            "Bagaimana cara membuat ramuan ini?",
-            "Apa catatan kewaspadaannya?",
+            "Rekomendasi ini membantu",
+            "Belum membantu / kurang cocok",
+            "Jelaskan cara pengolahan ramuan ini lebih detail",
+        ],
+        "feedback": [
+            "Cara pengolahan kurang jelas",
+            "Bahan sulit didapat",
+            "Mulai sesi baru",
+        ],
+        "preparation_detail": [
+            "Rekomendasi ini membantu",
+            "Cara pengolahan kurang jelas",
+            "Mulai sesi baru",
+        ],
+        "medical_referral": [
+            "Tolong rangkum alasan saya harus diperiksa.",
+            "Apa tanda bahaya yang harus saya waspadai?",
             "Mulai sesi baru",
         ],
         "out_of_scope": [
-            "Saya mual ringan sejak tadi pagi.",
-            "Tenggorokan saya tidak nyaman sejak kemarin.",
-            "Saya diare ringan tanpa darah sejak tadi pagi.",
+            "Saya mau cek keluhan lain.",
+            "Keluhan saya mual ringan sejak tadi pagi.",
+            "Mulai sesi baru",
         ],
         "red_flag": [
+            "Tolong rangkum tanda bahaya yang terdeteksi.",
+            "Saya akan mulai sesi baru.",
             "Mulai sesi baru",
-            "Saya ingin melihat contoh keluhan ringan yang didukung.",
         ],
     }
     return options.get(response_type, [])
 
 
-def _is_detail_request(message: str) -> bool:
-    lowered = message.lower()
-    return any(
-        keyword in lowered
-        for keyword in [
-            "cara membuat",
-            "cara mengolah",
-            "dosis",
-            "kewaspadaan",
-            "catatan",
-            "bagaimana cara",
-        ]
+def _finalize_response(
+    session_id: str,
+    session: dict[str, object],
+    user_message: str,
+    response: ChatResponse,
+) -> ChatResponse:
+    turns = session.setdefault("turns", [])
+    if isinstance(turns, list):
+        turns.append({"role": "assistant", "content": response.reply})
+    learning_capture.capture_turn(
+        session_id=session_id,
+        user_message=user_message,
+        response=response,
+        session_snapshot=_session_snapshot(session),
     )
+    return response
 
 
-def _should_keep_previous_case(session: dict[str, object], previous_case_id: str, message: str) -> bool:
-    if not session.get("asked_anamnesis"):
-        return False
-    normalized = normalize(message)
-    if previous_case_id == "case_009":
-        return any(
-            contains_phrase(normalized, phrase)
-            for phrase in [
-                "iya",
-                "ya",
-                "demam",
-                "tidak demam",
-                "ruam",
-                "gatal",
-                "bengkak",
-                "sesak",
-                "lepuh",
-                "menyebar",
-            ]
-        )
-    return False
-
-
-def _needs_more_follow_up(previous_case_id: str, message: str, anamnesis) -> bool:
-    normalized = normalize(message)
-    if previous_case_id == "case_009":
-        if contains_phrase(normalized, "demam") and not (
-            contains_phrase(normalized, "demam tinggi")
-            or contains_phrase(normalized, "demam ringan")
-            or contains_phrase(normalized, "tidak demam")
-            or contains_phrase(normalized, "tanpa demam")
-            or contains_phrase(normalized, "tidak tinggi")
-        ):
-            return True
-        if any(
-            contains_phrase(normalized, phrase)
-            for phrase in ["iya demam", "ya demam", "ada demam"]
-        ):
-            return True
-    return False
-
-
-def _select_anamnesis_record(case: CaseEntry, message: str) -> AnamnesisEntry | None:
-    candidates = [record for record in kb.anamnesis_records if case.id in record.applicable_case_ids]
-    if not candidates:
-        return None
-
-    normalized = normalize(message)
-
-    def score(record: AnamnesisEntry) -> int:
-        value = 0
-        for symptom in record.primary_symptoms:
-            if contains_phrase(normalized, symptom):
-                value += 3
-            elif any(contains_phrase(normalized, token) for token in symptom.split()):
-                value += 1
-        if contains_phrase(normalized, record.condition_group):
-            value += 2
-        if contains_phrase(normalized, record.suspected_condition):
-            value += 2
-        if case.id in record.applicable_case_ids:
-            value += 1
-        return value
-
-    return max(candidates, key=score)
-
-
-def _follow_up_questions(case: CaseEntry, record: AnamnesisEntry | None) -> list[str]:
-    questions: list[str] = []
-    if record:
-        questions.extend(record.required_questions[:4])
-        questions.extend(record.red_flag_questions[:2])
-    else:
-        questions.append(case.pertanyaan_anamnesis)
-
-    deduped: list[str] = []
-    for question in questions:
-        if question and question not in deduped:
-            deduped.append(question)
-    return deduped[:6]
+def _session_snapshot(session: dict[str, object]) -> dict[str, object]:
+    snapshot = {
+        "matched_case_id": session.get("matched_case_id"),
+        "question_count": int(session.get("question_count", 0)),
+        "suspected_conditions": list(session.get("suspected_conditions", [])),
+        "asked_follow_up_questions": _asked_follow_up_questions(session),
+        "conversation_stage": str(session.get("conversation_stage") or ""),
+        "completed": bool(session.get("completed")),
+        "last_recommendation": session.get("last_recommendation"),
+        "feedback": list(session.get("feedback", [])) if isinstance(session.get("feedback"), list) else [],
+        "turn_count": len(session.get("turns", [])) if isinstance(session.get("turns", []), list) else 0,
+        "turns": deepcopy(session.get("turns", [])),
+    }
+    return snapshot

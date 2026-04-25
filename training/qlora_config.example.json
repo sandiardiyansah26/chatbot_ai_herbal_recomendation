@@ -1,6 +1,6 @@
 {
   "base_model": "Qwen/Qwen2.5-1.5B-Instruct",
-  "dataset_path": "../../data/traning/combined_training_sft.jsonl",
+  "dataset_path": "../data/traning/combined_training_sft.jsonl",
   "output_dir": "./outputs/herbal-chatbot-qlora",
   "max_seq_length": 1024,
   "num_train_epochs": 3,

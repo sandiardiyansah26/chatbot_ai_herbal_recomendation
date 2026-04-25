@@ -1,0 +1,8 @@
+{
+  "source_rows": 7,
+  "training_record_rows": 9,
+  "training_sft_rows": 9,
+  "records_path": "data/traning/herbal_preparation_training_records.jsonl",
+  "sft_path": "data/traning/herbal_preparation_training_sft.jsonl",
+  "retrieved_at": "2026-04-23T13:39:45.996298+00:00"
+}

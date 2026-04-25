@@ -9,7 +9,7 @@ QLoRA memungkinkan untuk proyek ini, tetapi tidak langsung dilakukan pada model 
 - Mengurangi kecenderungan model mengarang ramuan atau dosis di luar konteks RAG.
 - Membuat format jawaban lebih stabil: gejala, pertanyaan lanjutan, ramuan, dosis, kewaspadaan, dan disclaimer.
 
-QLoRA tidak otomatis membuat inference jauh lebih cepat. Latency aplikasi saat ini lebih banyak disebabkan oleh dua model Ollama yang dipanggil berurutan. Untuk latency, optimasi yang paling berdampak adalah parallel inference, streaming response, model yang lebih kecil, atau menampilkan baseline RAG lebih dulu.
+QLoRA tidak otomatis membuat inference jauh lebih cepat. Latency aplikasi saat ini lebih banyak disebabkan oleh proses komparasi dua model pada flow anamnesis-first. Pada implementasi runtime terbaru, `follow_up` dijalankan paralel, sedangkan `recommendation` dijalankan berurutan agar lebih stabil di mesin lokal saat `deepseek-r1:7b` dan `gemma4:latest` dipakai bersama.
 
 ## Kebutuhan Environment
 
@@ -20,21 +20,21 @@ Mac Apple Silicon dapat dipakai untuk validasi dataset dan konfigurasi, tetapi b
 ## Cek Kesiapan
 
 ```bash
-cd program/training
+cd training
 python3 qlora_finetune.py --config qlora_config.deepseek-r1.example.json --check_environment
 ```
 
 Dry-run rencana training:
 
 ```bash
-cd program/training
+cd training
 python3 qlora_finetune.py --config qlora_config.deepseek-r1.example.json --dry_run
 ```
 
 ## Instalasi di Mesin Training CUDA
 
 ```bash
-cd program/training
+cd training
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements-qlora.txt
@@ -43,17 +43,33 @@ pip install -r requirements-qlora.txt
 ## Training DeepSeek-R1 Distill
 
 ```bash
-cd program/training
+cd training
 source .venv/bin/activate
 python qlora_finetune.py --config qlora_config.deepseek-r1.example.json
+```
+
+Versi dataset yang sudah ditambah dokumen penyakit tropis:
+
+```bash
+cd training
+source .venv/bin/activate
+python qlora_finetune.py --config qlora_config.deepseek-r1.tropical.json
 ```
 
 ## Training Gemma
 
 ```bash
-cd program/training
+cd training
 source .venv/bin/activate
 python qlora_finetune.py --config qlora_config.gemma4.example.json
+```
+
+Versi dataset yang sudah ditambah dokumen penyakit tropis:
+
+```bash
+cd training
+source .venv/bin/activate
+python qlora_finetune.py --config qlora_config.gemma4.tropical.json
 ```
 
 ## Integrasi ke Ollama
@@ -75,7 +91,11 @@ OLLAMA_MODEL_B=gemma4-herbal-qlora
 Dataset utama saat ini:
 
 - `data/traning/combined_training_sft.jsonl`
-- `data/traning/anamnesis_training_sft.jsonl`
+- `data/anamnesis/anamnesis_training_sft.jsonl`
 - `data/traning/herbal_training_sft.jsonl`
+- `data/traning/tropical_disease_training_sft.jsonl`
+- `data/learning/conversation_turns.jsonl`
+- `data/learning/dual_llm_interactions.jsonl`
+- `data/learning/kb_enrichment_candidates.jsonl`
 
-Sebelum training serius, dataset sebaiknya dikurasi lagi untuk memastikan tidak ada dosis berlebihan, klaim menyembuhkan, atau rekomendasi untuk kondisi red flag.
+Sebelum training serius, dataset sebaiknya dikurasi lagi untuk memastikan tidak ada dosis berlebihan, klaim menyembuhkan, rekomendasi untuk kondisi red flag, atau enrichment percakapan yang belum lolos review manusia.

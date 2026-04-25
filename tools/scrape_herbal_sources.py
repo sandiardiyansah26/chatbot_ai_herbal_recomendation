@@ -639,8 +639,8 @@ def write_jsonl(path: Path, rows: list[dict[str, object]]) -> None:
 
 def write_combined_sft() -> None:
     rows: list[dict[str, object]] = []
-    for path in [SFT_PATH, ANAMNESIS_SFT_PATH]:
-        if not path.exists():
+    for path in sorted(TRAINING_DIR.glob("*_training_sft.jsonl")):
+        if path.name == COMBINED_SFT_PATH.name:
             continue
         with path.open(encoding="utf-8") as file:
             rows.extend(json.loads(line) for line in file if line.strip())
