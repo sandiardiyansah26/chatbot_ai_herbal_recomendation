@@ -4,6 +4,8 @@ services:
       context: ./backend
     container_name: herbal-chatbot-backend
     environment:
+      APP_NAME: ${APP_NAME:-AI Chatbot Rekomendasi Ramuan Herbal}
+      APP_VERSION: ${APP_VERSION:-0.1.1}
       HERBAL_DATA_DIR: ${HERBAL_DATA_DIR:-/app/data/referensi}
       CHROMA_DB_DIR: ${CHROMA_DB_DIR:-/app/.chroma}
       ENABLE_DUAL_LLM_COMPARISON: ${ENABLE_DUAL_LLM_COMPARISON:-true}
@@ -30,7 +32,7 @@ services:
       RECOMMENDATION_FEEDBACK_LOG_PATH: ${RECOMMENDATION_FEEDBACK_LOG_PATH:-/app/data/learning/recommendation_feedback.jsonl}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173,http://127.0.0.1:5173}
     ports:
-      - "8000:8000"
+      - "${BACKEND_PORT:-8000}:8000"
     volumes:
       - ./.chroma:/app/.chroma
       - ./data:/app/data
@@ -42,4 +44,4 @@ services:
     depends_on:
       - backend
     ports:
-      - "5173:80"
+      - "${FRONTEND_PORT:-5173}:80"

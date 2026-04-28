@@ -14,7 +14,7 @@ from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[1]
 REFERENCE_DIR = ROOT / "data" / "referensi"
 TRAINING_DIR = ROOT / "data" / "traning"
 SCRAPED_SOURCES_PATH = TRAINING_DIR / "scraped_sources.jsonl"
@@ -388,17 +388,219 @@ EXTRA_CURATED_RECORDS = [
 ]
 
 
+SFT_VARIANTS = [
+    (
+        "",
+        "full",
+        "Saya mengalami {symptoms}. Tolong lakukan anamnesis singkat dan rekomendasikan ramuan herbal bila masih ringan.",
+    ),
+    ("dosis", "dosis", "Bagaimana cara membuat dan dosis {formula}?"),
+    (
+        "triase",
+        "triage",
+        "Keluhan saya {symptoms}. Pertanyaan anamnesis apa yang perlu ditanyakan sebelum menyarankan {formula}?",
+    ),
+    (
+        "keamanan",
+        "safety",
+        "Apa batas aman, tanda bahaya, dan siapa yang perlu hati-hati sebelum memakai {formula}?",
+    ),
+    (
+        "bukti",
+        "evidence",
+        "Sumber rujukan apa yang mendukung penggunaan {formula} untuk konteks {symptoms}? Jelaskan dalam Bahasa Indonesia.",
+    ),
+    (
+        "ringkas",
+        "brief",
+        "Jawab singkat untuk pasien dengan {symptoms}: apakah {formula} boleh dipertimbangkan?",
+    ),
+    (
+        "langkah",
+        "dosis",
+        "Tuliskan langkah pengolahan {formula} yang higienis dan tidak berlebihan.",
+    ),
+    (
+        "red_flag",
+        "safety",
+        "Kapan pengguna dengan {symptoms} harus berhenti self-care dan periksa, bukan memakai {formula}?",
+    ),
+    (
+        "follow_up",
+        "triage",
+        "Buat 3 pertanyaan lanjutan sebelum memberi rekomendasi {formula} untuk {symptoms}.",
+    ),
+    (
+        "paper_id",
+        "evidence",
+        "Ada referensi paper atau sumber valid untuk {formula}? Terjemahkan ringkasannya ke Bahasa Indonesia.",
+    ),
+    (
+        "kontraindikasi",
+        "safety",
+        "Sebutkan kontraindikasi atau kondisi yang perlu hati-hati untuk {formula}.",
+    ),
+    (
+        "edukasi",
+        "full",
+        "Edukasi pasien awam tentang penggunaan {formula} untuk {symptoms} tanpa klaim menyembuhkan.",
+    ),
+    (
+        "higiene",
+        "dosis",
+        "Bagaimana menjaga kebersihan bahan dan alat saat membuat {formula}?",
+    ),
+    (
+        "anak_hamil",
+        "safety",
+        "Bagaimana catatan keamanan {formula} untuk anak kecil, ibu hamil, atau pasien dengan obat rutin?",
+    ),
+    (
+        "interaksi",
+        "safety",
+        "Apakah ada risiko interaksi obat atau efek samping yang perlu ditanyakan sebelum memakai {formula}?",
+    ),
+    (
+        "keluhan_ringan",
+        "triage",
+        "Bagaimana memastikan {symptoms} masih termasuk keluhan ringan sebelum menyarankan herbal?",
+    ),
+    (
+        "dosis_pendek",
+        "dosis",
+        "Berapa kisaran penggunaan pendek {formula} dan apa yang harus dilakukan bila tidak membaik?",
+    ),
+    (
+        "sumber_valid",
+        "evidence",
+        "Jelaskan sumber valid yang dipakai untuk {formula}, termasuk bila sumbernya berbahasa Inggris.",
+    ),
+    (
+        "batas_klaim",
+        "evidence",
+        "Apa batas klaim yang aman untuk {formula} berdasarkan referensi dataset?",
+    ),
+    (
+        "rekomendasi_aman",
+        "full",
+        "Susun rekomendasi aman untuk {formula} pada {symptoms}: anamnesis, cara pakai, kewaspadaan, dan disclaimer.",
+    ),
+    (
+        "validasi_gejala",
+        "triage",
+        "Validasi dulu gejala {symptoms} sebelum menyarankan {formula}. Apa saja yang harus diklarifikasi?",
+    ),
+    (
+        "monitoring",
+        "safety",
+        "Bagaimana cara memantau respons setelah memakai {formula} untuk {symptoms}?",
+    ),
+    (
+        "alternatif_non_obat",
+        "brief",
+        "Selain {formula}, edukasi non-obat apa yang aman untuk keluhan {symptoms}?",
+    ),
+    (
+        "batas_durasi",
+        "safety",
+        "Berapa lama {formula} boleh dicoba untuk {symptoms} sebelum pengguna perlu periksa?",
+    ),
+    (
+        "label_produk",
+        "dosis",
+        "Jika {formula} memakai produk herbal kemasan, bagaimana membaca aturan pakai dan batas amannya?",
+    ),
+    (
+        "cara_menjawab_pasien",
+        "full",
+        "Buat jawaban natural untuk pasien yang bertanya tentang {formula} untuk {symptoms}.",
+    ),
+    (
+        "penolakan_redflag",
+        "safety",
+        "Jika ada tanda bahaya pada {symptoms}, bagaimana menolak rekomendasi {formula} dan mengarahkan pemeriksaan?",
+    ),
+    (
+        "terjemah_referensi",
+        "evidence",
+        "Terjemahkan inti referensi valid tentang {formula} ke Bahasa Indonesia yang mudah dipahami.",
+    ),
+    (
+        "klaim_tidak_berlebihan",
+        "evidence",
+        "Bagaimana menjelaskan manfaat {formula} tanpa klaim menyembuhkan penyakit?",
+    ),
+    (
+        "dosis_konservatif",
+        "dosis",
+        "Susun dosis konservatif {formula} untuk edukasi awal pada {symptoms}.",
+    ),
+    (
+        "kebersihan_penyimpanan",
+        "dosis",
+        "Bagaimana aturan kebersihan dan penyimpanan singkat saat membuat {formula}?",
+    ),
+    (
+        "risiko_alergi",
+        "safety",
+        "Apa risiko alergi atau iritasi yang perlu dijelaskan sebelum memakai {formula}?",
+    ),
+    (
+        "pasien_kronis",
+        "safety",
+        "Apa pesan keamanan {formula} untuk pasien dengan penyakit kronis atau obat rutin?",
+    ),
+    (
+        "format_chatbot",
+        "full",
+        "Jawab sebagai chatbot anamnesis-first untuk {symptoms} dengan opsi {formula}.",
+    ),
+    (
+        "prioritas_medis",
+        "triage",
+        "Pada kondisi apa {symptoms} harus diprioritaskan ke tenaga kesehatan daripada memakai {formula}?",
+    ),
+    (
+        "bukti_lokal_internasional",
+        "evidence",
+        "Bandingkan ringkas rujukan lokal dan paper/internasional untuk {formula}.",
+    ),
+    (
+        "cara_pakai_pendamping",
+        "full",
+        "Jelaskan {formula} sebagai pendamping self-care untuk {symptoms}, bukan terapi utama.",
+    ),
+    (
+        "edukasi_keluarga",
+        "brief",
+        "Buat edukasi singkat untuk keluarga pasien tentang penggunaan aman {formula}.",
+    ),
+    (
+        "cek_kelayakan",
+        "triage",
+        "Buat checklist kelayakan sebelum {formula} direkomendasikan untuk {symptoms}.",
+    ),
+    (
+        "review_keamanan",
+        "safety",
+        "Review keamanan {formula}: tanda bahaya, efek samping, dan kapan harus berhenti.",
+    ),
+]
+
+
 def main() -> int:
     TRAINING_DIR.mkdir(parents=True, exist_ok=True)
     fetched_sources = fetch_sources(SOURCE_SEEDS)
     records = build_training_records(SOURCE_SEEDS, fetched_sources)
     records.extend(EXTRA_CURATED_RECORDS)
     records.extend(records_from_reference_csv())
+    deduped_records = dedupe_records(records)
+    sft_rows = build_sft_examples(deduped_records)
     write_jsonl(SCRAPED_SOURCES_PATH, fetched_sources)
-    write_jsonl(TRAINING_RECORDS_PATH, dedupe_records(records))
-    write_jsonl(SFT_PATH, build_sft_examples(dedupe_records(records)))
+    write_jsonl(TRAINING_RECORDS_PATH, deduped_records)
+    write_jsonl(SFT_PATH, sft_rows)
     write_combined_sft()
-    write_readme(len(fetched_sources), len(dedupe_records(records)))
+    write_readme(len(fetched_sources), len(deduped_records), len(sft_rows))
     print(f"Wrote {SCRAPED_SOURCES_PATH.relative_to(ROOT)}")
     print(f"Wrote {TRAINING_RECORDS_PATH.relative_to(ROOT)}")
     print(f"Wrote {SFT_PATH.relative_to(ROOT)}")
@@ -517,7 +719,10 @@ def records_from_reference_csv() -> list[dict[str, object]]:
                         "safety_notes": row["catatan_kewaspadaan"],
                         "evidence_level": "curated_case",
                         "source_title": row["sumber_ringkas"],
-                        "source_url": "data/referensi/focused_mild_ailment_herbal_dataset.csv",
+                        "source_url": reference_urls(
+                            row["sumber_ringkas"],
+                            "data/referensi/focused_mild_ailment_herbal_dataset.csv",
+                        ),
                         "curation_method": "local_case_dataset",
                     }
                 )
@@ -537,7 +742,7 @@ def records_from_reference_csv() -> list[dict[str, object]]:
                         "safety_notes": row["catatan_keamanan"],
                         "evidence_level": row["evidence_level"],
                         "source_title": row["sumber_utama"],
-                        "source_url": "data/referensi/herbal_formulas.csv",
+                        "source_url": reference_urls(row["sumber_utama"], "data/referensi/herbal_formulas.csv"),
                         "curation_method": "local_formula_dataset",
                     }
                 )
@@ -557,7 +762,7 @@ def records_from_reference_csv() -> list[dict[str, object]]:
                         "safety_notes": row["catatan_keamanan"],
                         "evidence_level": row["evidence_level"],
                         "source_title": row["sumber_utama"],
-                        "source_url": "data/referensi/herbal_references.csv",
+                        "source_url": reference_urls(row["sumber_utama"], "data/referensi/herbal_references.csv"),
                         "curation_method": "local_herb_dataset",
                     }
                 )
@@ -569,57 +774,128 @@ def build_sft_examples(records: list[dict[str, object]]) -> list[dict[str, objec
     for record in records:
         symptoms = ", ".join(as_list(record.get("symptoms"))) or str(record.get("topic", "keluhan ringan"))
         formula = str(record.get("formula_name", "ramuan herbal"))
-        examples.append(
-            {
-                "id": f"sft_{record['id']}",
-                "source_record_id": record["id"],
-                "messages": [
-                    {"role": "system", "content": SYSTEM_PROMPT},
-                    {
-                        "role": "user",
-                        "content": (
-                            f"Saya mengalami {symptoms}. Tolong lakukan anamnesis singkat "
-                            "dan rekomendasikan ramuan herbal bila masih ringan."
-                        ),
-                    },
-                    {"role": "assistant", "content": assistant_answer(record)},
-                ],
-            }
-        )
-        examples.append(
-            {
-                "id": f"sft_dosis_{record['id']}",
-                "source_record_id": record["id"],
-                "messages": [
-                    {"role": "system", "content": SYSTEM_PROMPT},
-                    {"role": "user", "content": f"Bagaimana cara membuat dan dosis {formula}?"},
-                    {"role": "assistant", "content": assistant_answer(record, focus="dosis")},
-                ],
-            }
-        )
+        for suffix, focus, template in SFT_VARIANTS:
+            example_id = f"sft_{record['id']}" if not suffix else f"sft_{suffix}_{record['id']}"
+            examples.append(
+                {
+                    "id": example_id,
+                    "source_record_id": record["id"],
+                    "variant": suffix or "rekomendasi",
+                    "messages": [
+                        {"role": "system", "content": SYSTEM_PROMPT},
+                        {"role": "user", "content": template.format(symptoms=symptoms, formula=formula)},
+                        {"role": "assistant", "content": assistant_answer(record, focus=focus)},
+                    ],
+                }
+            )
     return examples
 
 
 def assistant_answer(record: dict[str, object], focus: str = "full") -> str:
     ingredients = ", ".join(as_list(record.get("ingredients"))) or "-"
     symptoms = ", ".join(as_list(record.get("symptoms"))) or str(record.get("topic") or "-")
-    opening = (
-        "Sebelum rekomendasi, pastikan keluhan masih ringan: tidak ada demam tinggi, sesak, "
-        "nyeri berat, darah, dehidrasi, kehamilan berisiko, atau gejala memburuk. "
+    formula_name = str(record.get("formula_name") or "ramuan herbal")
+    source_title = str(record.get("source_title") or "-")
+    evidence_level = str(record.get("evidence_level") or "-")
+    evidence_summary = translated_evidence_summary(record)
+    research_only = str(record.get("curation_method") or "") == "research_reference_only" or evidence_level == "research_reference"
+
+    if research_only:
+        recommendation = (
+            f"{formula_name} hanya dipakai sebagai referensi penelitian/edukasi dalam dataset ini, "
+            "bukan sebagai resep utama untuk self-care."
+        )
+    else:
+        recommendation = (
+            f"Untuk konteks {symptoms}, ramuan yang dapat dipertimbangkan adalah {formula_name} "
+            "bila keluhan masih ringan dan tidak ada tanda bahaya."
+        )
+
+    focus_opening = {
+        "dosis": "Fokus pada cara pakai yang konservatif dan higienis.",
+        "safety": "Fokus utama adalah keamanan, tanda bahaya, dan kondisi yang perlu hati-hati.",
+        "triage": "Mulai dari anamnesis singkat sebelum memberi saran herbal.",
+        "evidence": "Gunakan rujukan sebagai batas klaim, bukan sebagai dasar diagnosis.",
+        "brief": "Jawaban ringkas tetap harus memuat batasan keamanan.",
+    }.get(
+        focus,
+        "Sebelum rekomendasi, pastikan keluhan masih ringan: tidak ada demam tinggi, sesak, nyeri berat, darah, dehidrasi, kehamilan berisiko, atau gejala memburuk.",
     )
-    if focus == "dosis":
-        opening = ""
+
     return (
-        f"{opening}Untuk konteks {symptoms}, ramuan yang dapat dipertimbangkan adalah "
-        f"{record.get('formula_name')}.\n"
+        f"{focus_opening}\n"
+        f"{recommendation}\n"
+        f"Pertanyaan anamnesis kunci: sejak kapan keluhan muncul, apakah makin berat, apakah ada tanda bahaya, dan apakah pengguna sedang hamil, anak kecil, punya penyakit kronis, alergi, atau minum obat rutin?\n"
         f"Bahan: {ingredients}.\n"
-        f"Cara pengolahan: {record.get('preparation')}.\n"
-        f"Dosis/kisaran: {record.get('dosage')}.\n"
-        f"Catatan kewaspadaan: {record.get('safety_notes')}.\n"
-        f"Sumber/kurasi: {record.get('source_title')}.\n"
+        f"Cara pengolahan: {as_sentence(record.get('preparation'))}\n"
+        f"Dosis/kisaran: {as_sentence(record.get('dosage'))}\n"
+        f"Catatan kewaspadaan: {as_sentence(record.get('safety_notes'))}\n"
+        f"Ringkasan bukti dalam Bahasa Indonesia: {evidence_summary}\n"
+        f"Tingkat bukti dataset: {evidence_label(evidence_level)}.\n"
+        f"Sumber/kurasi: {source_title}.\n"
+        f"Sumber URL: {record.get('source_url')}.\n"
         "Informasi ini bersifat edukasi dan rekomendasi awal, bukan diagnosis medis final "
         "atau pengganti konsultasi tenaga kesehatan."
     )
+
+
+def evidence_label(value: str) -> str:
+    labels = {
+        "high": "tinggi",
+        "medium": "sedang",
+        "low_to_medium": "rendah sampai sedang",
+        "low": "rendah",
+        "curated_case": "case terkurasi",
+        "clinical_safety_context": "konteks keamanan klinis",
+        "safety_guideline": "panduan keamanan",
+        "evidence_framework": "kerangka klasifikasi bukti",
+        "ethnomedicine_reference": "referensi etnomedisin",
+        "research_reference": "referensi penelitian, bukan resep langsung",
+    }
+    return labels.get(value, value or "-")
+
+
+def translated_evidence_summary(record: dict[str, object]) -> str:
+    source_title = str(record.get("source_title") or "")
+    source_url = str(record.get("source_url") or "")
+    evidence_level = str(record.get("evidence_level") or "")
+    formula_name = str(record.get("formula_name") or "bahan herbal")
+    symptoms = ", ".join(as_list(record.get("symptoms"))) or str(record.get("topic") or "keluhan ringan")
+    source_reference = f"{source_title} {source_url}"
+
+    if re.search(r"PubMed|NCCIH|WHO|review|springer|frontiers|ncbi", source_reference, flags=re.IGNORECASE):
+        return (
+            f"Rujukan berbahasa Inggris/paper diterjemahkan sebagai konteks bahwa {formula_name} "
+            f"memiliki dukungan untuk {symptoms}, tetapi pemakaian tetap dibatasi pada keluhan ringan, "
+            "dosis konservatif, dan tidak menggantikan terapi medis."
+        )
+    if evidence_level in {"research_reference", "ethnomedicine_reference", "evidence_framework"}:
+        return (
+            f"{formula_name} disimpan sebagai bahan referensi kurasi. Dataset tidak mengubahnya menjadi klaim terapi langsung "
+            "tanpa validasi dosis, keamanan, dan kecocokan keluhan."
+        )
+    return (
+        f"Sumber Indonesia/kurasi lokal digunakan untuk memetakan {formula_name} ke {symptoms}; "
+        "klaim dibuat sebagai edukasi awal dengan batasan keamanan."
+    )
+
+
+def reference_urls(source_title: str, fallback: str) -> str:
+    urls = [fallback]
+    for pmid in re.findall(r"PMID\s*(\d+)", source_title, flags=re.IGNORECASE):
+        urls.append(f"https://pubmed.ncbi.nlm.nih.gov/{pmid}/")
+
+    lowered = source_title.lower()
+    if "aloe vera dermatitis" in lowered:
+        urls.append("https://pubmed.ncbi.nlm.nih.gov/?term=aloe+vera+dermatitis+review")
+    if "guava diarrhea" in lowered or "jambu biji" in lowered:
+        urls.append("https://www.frontiersin.org/journals/pharmacology/articles/10.3389/fphar.2024.1459066/full")
+    if "sambiloto" in lowered or "andrographis" in lowered:
+        urls.append("https://www.ncbi.nlm.nih.gov/books/NBK70784/")
+    if "madu" in lowered or "honey" in lowered:
+        urls.append("https://link.springer.com/article/10.1007/s00431-023-05066-1")
+
+    return "; ".join(dict.fromkeys(urls))
 
 
 def dedupe_records(records: list[dict[str, object]]) -> list[dict[str, object]]:
@@ -648,7 +924,18 @@ def write_combined_sft() -> None:
         write_jsonl(COMBINED_SFT_PATH, rows)
 
 
-def write_readme(source_count: int, record_count: int) -> None:
+def write_readme(source_count: int, record_count: int, sft_count: int) -> None:
+    herbal_preparation_records = count_jsonl_rows(TRAINING_DIR / "herbal_preparation_training_records.jsonl")
+    herbal_preparation_sft = count_jsonl_rows(TRAINING_DIR / "herbal_preparation_training_sft.jsonl")
+    medline_records = count_jsonl_rows(TRAINING_DIR / "medlineplus_guidance_training_records.jsonl")
+    medline_sft = count_jsonl_rows(TRAINING_DIR / "medlineplus_guidance_training_sft.jsonl")
+    tropical_sft = count_jsonl_rows(TRAINING_DIR / "tropical_disease_training_sft.jsonl")
+    anamnesis_sft = count_jsonl_rows(TRAINING_DIR / "anamnesis_training_sft.jsonl")
+    rag_sft = count_jsonl_rows(TRAINING_DIR / "rag_learning_sft.jsonl")
+    combined_sft = count_jsonl_rows(COMBINED_SFT_PATH)
+    combined_sft_rag = count_jsonl_rows(TRAINING_DIR / "combined_training_sft_rag.jsonl")
+    runtime_records = record_count + herbal_preparation_records + medline_records
+
     README_PATH.write_text(
         "\n".join(
             [
@@ -661,26 +948,61 @@ def write_readme(source_count: int, record_count: int) -> None:
                 "- `scraped_sources.jsonl`: metadata sumber web dan excerpt pendek hasil scraping. Excerpt dibatasi agar tidak menyalin halaman penuh.",
                 "- `herbal_training_records.jsonl`: record terstruktur ramuan, gejala, cara pengolahan, dosis/kisaran, kewaspadaan, dan sumber.",
                 "- `herbal_training_sft.jsonl`: contoh percakapan format messages untuk supervised fine-tuning/QLoRA.",
+                "- `herbal_preparation_sources.jsonl`: metadata sumber internet untuk detail cara pengolahan ramuan herbal.",
+                "- `herbal_preparation_training_records.jsonl`: record tambahan yang memperinci bahan, langkah pengolahan, dosis, dan batas keamanan.",
+                "- `herbal_preparation_training_sft.jsonl`: contoh percakapan SFT khusus pertanyaan \"bagaimana cara membuat/mengolah ramuan\".",
+                "- `medlineplus_guidance_sources.jsonl`: daftar topik MedlinePlus resmi yang dipilih untuk edukasi gejala, triase, follow-up, dan pencegahan.",
+                "- `medlineplus_guidance_training_records.jsonl`: record `disease_guidance` skala besar hasil kurasi dari MedlinePlus XML resmi.",
+                "- `medlineplus_guidance_training_sft.jsonl`: contoh percakapan SFT berbasis topik gejala/penyakit MedlinePlus.",
+                "- `medlineplus_guidance_manifest.json`: manifest jumlah topik, aturan filter, dan tanggal snapshot XML MedlinePlus.",
                 "- `anamnesis_training_sft.jsonl`: contoh percakapan anamnesis bila sudah digenerate dari `program/tools/build_anamnesis_dataset.py`.",
                 "- `combined_training_sft.jsonl`: gabungan data herbal dan data anamnesis bila `anamnesis_training_sft.jsonl` sudah tersedia.",
+                "- `combined_training_sft_rag.jsonl`: gabungan data SFT utama dengan log learning RAG yang sudah dibersihkan.",
                 "",
                 "## Catatan Kurasi",
                 f"- Jumlah sumber web yang diproses: {source_count}.",
-                f"- Jumlah record training terstruktur: {record_count}.",
+                f"- Jumlah record training herbal dasar: {record_count}.",
+                f"- Jumlah contoh SFT herbal: {sft_count}.",
+                f"- Jumlah sumber detail pengolahan herbal: {count_jsonl_rows(TRAINING_DIR / 'herbal_preparation_sources.jsonl')}.",
+                f"- Jumlah record detail pengolahan herbal: {herbal_preparation_records}.",
+                f"- Jumlah contoh SFT detail pengolahan herbal: {herbal_preparation_sft}.",
+                f"- Jumlah record disease guidance MedlinePlus: {medline_records}.",
+                f"- Jumlah contoh SFT MedlinePlus: {medline_sft}.",
+                f"- Jumlah contoh SFT penyakit tropis: {tropical_sft}.",
+                f"- Jumlah total runtime training records yang dibaca knowledge base: {runtime_records}.",
+                f"- Jumlah contoh SFT anamnesis: {anamnesis_sft}.",
+                f"- Jumlah contoh SFT learning log RAG: {rag_sft}.",
+                f"- Jumlah contoh SFT gabungan utama: {combined_sft}.",
+                f"- Jumlah contoh SFT gabungan + learning log RAG: {combined_sft_rag}.",
+                "- Data herbal SFT diperbanyak dengan variasi instruksi terstruktur per record: rekomendasi, dosis, triase, keamanan, red flag, dan ringkasan bukti.",
+                "- Referensi berbahasa Inggris/paper diringkas ke Bahasa Indonesia di jawaban SFT dan tetap dibatasi sebagai edukasi awal.",
+                "- Data anamnesis diperluas dengan variasi synthetic-guided by curated references dari sumber resmi dan paper pendukung. Data ini bukan hasil diagnosis klinis dan tetap perlu review ahli sebelum produksi.",
+                "- Dataset MedlinePlus dibangun dari XML resmi snapshot harian dan diekspansi menjadi lima varian record per topik: overview, triage, follow-up, prevention, dan self-care.",
                 "- Data ini digunakan untuk edukasi dan rekomendasi awal keluhan ringan, bukan diagnosis medis final.",
                 "- Record dari sumber web tetap dikurasi manual agar tidak mengambil klaim mentah tanpa batasan dosis dan kewaspadaan.",
                 "- Untuk produksi, setiap record perlu review tenaga kesehatan/herbalis dan uji keamanan lebih lanjut.",
                 "",
                 "## Regenerasi",
                 "```bash",
-                "cd program",
                 "python3 tools/scrape_herbal_sources.py",
+                "python3 tools/build_herbal_preparation_dataset.py",
+                "python3 tools/build_medlineplus_guidance_dataset.py",
+                "python3 tools/build_anamnesis_dataset.py",
+                "python3 training/build_rag_lora_dataset.py",
+                "python3 training/prepare_mlx_lora_data.py --input data/traning/combined_training_sft_rag.jsonl --output training/data_mlx/herbal_chat_rag_light_current",
                 "```",
             ]
         )
         + "\n",
         encoding="utf-8",
     )
+
+
+def count_jsonl_rows(path: Path) -> int:
+    if not path.exists():
+        return 0
+    with path.open(encoding="utf-8") as file:
+        return sum(1 for line in file if line.strip())
 
 
 def normalize_text(value: str) -> str:
@@ -705,6 +1027,13 @@ def as_list(value: object) -> list[str]:
     if isinstance(value, str):
         return split_semicolon(value)
     return []
+
+
+def as_sentence(value: object) -> str:
+    text = str(value or "-").strip()
+    if text.endswith((".", "!", "?")):
+        return text
+    return f"{text}."
 
 
 def slugify(value: str) -> str:

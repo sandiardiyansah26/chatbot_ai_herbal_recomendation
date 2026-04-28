@@ -1,8 +1,21 @@
 {
   "source_rows": 7,
-  "training_record_rows": 9,
-  "training_sft_rows": 9,
+  "training_record_rows": 10,
+  "training_sft_rows": 1100,
+  "sft_audience_variants": 10,
+  "sft_question_variants": 11,
+  "sft_variants_per_record": 110,
+  "reference_policy": "Setiap contoh SFT diturunkan dari record pengolahan terkurasi, menyertakan sumber utama, referensi tambahan resmi/paper bila relevan, dan tetap membatasi penggunaan pada edukasi awal keluhan ringan.",
+  "supplemental_reference_urls": [
+    "https://link.springer.com/article/10.1007/s00431-023-05066-1",
+    "https://pubmed.ncbi.nlm.nih.gov/30838707/",
+    "https://www.nccih.nih.gov/health/aloe-vera",
+    "https://www.nccih.nih.gov/health/ginger",
+    "https://www.nccih.nih.gov/health/safety",
+    "https://www.nccih.nih.gov/health/turmeric",
+    "https://www.tandfonline.com/doi/full/10.1080/09637486.2023.2284647"
+  ],
   "records_path": "data/traning/herbal_preparation_training_records.jsonl",
   "sft_path": "data/traning/herbal_preparation_training_sft.jsonl",
-  "retrieved_at": "2026-04-23T13:39:45.996298+00:00"
+  "retrieved_at": "2026-04-26T10:03:45.623584+00:00"
 }

@@ -19,15 +19,22 @@ Nama folder mengikuti permintaan proyek (`traning`).
 - `combined_training_sft_rag.jsonl`: gabungan data SFT utama dengan log learning RAG yang sudah dibersihkan.
 
 ## Catatan Kurasi
+- Jumlah sumber web yang diproses: 11.
 - Jumlah record training herbal dasar: 52.
-- Jumlah contoh SFT herbal: 104.
+- Jumlah contoh SFT herbal: 2080.
 - Jumlah sumber detail pengolahan herbal: 7.
-- Jumlah record detail pengolahan herbal: 9.
+- Jumlah record detail pengolahan herbal: 10.
+- Jumlah contoh SFT detail pengolahan herbal: 1100.
 - Jumlah record disease guidance MedlinePlus: 2660.
-- Jumlah total runtime training records yang dibaca knowledge base: 2730.
+- Jumlah contoh SFT MedlinePlus: 2660.
+- Jumlah contoh SFT penyakit tropis: 1080.
+- Jumlah total runtime training records yang dibaca knowledge base: 2722.
 - Jumlah contoh SFT anamnesis: 1200.
-- Jumlah contoh SFT gabungan utama: 3991.
-- Jumlah contoh SFT gabungan + learning log RAG: 4071.
+- Jumlah contoh SFT learning log RAG: 82.
+- Jumlah contoh SFT gabungan utama: 8120.
+- Jumlah contoh SFT gabungan + learning log RAG: 8202.
+- Data herbal SFT diperbanyak dengan variasi instruksi terstruktur per record: rekomendasi, dosis, triase, keamanan, red flag, dan ringkasan bukti.
+- Referensi berbahasa Inggris/paper diringkas ke Bahasa Indonesia di jawaban SFT dan tetap dibatasi sebagai edukasi awal.
 - Data anamnesis diperluas dengan variasi synthetic-guided by curated references dari sumber resmi dan paper pendukung. Data ini bukan hasil diagnosis klinis dan tetap perlu review ahli sebelum produksi.
 - Dataset MedlinePlus dibangun dari XML resmi snapshot harian dan diekspansi menjadi lima varian record per topik: overview, triage, follow-up, prevention, dan self-care.
 - Data ini digunakan untuk edukasi dan rekomendasi awal keluhan ringan, bukan diagnosis medis final.

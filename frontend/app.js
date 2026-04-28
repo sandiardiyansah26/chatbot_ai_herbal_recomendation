@@ -1,8 +1,11 @@
 const LOCAL_HOST_ALIASES = new Set(["localhost", "127.0.0.1", "0.0.0.0", ""]);
+const runtimeConfig = window.HERBAL_APP_CONFIG || {};
 const pageHost = window.location.hostname || "127.0.0.1";
 const preferredApiHost = LOCAL_HOST_ALIASES.has(pageHost) ? "127.0.0.1" : pageHost;
 const storedApiBase = localStorage.getItem("HERBAL_API_BASE");
+const configuredApiBase = runtimeConfig.apiBase || runtimeConfig.API_BASE || "";
 const API_BASES = [
+  configuredApiBase,
   storedApiBase,
   `http://${preferredApiHost}:8000`,
   "http://127.0.0.1:8000",

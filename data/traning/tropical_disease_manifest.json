@@ -2,7 +2,11 @@
   "document_dir": "/Users/sandyqx/Data/Project/tesis/ai_chatbot_herbal/applikasi/chatbot_ai_herbal_recomendation/document/disease_tropic",
   "source_rows": 12,
   "training_record_rows": 9,
-  "training_sft_rows": 18,
+  "training_sft_rows": 1080,
+  "sft_audience_variants": 10,
+  "sft_task_variants": 12,
+  "sft_variants_per_disease": 120,
+  "safety_policy": "Variasi SFT penyakit tropis hanya untuk triase, edukasi gejala, red flag, pencegahan, follow-up, dan arahan pemeriksaan. Dataset ini belum memetakan rekomendasi herbal untuk penyakit tropis.",
   "included_documents": [
     "01_dbd.docx",
     "02_Malaria.docx",

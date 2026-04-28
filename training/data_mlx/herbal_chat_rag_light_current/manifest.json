@@ -1,10 +1,18 @@
 {
   "source": "data/traning/combined_training_sft_rag.jsonl",
   "output": "training/data_mlx/herbal_chat_rag_light_current",
-  "total_rows": 4071,
-  "train_rows": 3421,
-  "valid_rows": 325,
-  "test_rows": 325,
+  "total_rows": 8202,
+  "train_rows": 6838,
+  "valid_rows": 706,
+  "test_rows": 658,
   "format": "OpenAI chat JSONL: {'messages': [{'role': ..., 'content': ...}]}",
-  "seed": 42
+  "seed": 42,
+  "split_strategy": "group",
+  "total_groups": 683,
+  "train_groups": 590,
+  "valid_groups": 32,
+  "test_groups": 61,
+  "group_leakage_count": 0,
+  "assistant_cross_split_duplicate_groups": 0,
+  "user_cross_split_duplicate_groups": 0
 }

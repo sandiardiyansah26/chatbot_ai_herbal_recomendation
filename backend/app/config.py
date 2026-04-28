@@ -86,8 +86,8 @@ KB_ENRICHMENT_LOG_PATH = Path(
 RECOMMENDATION_FEEDBACK_LOG_PATH = Path(
     os.getenv("RECOMMENDATION_FEEDBACK_LOG_PATH") or (DATA_DIR.parent / "learning" / "recommendation_feedback.jsonl")
 ).resolve()
-APP_NAME = "AI Chatbot Rekomendasi Ramuan Herbal"
-APP_VERSION = "0.1.1"
+APP_NAME = os.getenv("APP_NAME", "AI Chatbot Rekomendasi Ramuan Herbal")
+APP_VERSION = os.getenv("APP_VERSION", "0.1.1")
 CORS_ORIGINS = [
     origin.strip()
     for origin in os.getenv(

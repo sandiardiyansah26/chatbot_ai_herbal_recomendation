@@ -1,0 +1,365 @@
+\documentclass[conference]{IEEEtran}
+\IEEEoverridecommandlockouts
+
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{algorithmic}
+\usepackage{graphicx}
+\usepackage{textcomp}
+\usepackage{xcolor}
+\usepackage{url}
+
+\def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
+    T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+
+\begin{document}
+
+\title{Komparasi Akurasi DeepSeek-R1 7B dan Gemma4 untuk Deteksi Indikasi Penyakit Melalui Anamnesis Humanis Berbahasa Indonesia}
+
+\author{\IEEEauthorblockN{1\textsuperscript{st} Sandi Ardiyansah}
+\IEEEauthorblockA{\textit{Program Studi Informatika Program Magister} \\
+\textit{Universitas Pelita Harapan}\\
+Jakarta, Indonesia \\
+01679240018@student.uph.edu}
+\and
+\IEEEauthorblockN{2\textsuperscript{nd} Pujianto Yugopuspito}
+\IEEEauthorblockA{\textit{Program Studi Informatika Program Magister} \\
+\textit{Universitas Pelita Harapan}\\
+Jakarta, Indonesia \\
+yugopuspito@uph.edu}}
+
+\maketitle
+
+\begin{abstract}
+Deteksi indikasi penyakit dari keluhan awal pengguna membutuhkan anamnesis yang aman, tidak repetitif, dan dapat memahami bahasa sehari-hari. Tantangan ini menjadi penting pada konteks Indonesia karena banyak pengguna mengawali pencarian informasi kesehatan dari keluhan ringan dan praktik herbal tradisional. Paper ini memfokuskan penelitian pada komparasi akurasi dua model lokal, yaitu \texttt{deepseek-r1:7b} dan \texttt{gemma4:latest}, untuk mendeteksi indikasi kondisi awal melalui anamnesis humanis berbahasa Indonesia. Rekomendasi ramuan herbal ditempatkan sebagai tugas downstream untuk menguji apakah hasil deteksi gejala dapat dipetakan secara aman ke knowledge base herbal, bukan sebagai tujuan utama paper. Sistem mengevaluasi model pada tiga tahap: pembentukan pertanyaan follow-up, deteksi red flag/indikasi kondisi, dan penyusunan final assessment yang grounded pada retrieval. Pada 88 interaksi berpasangan yang tercatat sampai 26 April 2026, Gemma4 lebih sering terpilih secara keseluruhan (42 kemenangan vs 39 untuk DeepSeek), memiliki tingkat respons berhasil lebih tinggi (92,0\% vs 75,0\%), dan rerata latensi kandidat lebih rendah (24817.11 ms vs 26736.49 ms). Namun, DeepSeek lebih dominan pada tahap follow-up (39 dari 76 turn), sedangkan Gemma4 lebih stabil pada final assessment (11 dari 12 turn). Temuan ini menunjukkan bahwa akurasi model pada tugas anamnesis tidak dapat dinilai hanya dari satu skor agregat; kekuatan model bergantung pada tahap dialog dan jenis keputusan klinis awal yang harus dibuat.
+\end{abstract}
+
+\begin{IEEEkeywords}
+deteksi indikasi penyakit, anamnesis humanis, komparasi model bahasa, DeepSeek-R1, Gemma4, Bahasa Indonesia, safety-constrained RAG
+\end{IEEEkeywords}
+
+\section{Pendahuluan}
+
+\subsection{Latar Belakang}
+
+Deteksi indikasi penyakit dari keluhan awal merupakan tahap penting dalam percakapan kesehatan. Pada interaksi nyata, pengguna jarang menyampaikan informasi klinis secara lengkap. Mereka dapat menulis keluhan dalam bahasa sehari-hari seperti ``tenggorokan tidak nyaman,'' ``mual sejak tadi pagi,'' atau ``demam dan badan lemas,'' tanpa menyebut durasi, gejala penyerta, riwayat paparan, maupun tanda bahaya. Sistem AI yang langsung memberi saran tanpa anamnesis berisiko salah memetakan keluhan, melewatkan red flag, atau memberi respons yang terlalu meyakinkan untuk kasus yang seharusnya dirujuk.
+
+Konteks Indonesia memperkuat kebutuhan tersebut. Ramuan herbal dan pengobatan tradisional masih menjadi bagian penting dari praktik kesehatan masyarakat. Studi survei nasional 2014--2015 menunjukkan bahwa pemanfaatan pengobatan tradisional dan komplementer tetap bermakna pada populasi dewasa Indonesia \cite{b1}. Profil Kesehatan Indonesia 2018 yang merangkum data Riskesdas juga menunjukkan bahwa 31,4\% rumah tangga memanfaatkan pelayanan kesehatan tradisional, 12,9\% melakukan upaya kesehatan tradisional sendiri, dan 24,6\% memanfaatkan Taman Obat Keluarga (TOGA). Dalam bentuk layanan, pemanfaatan ramuan jadi mencapai 48\%, sedangkan ramuan buatan sendiri mencapai 31,8\% \cite{b2}. Dari sisi layanan kesehatan formal, jumlah puskesmas yang menyelenggarakan pelayanan kesehatan tradisional meningkat dari 1.532 pada 2015 menjadi 4.252 pada 2018 \cite{b2}.
+
+Kenaikan minat juga terlihat pada sisi industri. Kementerian Perindustrian melaporkan bahwa produk kosmetik dan obat tradisional lokal didorong oleh tren konsumen terhadap produk alami dan berbahan herbal. Pada Januari--November 2024, ekspor obat-obatan tradisional tercatat US\$6,3 juta, lebih dari 85\% pelaku industri kosmetik dan obat tradisional berada pada sektor industri kecil dan menengah (IKM), dan industri obat tradisional diperkirakan tumbuh 7,1\% per tahun pada periode 2024--2033 \cite{b3}. Data tersebut menunjukkan bahwa herbal merupakan domain aplikasi yang relevan untuk menguji apakah deteksi gejala oleh model dapat diterjemahkan menjadi saran edukatif yang aman.
+
+Namun, pengetahuan herbal di tingkat masyarakat masih sering diwariskan secara lisan, melalui keluarga, komunitas, pedagang, atau pengalaman personal. Studi etnobotani pada masyarakat Indonesia menegaskan bahwa obat tradisional banyak digunakan berdasarkan pengalaman turun-temurun dan warisan pengetahuan lokal \cite{b4}. Pola ini bernilai budaya, tetapi juga membuat informasi menjadi fragmenter: nama tanaman dapat berbeda antar daerah, dosis tidak selalu konsisten, kontraindikasi sering tidak dijelaskan, dan batas antara keluhan ringan dengan tanda bahaya medis tidak selalu dikenali. Karena itu, fokus penelitian ini bukan sekadar membuat chatbot rekomendasi ramuan, melainkan mengevaluasi model mana yang lebih akurat dalam melakukan anamnesis dan deteksi indikasi kondisi sebelum rekomendasi apa pun diberikan.
+
+\subsection{Peluang AI dan Kesenjangan Riset}
+
+Perkembangan model bahasa besar dan chatbot kesehatan membuka peluang untuk menyajikan anamnesis awal secara lebih interaktif. Kajian sistematis menunjukkan bahwa chatbot dapat mendukung pengambilan riwayat medis dan percakapan kesehatan, tetapi desainnya harus memperhatikan keamanan, kualitas pertanyaan, dan eskalasi ke tenaga kesehatan \cite{b5}. RAG juga telah menjadi pendekatan penting untuk membatasi jawaban model bahasa pada sumber pengetahuan yang dapat diretrieval \cite{b6}, terutama pada domain kesehatan yang sensitif terhadap hallucination \cite{b7}.
+
+Penelitian terkait chatbot herbal Indonesia sudah mulai muncul. Misalnya, Aras \emph{et al.} mengembangkan chatbot edukasi dan rekomendasi tanaman herbal asli Papua berbasis LLM dan mengevaluasinya dengan BERTScore \cite{b8}. Penelitian tersebut menunjukkan potensi LLM untuk edukasi herbal lokal. Namun, ruang riset yang masih terbuka adalah komparasi akurasi model untuk tahap sebelum rekomendasi, yaitu ketika sistem harus memahami keluhan pengguna, memilih pertanyaan anamnesis yang tepat, mendeteksi red flag, dan membedakan apakah keluhan masih berada pada ruang lingkup ringan atau membutuhkan rujukan.
+
+Berdasarkan gap tersebut, paper ini berfokus pada \emph{dual-model runtime comparison} antara DeepSeek-R1 7B dan Gemma4. Sistem herbal digunakan sebagai testbed karena menyediakan knowledge base gejala, red flag, dan rekomendasi terstruktur. Dengan demikian, kontribusi utama bukan pada klaim bahwa sistem telah menjadi aplikasi herbal final, melainkan pada kerangka evaluasi untuk menilai model mana yang lebih akurat dalam alur deteksi indikasi penyakit berbasis anamnesis humanis berbahasa Indonesia.
+
+\subsection{Rumusan Masalah dan Pertanyaan Penelitian}
+
+\textbf{Rumusan Masalah Utama:} Bagaimana membandingkan akurasi DeepSeek-R1 7B dan Gemma4 dalam mendeteksi indikasi penyakit atau kondisi awal melalui anamnesis humanis berbahasa Indonesia, dengan testbed chatbot herbal yang menuntut red-flag screening dan grounding pada knowledge base?
+
+\textbf{Sub-Pertanyaan Penelitian:}
+\begin{enumerate}
+\item Bagaimana merumuskan tugas evaluasi deteksi indikasi penyakit dari percakapan anamnesis Bahasa Indonesia?
+\item Bagaimana membandingkan DeepSeek-R1 7B dan Gemma4 pada tahap follow-up, red-flag screening, scope decision, dan rekomendasi akhir berbasis knowledge base?
+\item Bagaimana menghitung akurasi fungsional komparatif ketika belum tersedia gold-standard diagnosis dari pakar?
+\item Bagaimana memanfaatkan log runtime untuk mengidentifikasi kekuatan dan kelemahan masing-masing model pada tahap dialog yang berbeda?
+\end{enumerate}
+
+\subsection{Tujuan Penelitian}
+
+Tujuan penelitian ini adalah mengevaluasi akurasi komparatif DeepSeek-R1 7B dan Gemma4 untuk deteksi indikasi penyakit melalui anamnesis humanis berbahasa Indonesia. Secara khusus, penelitian ini bertujuan:
+\begin{enumerate}
+\item merancang skema anamnesis humanis yang mengekstrak gejala, durasi, negasi, red flag, dan dugaan kondisi awal;
+\item mendefinisikan metrik akurasi fungsional komparatif berbasis safety, grounding, completeness, relevance, question quality, non-repetition, dan herbal fit sebagai validasi downstream;
+\item membandingkan \texttt{deepseek-r1:7b} dan \texttt{gemma4:latest} dari sisi tingkat keberhasilan, skor ranking, latensi, dan distribusi kemenangan per tahap dialog;
+\item menganalisis apakah satu model cukup untuk seluruh alur anamnesis atau diperlukan pemilihan model yang berbeda untuk follow-up dan rekomendasi akhir.
+\end{enumerate}
+
+\subsection{Kontribusi Penelitian}
+
+Penelitian ini memberikan kontribusi sebagai berikut:
+\begin{enumerate}
+\item Kerangka komparasi dua model lokal untuk deteksi indikasi kondisi awal melalui anamnesis humanis berbahasa Indonesia.
+\item Skema scoring deterministik yang menilai safety, grounding, completeness, relevance, kualitas pertanyaan, non-repetition, dan kesesuaian rekomendasi downstream.
+\item Benchmark runtime DeepSeek-R1 7B dan Gemma4 yang menunjukkan perbedaan akurasi fungsional antara tahap follow-up dan rekomendasi akhir.
+\item Testbed berbasis knowledge base herbal yang memungkinkan hasil deteksi gejala diuji terhadap pemetaan gejala, red flag, ramuan, bahan, dan cara pengolahan yang dapat diaudit.
+\end{enumerate}
+
+\section{Kerangka Evaluasi dan Aset Data}
+\subsection{Ruang Lingkup Evaluasi}
+Objek utama penelitian ini adalah akurasi fungsional model dalam alur anamnesis, bukan validasi klinis diagnosis penyakit. Sistem tidak ditujukan untuk menegakkan diagnosis final, meresepkan obat, atau menangani kondisi gawat darurat. Ruang lingkup evaluasi dibatasi pada kemampuan model untuk membaca keluhan awal berbahasa Indonesia, mengekstrak sinyal gejala, menanyakan follow-up yang relevan, mendeteksi red flag, dan memutuskan apakah kasus masih berada pada keluhan ringan atau harus diarahkan ke rujukan medis.
+
+Istilah deteksi penyakit pada paper ini digunakan secara terbatas sebagai deteksi indikasi kondisi awal berbasis gejala dan anamnesis, bukan diagnosis klinis final. Testbed herbal dipakai karena menyediakan skenario evaluasi yang lengkap: model harus memahami gejala, menjaga safety, lalu hanya jika aman memetakan keluhan ke rekomendasi ramuan yang grounded. Jika terdapat red flag, sistem tidak melanjutkan ke rekomendasi ramuan dan mengutamakan rujukan medis.
+
+Tiga prinsip evaluasi mendasari implementasi ini. Pertama, anamnesis harus terasa humanis, bukan robotik; karena itu sistem menyimpan answered slots dan menghindari pertanyaan yang sama berulang kali. Kedua, hasil deteksi indikasi kondisi harus aman; karena itu red flag diberi prioritas lebih tinggi daripada rekomendasi. Ketiga, rekomendasi downstream harus dapat diaudit; karena itu jawaban akhir dibatasi oleh konteks retrieval.
+
+\subsection{Formulasi Alur Evaluasi}
+Alur evaluasi disusun sebagai proses bertahap agar komparasi model tidak hanya menilai jawaban akhir, tetapi juga kualitas proses anamnesis yang mengarah ke keputusan. Formulasi yang digunakan adalah sebagai berikut:
+\begin{enumerate}
+\item \textbf{Kurasi testbed.} Case ringan, formula herbal, referensi bahan, dan panduan anamnesis dikumpulkan dari dokumen pemerintah, literatur ilmiah, serta dataset internal yang dikurasi manual.
+\item \textbf{Normalisasi label evaluasi.} Setiap record dirapikan menjadi struktur yang memuat sinyal gejala, dugaan kondisi awal, red flag, pertanyaan follow-up, dan mapping downstream ke ramuan bila kasus aman.
+\item \textbf{Indexing retrieval.} Record yang telah dikurasi diubah menjadi chunk dan diindeks ke ChromaDB agar dapat diretrieval berdasarkan gejala, case hint, formula, dan metadata evidence.
+\item \textbf{Anamnesis-first inference.} Input pengguna dianalisis untuk mengekstrak gejala, durasi, negasi, red flag, dugaan kondisi awal, dan slot yang sudah terjawab.
+\item \textbf{Dual-model comparison.} DeepSeek-R1 7B dan Gemma4 dijalankan pada prompt dan konteks yang sama, lalu kandidatnya diberi skor deterministik berdasarkan safety, grounding, completeness, relevance, language quality, question quality, non-repetition, dan herbal fit.
+\item \textbf{Decision logging.} Seluruh interaksi, kandidat model, skor, latensi, status keberhasilan, model terpilih, dan feedback disimpan sebagai learning log untuk analisis komparatif.
+\end{enumerate}
+
+\subsection{Aset Testbed dan Knowledge Base}
+Knowledge base menggabungkan aset referensi, anamnesis, training, indeks retrieval, dan log pembelajaran yang disimpan di folder data proyek. Dalam paper ini, aset tersebut diperlakukan sebagai testbed untuk menguji apakah model mampu menghubungkan gejala, red flag, dan keputusan rekomendasi secara konsisten. Tabel \ref{tab:data_assets_id} merangkum aset yang digunakan pada snapshot paper ini.
+
+\begin{table}[t]
+\caption{Ringkasan Aset Testbed Evaluasi}
+\label{tab:data_assets_id}
+\centering
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{|p{2.05cm}|c|p{3.95cm}|}
+\hline
+\textbf{Aset} & \textbf{Jumlah} & \textbf{Peran dalam Sistem} \\
+\hline
+Case keluhan ringan & 9 & Label uji untuk gejala, red flag, dan indikasi kondisi awal \\
+\hline
+Formula herbal & 10 & Validasi downstream untuk ramuan, bahan, pengolahan, dosis, dan kewaspadaan \\
+\hline
+Referensi bahan herbal & 13 & Grounding evidence untuk rekomendasi downstream \\
+\hline
+Record anamnesis & 18 & Label pertanyaan follow-up, red flag, dan slot yang perlu dicek \\
+\hline
+Record training referensi & 2731 & Herbal, pengolahan, penyakit tropis, dan guidance kesehatan pendukung \\
+\hline
+Knowledge chunk ChromaDB & 2781 & Indeks retrieval untuk konteks evaluasi model \\
+\hline
+Contoh Herbal SFT & 2080 & Data downstream untuk gaya rekomendasi yang grounded \\
+\hline
+Contoh Anamnesis SFT & 1200 & Data pelatihan follow-up yang ringkas dan humanis \\
+\hline
+Contoh Combined SFT & 8120 & Korpus gabungan untuk LoRA/QLoRA \\
+\hline
+Log dual-model & 113 & Rekam jejak kandidat model, skor, pemenang, status, dan latensi \\
+\hline
+\end{tabular}
+\end{table}
+
+Basis referensi dimulai dari case keluhan ringan, lalu diperluas dengan detail pengolahan, materi kesehatan tropis, panduan kesehatan umum, dan kondisi non-kritis yang lebih luas. Aset ini memungkinkan komparasi model dilakukan pada situasi yang realistis: pengguna datang dengan gejala awal, sistem perlu bertanya terlebih dahulu, lalu model harus membedakan antara kasus ringan, kasus yang membutuhkan follow-up, dan kasus dengan tanda bahaya.
+
+\subsection{Mapping Downstream untuk Validasi}
+Setelah model mendeteksi indikasi kondisi awal dan memastikan tidak ada red flag, hasil tersebut diuji lagi melalui mapping downstream ke rekomendasi herbal. Knowledge base tidak hanya menyimpan nama tanaman, tetapi juga hubungan antara sinyal gejala, dugaan kondisi awal, red flag, ramuan, bahan, cara pengolahan, dosis, dan sumber bukti. Tabel \ref{tab:symptom_mapping_id} memperlihatkan contoh mapping yang digunakan sistem. Setiap mapping bersifat edukatif dan hanya aktif ketika tanda bahaya tidak ditemukan.
+
+\begin{table}[t]
+\caption{Contoh Mapping Downstream Gejala ke Ramuan}
+\label{tab:symptom_mapping_id}
+\centering
+\scriptsize
+\setlength{\tabcolsep}{2pt}
+\begin{tabular}{|p{1.35cm}|p{1.55cm}|p{2.2cm}|p{2.15cm}|}
+\hline
+\textbf{Sinyal Gejala} & \textbf{Indikasi Awal} & \textbf{Ramuan dan Pengolahan} & \textbf{Bukti Ringkas} \\
+\hline
+Mual ringan & Keluhan lambung ringan & Jahe/Jahe-Madu; jahe diiris atau dimemarkan, diseduh/rebus 10--15 menit, madu ditambahkan saat hangat & Kemenkes jahe dan madu; review sistematis jahe untuk mual \cite{b16}, \cite{b17}, \cite{b23} \\
+\hline
+Tenggorokan tidak nyaman atau batuk ringan & Gejala saluran napas atas ringan & Serai-Kayu Manis-Madu atau Jeruk Nipis-Madu; bahan direbus/diseduh, madu ditambahkan saat hangat & Kemenkes madu dan batuk tradisional; review madu untuk batuk/ISPA \cite{b17}, \cite{b18}, \cite{b24} \\
+\hline
+Diare ringan tanpa darah & Diare ringan non-red-flag & Daun jambu biji; daun dicuci, direbus, disaring, diminum hangat sebagai pendamping cairan & Artikel Kemenkes dan uji klinis rebusan daun jambu biji \cite{b20}, \cite{b22} \\
+\hline
+Pegal, kurang fit, atau demam ringan tanpa red flag & Rasa tidak nyaman tubuh ringan & Kunyit Asam atau Beras Kencur; rimpang dicuci, diiris/parut, direbus, lalu disaring & Kemenkes 7 jamu herbal dan data formula tradisional \cite{b19} \\
+\hline
+Gatal dan ruam merah ringan & Iritasi kulit ringan; perlu bedakan dari ruam infeksi/alergi berat & Gel lidah buaya topikal; cuci area, oles tipis, uji tempel kecil, hentikan bila memburuk & Kurasi keamanan kulit dan panduan red flag ruam/dengue dari CDC \cite{b21} \\
+\hline
+\end{tabular}
+\end{table}
+
+Mapping tersebut menjadi validasi downstream dari deteksi indikasi penyakit. Kandidat model dinilai lebih akurat secara fungsional apabila mampu mengenali gejala yang relevan, tidak melewati red flag, memilih follow-up yang belum terjawab, dan hanya setelah itu menghasilkan rekomendasi ramuan yang sesuai dengan bahan serta cara pengolahan pada knowledge base. Dengan demikian, akurasi yang dimaksud bukan sekadar kemampuan menghasilkan teks yang lancar, tetapi kesesuaian antara anamnesis, keputusan safety, retrieval, dan rekomendasi yang dapat diaudit.
+
+\subsection{Arsitektur Runtime Benchmark}
+Pipeline runtime terdiri dari session synchronization, analisis anamnesis, scope control, retrieval, komparasi model, komposisi rekomendasi downstream, dan learning capture. Alur sederhananya ditunjukkan pada Gambar \ref{fig:workflow_id}. Alih-alih memakai generator medis monolitik lama, arsitektur saat ini melakukan multi-model assessment hanya setelah input diringkas menjadi konteks anamnesis terstruktur.
+
+\begin{figure}[t]
+\centering
+\fbox{\parbox{0.46\textwidth}{
+\centering
+\footnotesize
+\textbf{Pesan pengguna + session sync} \\
+$\downarrow$ \\
+Humanizing anamnesis analyzer \\
+(gejala, durasi, negasi, red flag, answered slots) \\
+$\downarrow$ \\
+Deteksi indikasi kondisi + safety gate \\
+$\downarrow$ \\
+RAG retrieval + metadata re-ranking \\
+$\downarrow$ \\
+\textit{Mode follow-up:} DeepSeek $\parallel$ Gemma \\
+\textit{Mode final:} DeepSeek $\rightarrow$ Gemma \\
+$\downarrow$ \\
+Perankingan deterministik kandidat model \\
+$\downarrow$ \\
+Rujukan medis atau rekomendasi downstream \\
+$\downarrow$ \\
+Learning log + umpan balik pengguna
+}}
+\caption{Alur runtime benchmark komparatif yang diusulkan.}
+\label{fig:workflow_id}
+\end{figure}
+
+Lapisan session synchronization merupakan tambahan praktis yang muncul dari proses pengembangan. Frontend mengirimkan kembali state percakapan ke backend pada setiap request agar sistem tetap bisa mempertahankan histori follow-up walaupun halaman di-refresh atau service di-restart. Mekanisme ini juga membuat comparator dapat memberi penalti terhadap pertanyaan duplikat secara lebih andal.
+
+\section{Metode Benchmark Anamnesis}
+\subsection{Tugas Deteksi Indikasi Kondisi}
+Pengendali anamnesis mengekstrak gejala yang hadir, gejala yang disangkal, ekspresi durasi, tanda bahaya, dan dugaan kondisi awal dari setiap turn pengguna. Sistem juga menyimpan answered slots seperti ``demam sudah disebut,'' ``durasi sudah disebut,'' dan ``tanda bahaya sudah disangkal.'' Slot-slot ini dimasukkan ke prompt model agar sistem dapat menanyakan follow-up yang lebih spesifik, bukan mengulang pertanyaan generik seperti menanyakan demam ketika pengguna telah menyebut demam di awal.
+
+Kebijakan percakapan memiliki tiga state. Pada state pertama, red-flag detection mem-bypass komparasi model dan langsung menghasilkan respons rujukan yang aman. Pada state kedua, jika informasi masih belum lengkap dan anggaran pertanyaan belum mencapai tiga, comparator meminta satu pertanyaan follow-up dari masing-masing model. Pada state ketiga, ketika informasi sudah cukup atau batas tiga pertanyaan telah tercapai, sistem memaksa jalur final ranking untuk melihat model mana yang paling konsisten menyusun kesimpulan aman. Desain ini mencegah percakapan berputar tanpa akhir, tetapi tetap menjaga ketajaman anamnesis.
+
+Output yang dibandingkan bukan diagnosis final, melainkan assessment terstruktur: scope kasus, alasan scope, dugaan kondisi awal, kebutuhan rujukan, pertanyaan follow-up, dan bila aman, rekomendasi downstream. Dengan struktur ini, model dapat dinilai pada proses berpikir klinis awal yang dapat diaudit, bukan hanya pada kalimat jawaban akhir.
+
+\subsection{Retrieval dan Scoring Komparatif}
+RAG diimplementasikan dengan embedding lokal yang ringan dan ChromaDB. Motivasi utama pemilihan ini adalah kepraktisan operasional, bukan semata-mata memaksimalkan kualitas retrieval semantik dengan layanan embedding besar. Sentence encoder ringan dan model distilasi tetap relevan sebagai titik acuan tradeoff tersebut \cite{b9}, \cite{b10}. Item yang diretrieval mencakup case record, formula, referensi bahan, training record, dan record anamnesis, yang kemudian diurutkan ulang memakai sinyal metadata seperti overlap gejala, case hint, level evidensi, dan kecocokan formula.
+
+Kedua model kandidat menerima prompt medis yang sama: turn percakapan terbaru, ringkasan anamnesis, heuristik red-flag, daftar follow-up yang sudah pernah ditanyakan, dan konteks retrieval. Masing-masing model wajib mengembalikan assessment JSON terstruktur, bukan prosa bebas. Lapisan ranking lalu menghitung skor khusus tugas. Untuk turn follow-up, skor agregat dirumuskan sebagai
+\begin{align}
+S_f &= 0.25s + 0.20g + 0.16c + 0.16r \nonumber \\
+&\quad + 0.08l + 0.05q + 0.10n,
+\end{align}
+dengan $s$ menyatakan safety, $g$ grounding, $c$ completeness, $r$ relevance, $l$ language quality, $q$ question quality, dan $n$ non-repetition.
+
+Untuk turn final assessment dan rekomendasi downstream, skornya menjadi
+\begin{align}
+S_r &= 0.28s + 0.22g + 0.20c + 0.14r \nonumber \\
+&\quad + 0.08l + 0.08h,
+\end{align}
+dengan $h$ menyatakan kecocokan rekomendasi downstream terhadap mapping herbal. Desain ini sengaja memberi bobot terbesar pada safety dan grounding, sesuai dengan profil risiko tugas kesehatan ini.
+
+\subsection{Safety, Umpan Balik, dan Loop Training}
+Sistem memblokir rekomendasi downstream ketika scope termasuk \emph{critical}, \emph{internal medicine}, atau \emph{unsupported}. Bahkan saat scope masih \emph{supported}, jawaban akhir tetap harus memuat bahasa keselamatan yang konservatif dan tetap terikat pada konteks yang diretrieval. Hal ini selaras dengan kekhawatiran RAG di domain kesehatan \cite{b7}, sekaligus sejalan dengan gagasan evaluasi RAG seperti grounding dan faithfulness \cite{b11}.
+
+Tiga kelas log menjadi inti benchmark ini. Pertama, \texttt{conversation\_turns.jsonl} menyimpan turn pengguna dan assistant. Kedua, \texttt{dual\_llm\_interactions.jsonl} menyimpan keluaran kandidat, skor, model terpilih, dan latensi. Ketiga, \texttt{kb\_enrichment\_candidates.jsonl} menyimpan usulan pengetahuan baru yang masih membutuhkan kurasi manusia. File terpisah \texttt{recommendation\_feedback.jsonl} menyimpan apakah pengguna merasa terbantu oleh rekomendasi yang diberikan. Seluruh log ini membangun jembatan langsung antara benchmarking runtime dan pengembangan LoRA/QLoRA pada tahap selanjutnya \cite{b12}, \cite{b13}.
+
+\section{Hasil Komparasi Model}
+\subsection{Snapshot Benchmark}
+Benchmark pada paper ini menggunakan snapshot log operasional yang tersedia sampai 26 April 2026. Pasangan lokal default adalah \texttt{deepseek-r1:7b} dan \texttt{gemma4:latest}, yang dipilih sebagai representasi model lokal untuk deployment praktis \cite{b14}, \cite{b15}. Komparasi berbasis GPT memang ada di codebase, tetapi tidak dimasukkan ke benchmark utama karena sifatnya opsional dan bukan target deployment lokal default. Dari 113 log dual-model yang tercatat, analisis utama difokuskan pada 88 interaksi berpasangan ketika kedua kandidat utama muncul bersama, terdiri dari 76 respons follow-up dan 12 final assessment/rekomendasi downstream.
+
+Benchmark ini bukan benchmark laboratorium dengan replay prompt yang seragam, melainkan benchmark operasional dari purwarupa yang benar-benar berjalan. Karena belum memakai gold-standard diagnosis dari pakar, istilah akurasi pada bagian ini dimaknai sebagai \emph{akurasi fungsional komparatif}: kandidat dianggap lebih akurat bila dipilih oleh scorer deterministik karena lebih aman, lebih grounded pada retrieval, lebih lengkap, lebih relevan terhadap anamnesis, tidak mengulang pertanyaan, dan lebih sesuai dengan mapping gejala-ramuan pada knowledge base. Konsekuensinya, data menjadi lebih ``kotor'' tetapi juga lebih realistis, karena mencakup run yang sukses, pemakaian fallback, timeout, dan perilaku pemulihan state. Tabel \ref{tab:primary_models_id} melaporkan perbandingan model utamanya.
+
+\begin{table}[t]
+\caption{Benchmark Model Utama dari Runtime Log}
+\label{tab:primary_models_id}
+\centering
+\scriptsize
+\setlength{\tabcolsep}{2pt}
+\begin{tabular}{|p{1.7cm}|c|c|c|c|c|}
+\hline
+\textbf{Model} & \textbf{N} & \textbf{Win} & \textbf{OK} & \textbf{Skor} & \textbf{Lat.} \\
+\hline
+DeepSeek-R1 7B & 88 & 39 & 75.0\% & 0.4317 & 26736.49 ms \\
+\hline
+Gemma4 latest & 88 & 42 & 92.0\% & 0.5305 & 24817.11 ms \\
+\hline
+\end{tabular}
+\end{table}
+
+Gemma menunjukkan robustness yang lebih tinggi, dengan tingkat error yang lebih rendah pada environment yang sama. Secara keseluruhan, Gemma dipilih pada 42 dari 88 interaksi berpasangan (47,7\%), DeepSeek pada 39 interaksi (44,3\%), dan 7 interaksi tidak menghasilkan pemenang utama (8,0\%). Rerata skor dan latensi pada Tabel \ref{tab:primary_models_id} dihitung pada seluruh kandidat, sehingga error bernilai skor nol tetap tercermin dalam evaluasi. Jika hanya menghitung respons yang berhasil, rerata skor kedua model hampir seimbang, yaitu 0.5756 untuk DeepSeek dan 0.5764 untuk Gemma. Rerata latensi respons berhasil juga berdekatan: 23759.15 ms untuk DeepSeek dan 24661.49 ms untuk Gemma.
+
+\subsection{Perilaku Berdasarkan Tahap Percakapan}
+Jumlah kemenangan total menyembunyikan perbedaan penting antar tahap. DeepSeek dan Gemma tidak mendominasi bagian workflow yang sama. Tabel \ref{tab:stage_wins_id} menunjukkan distribusi model terpilih berdasarkan tahap respons.
+
+\begin{table}[t]
+\caption{Model Terpilih Berdasarkan Tahap Runtime}
+\label{tab:stage_wins_id}
+\centering
+\footnotesize
+\begin{tabular}{|l|c|c|}
+\hline
+\textbf{Output Terpilih} & \textbf{Follow-up} & \textbf{Final} \\
+\hline
+DeepSeek-R1 7B & 39 & 0 \\
+\hline
+Gemma4 latest & 31 & 11 \\
+\hline
+Tidak ada pemenang & 6 & 1 \\
+\hline
+\end{tabular}
+\end{table}
+
+Pemisahan per tahap ini memberi interpretasi perilaku yang menarik. DeepSeek-R1 7B lebih kompetitif pada generasi follow-up, yaitu ketika ketajaman pertanyaan dan eksplorasi gejala lebih dominan; model ini menang pada 39 dari 76 respons follow-up (51,3\%). Sebaliknya, Gemma4 latest lebih stabil pada penyusunan final assessment, yaitu saat keluaran harus ringkas, aman, grounded, lengkap, dan sesuai mapping downstream; model ini menang pada 11 dari 12 respons final (91,7\%). Temuan ini konsisten dengan tujuan komparasi: pembentukan pertanyaan lanjutan dan penyusunan keputusan akhir belum tentu diuntungkan oleh perilaku model yang sama.
+
+\subsection{Metrik Inferensi}
+Frontend kini menampilkan metadata komparasi model seperti provider, total latency, dan metrik inferensi detail ketika tersedia. Untuk model yang berjalan di atas Ollama, sistem mencatat \texttt{total\_duration}, \texttt{load\_duration}, \texttt{prompt\_eval\_count}, \texttt{prompt\_eval\_duration}, \texttt{eval\_count}, dan \texttt{eval\_duration}, lalu menurunkan nilai token-per-second. Karena instrumentasi ini baru diaktifkan setelah sebagian log lama sudah terbentuk, baru subset awal saja yang memiliki metrik detail tersebut. Tabel \ref{tab:inference_metrics_id} melaporkan rerata awalnya.
+
+\begin{table}[t]
+\caption{Metrik Inferensi Awal yang Sudah Diinstrumentasi}
+\label{tab:inference_metrics_id}
+\centering
+\footnotesize
+\begin{tabular}{|l|c|c|}
+\hline
+\textbf{Metrik} & \textbf{DeepSeek-R1 7B} & \textbf{Gemma4 latest} \\
+\hline
+Prompt eval rate & 197.89 tok/s & 292.83 tok/s \\
+\hline
+Generation eval rate & 20.27 tok/s & 26.78 tok/s \\
+\hline
+Sampel terinstrumentasi & 10 & 11 \\
+\hline
+\end{tabular}
+\end{table}
+
+Angka awal ini belum cukup besar untuk menjadi klaim throughput yang definitif, tetapi menunjukkan bahwa Gemma menghasilkan token lebih cepat pada subset terinstrumentasi. Yang lebih penting, instrumentasi ini membuat benchmark ke depan dapat diaudit secara lebih baik, karena paper tidak lagi hanya bergantung pada kesan subjektif ``terasa lebih cepat''.
+
+\subsection{Outcome Anamnesis dan Safety}
+Benchmark ini tidak hanya membahas model mana yang lebih cepat. Perbaikan pada level sistem juga penting. Implementasi saat ini memiliki tiga pengaman praktis yang secara langsung meningkatkan kualitas percakapan selama pengembangan:
+\begin{itemize}
+\item \textbf{anti-repetition:} kandidat follow-up diberi penalti bila menanyakan gejala atau durasi yang sudah disebut pengguna;
+\item \textbf{session synchronization:} state frontend dikirim ulang ke backend agar histori follow-up tidak hilang setelah restart;
+\item \textbf{forced completion:} sistem berpindah ke final assessment ketika tiga turn follow-up telah tercapai atau coverage informasi sudah cukup.
+\end{itemize}
+
+Kontrol tersebut penting bagi ``anamnesis humanis,'' karena pertanyaan yang repetitif atau pelupa cepat merusak kualitas pengambilan riwayat. Modul feedback juga sudah menangkap record rekomendasi pertama yang dinilai membantu, walaupun jumlah sampel ini masih terlalu kecil untuk dijadikan studi pengguna formal.
+
+\section{Pembahasan}
+Benchmark menunjukkan bahwa desain dual-model tetap berguna walaupun kedua model memiliki skor respons sukses yang berdekatan. Dari sisi akurasi fungsional, Gemma4 latest lebih robust dan lebih sering terpilih secara keseluruhan, terutama ketika sistem harus menyusun final assessment yang aman, grounded, lengkap, dan konsisten dengan knowledge base. DeepSeek-R1 7B lebih kuat untuk eksplorasi follow-up, yaitu tahap yang menentukan apakah gejala pengguna sudah cukup jelas dan aman untuk disimpulkan. Hal ini menyiratkan bahwa sistem anamnesis berbasis LLM tidak seharusnya mengasumsikan satu model selalu unggul pada semua tahap interaksi.
+
+Hasil saat ini juga mendukung keputusan untuk menjalankan follow-up secara paralel dan final assessment secara berurutan. Jika kedua tahap dijalankan dalam mode yang sama, sistem berisiko mengalami latensi yang lebih tinggi atau stabilitas yang lebih rendah pada mesin lokal. Karena itu, strategi eksekusi hibrid ini bukan sekadar kompromi engineering, melainkan keputusan desain yang dipandu oleh perilaku deployment nyata.
+
+Terdapat beberapa keterbatasan. Pertama, benchmark ini didasarkan pada runtime log operasional, bukan pada gold-standard evaluation set yang seimbang. Karena itu, paper ini belum mengklaim akurasi diagnosis klinis, melainkan akurasi fungsional dalam tugas anamnesis, deteksi indikasi kondisi awal, dan pemetaan gejala ke ramuan herbal. Kedua, instrumentasi throughput baru mencakup subset awal setelah logging metrik ditambahkan. Ketiga, dataset feedback masih kecil dan belum mendukung klaim kuat mengenai perceived usefulness. Keempat, lapisan retrieval masih mengutamakan deployment lokal yang praktis, sehingga embedding medis multilingual yang lebih baik masih berpotensi meningkatkan versi berikutnya.
+
+Walaupun demikian, benchmark saat ini sudah menunjukkan pola evaluasi LLM yang layak untuk tugas anamnesis Bahasa Indonesia: anamnesis terlebih dahulu, deteksi red flag sebelum rekomendasi, retrieval untuk grounding, perankingan deterministik lintas model, dan log yang dapat digunakan kembali untuk adaptasi LoRA/QLoRA.
+
+\section{Kesimpulan}
+Paper ini menyajikan komparasi akurasi DeepSeek-R1 7B dan Gemma4 untuk deteksi indikasi penyakit melalui anamnesis humanis berbahasa Indonesia. Testbed herbal digunakan untuk memaksa model menjalankan proses yang lengkap: memahami gejala, menanyakan follow-up, mendeteksi red flag, menentukan scope, dan bila aman memetakan hasil ke rekomendasi downstream berbasis knowledge base. Pada snapshot runtime sampai 26 April 2026 yang memuat 88 interaksi berpasangan, Gemma lebih sering terpilih secara keseluruhan, memiliki successful-response rate yang lebih baik, dan menunjukkan rerata latensi kandidat yang lebih rendah. DeepSeek tetap kompetitif, terutama untuk pembangkitan pertanyaan follow-up, sehingga kekuatan model terbukti bergantung pada tahap dialognya.
+
+Kontribusi yang lebih luas dari paper ini bersifat metodologis. Dengan menggabungkan anamnesis-first, kontrol anti-repetisi, grounding berbasis RAG, scoring yang deterministik, dan learning log, sistem membangun loop benchmark yang praktis antara deployment dan refinement model di masa depan. Hal ini menjadikan kerangka evaluasi ini sebagai landasan untuk studi berikutnya dengan gold-standard pakar, embedding medis yang lebih kuat, dan adaptasi domain berbasis LoRA untuk anamnesis kesehatan berbahasa Indonesia.
+
+\section*{Ucapan Terima Kasih}
+Penulis mengucapkan terima kasih kepada Program Studi Informatika Program Magister Universitas Pelita Harapan atas dukungan terhadap riset ini pada evaluasi model bahasa untuk anamnesis kesehatan berbahasa Indonesia yang aman dan dapat diaudit.
+
+\begin{thebibliography}{00}
+\bibitem{b1} S. Pengpid and K. Peltzer, ``Utilization of traditional and complementary medicine in Indonesia: Results of a national survey in 2014--15,'' \emph{Complementary Therapies in Clinical Practice}, vol. 33, pp. 156--163, 2018.
+\bibitem{b2} Kementerian Kesehatan Republik Indonesia, ``Profil Kesehatan Indonesia Tahun 2018,'' Jakarta, Indonesia, 2019. [Online]. Available: \url{https://kemkes.go.id/app_asset/file_content_download/profil-kesehatan-indonesia-2018.pdf}
+\bibitem{b3} Direktorat Jenderal Industri Kecil, Menengah dan Aneka, Kementerian Perindustrian Republik Indonesia, ``Kemenperin Perkuat Branding IKM Kosmetik dan Obat Tradisional Lokal,'' Mar. 20, 2025. [Online]. Available: \url{https://ikm.kemenperin.go.id/kemenperin-perkuat-branding-ikm-kosmetik-dan-obat-tradisional-lokal}
+\bibitem{b4} A. Yanti, E. Kriswiyanti, and A. A. K. Darmadi, ``Kajian etnobotani obat tradisional masyarakat suku Batak di Desa Lawe Perbunga, Kecamatan Babul Makmur, Aceh Tenggara,'' \emph{Simbiosis}, vol. 10, no. 2, pp. 140--151, 2022. [Online]. Available: \url{https://jurnal.harianregional.com/simbiosis/full-77914}
+\bibitem{b5} M. Hindelang, S. Sitaru, and A. Zink, ``Transforming health care through chatbots for medical history-taking and future directions: Comprehensive systematic review,'' \emph{JMIR Medical Informatics}, vol. 12, e56628, 2024.
+\bibitem{b6} P. Lewis \emph{et al.}, ``Retrieval-augmented generation for knowledge-intensive NLP tasks,'' in \emph{Advances in Neural Information Processing Systems}, vol. 33, 2020, pp. 9459--9474.
+\bibitem{b7} L. M. Amugongo, P. Mascheroni, S. Brooks, S. Doering, and J. Seidel, ``Retrieval augmented generation for large language models in healthcare: A systematic review,'' \emph{PLOS Digital Health}, vol. 4, no. 6, e0000877, 2025.
+\bibitem{b8} S. Aras, M. N. Kelian, Ilham S, and A. Faridah, ``AI-based chatbot system for education and recommendations on the use of native Papuan herbal plants using the large language models method,'' \emph{International Journal of Informatics, Information System and Computer Engineering}, vol. 6, no. 1, pp. 96--105, 2025, doi: 10.34010/injiiscom.v6i1.13575.
+\bibitem{b9} N. Reimers and I. Gurevych, ``Sentence-BERT: Sentence embeddings using Siamese BERT-networks,'' in \emph{Proc. EMNLP-IJCNLP}, 2019, pp. 3982--3992.
+\bibitem{b10} W. Wang, F. Wei, L. Dong, H. Bao, N. Yang, and M. Zhou, ``MiniLM: Deep self-attention distillation for task-agnostic compression of pre-trained transformers,'' arXiv:2002.10957, 2020.
+\bibitem{b11} S. Es, J. James, L. Espinosa-Anke, and S. Schockaert, ``RAGAs: Automated evaluation of retrieval augmented generation,'' in \emph{Proc. EACL System Demonstrations}, 2024, pp. 150--158.
+\bibitem{b12} E. J. Hu \emph{et al.}, ``LoRA: Low-rank adaptation of large language models,'' in \emph{Proc. ICLR}, 2022.
+\bibitem{b13} T. Dettmers, A. Pagnoni, A. Holtzman, and L. Zettlemoyer, ``QLoRA: Efficient finetuning of quantized LLMs,'' in \emph{Advances in Neural Information Processing Systems}, vol. 36, 2023, pp. 10088--10115.
+\bibitem{b14} DeepSeek-AI, ``DeepSeek-R1: Incentivizing reasoning capability in LLMs via reinforcement learning,'' arXiv:2501.12948, 2025.
+\bibitem{b15} Gemma Team, ``Gemma: Open models based on Gemini research and technology,'' arXiv:2403.08295, 2024.
+\bibitem{b16} Kementerian Kesehatan Republik Indonesia, ``Takhlukan Mual Pasca Kemoterapi dengan Jahe,'' 2022. [Online]. Available: \url{https://keslan.kemkes.go.id/view_artikel/978/takhlukan-mual-pasca-kemoterapi-dengan-jahe}
+\bibitem{b17} Kementerian Kesehatan Republik Indonesia, ``Manfaat Madu Bagi Kesehatan,'' 2022. [Online]. Available: \url{https://keslan.kemkes.go.id/view_artikel/72/manfaat-madu-bagi-kesehatan}
+\bibitem{b18} Kementerian Kesehatan Republik Indonesia, ``Batuk dengan Pengobatan Tradisional,'' 2022. [Online]. Available: \url{https://keslan.kemkes.go.id/view_artikel/653/batuk-dengan-pengobatan-tradisonal}
+\bibitem{b19} Kementerian Kesehatan Republik Indonesia, ``7 Jamu Herbal yang Wajib Kamu Tahu,'' 2023. [Online]. Available: \url{https://keslan.kemkes.go.id/view_artikel/2062/7-jamu-herbal-yang-wajib-kamu-tahu}
+\bibitem{b20} U.S. National Library of Medicine, ``A randomized open label efficacy clinical trial of oral guava leaf decoction in patients with acute infectious diarrhoea,'' PubMed PMID: 32507357.
+\bibitem{b21} Centers for Disease Control and Prevention, ``Dengue Clinical Signs and Symptoms,'' 2024. [Online]. Available: \url{https://www.cdc.gov/dengue/hcp/clinical-signs/index.html}
+\bibitem{b22} Kementerian Kesehatan Republik Indonesia, ``Yuk Ketahui Manfaat Buah Jambu Biji untuk Kesehatan Tubuh,'' 2022. [Online]. Available: \url{https://keslan.kemkes.go.id/view_artikel/162/yuk-ketahui-manfaat-buah-jambu-biji-untuk-kesehatan-tubuh}
+\bibitem{b23} U.S. National Library of Medicine, ``Ginger for treating nausea and vomiting: An overview of systematic reviews and meta-analyses,'' PubMed PMID: 38072785.
+\bibitem{b24} U.S. National Library of Medicine, ``Effectiveness of honey for symptomatic relief in upper respiratory tract infections: A systematic review and meta-analysis,'' PubMed PMID: 32817011.
+\end{thebibliography}
+
+\end{document}

@@ -29,6 +29,34 @@ PREVENTION_SYSTEM_PROMPT = (
     "Jangan mengarang terapi herbal untuk penyakit serius. Bila perlu, arahkan ke pemeriksaan medis."
 )
 
+SFT_AUDIENCE_VARIANTS = [
+    ("umum", "pengguna umum"),
+    ("keluarga", "keluarga pasien"),
+    ("orang_tua", "orang tua atau pengasuh"),
+    ("remaja", "remaja/dewasa muda"),
+    ("lansia", "lansia atau pasien rentan"),
+    ("daerah_endemis", "orang yang tinggal di daerah endemis"),
+    ("pelancong", "orang yang baru bepergian"),
+    ("imun_rentan", "pasien dengan daya tahan tubuh lemah"),
+    ("komorbid", "pasien dengan penyakit kronis"),
+    ("kader", "kader kesehatan/edukator komunitas"),
+]
+
+SFT_TASK_VARIANTS = [
+    ("triage_awal", "triage", "Saya mengalami gejala yang mungkin terkait {disease}. Bantu triase awal untuk {audience}."),
+    ("gejala_kunci", "symptoms", "Apa gejala kunci {disease} yang perlu dikenali oleh {audience}?"),
+    ("pertanyaan_lanjutan", "triage", "Buat pertanyaan anamnesis lanjutan untuk menilai kemungkinan {disease} pada {audience}."),
+    ("red_flag", "red_flag", "Tanda bahaya apa pada {disease} yang harus membuat {audience} segera periksa?"),
+    ("pencegahan", "prevention", "Bagaimana pencegahan {disease} yang praktis untuk {audience}?"),
+    ("kapan_periksa", "red_flag", "Kapan keluhan yang mengarah ke {disease} harus diperiksa langsung?"),
+    ("edukasi_ringkas", "brief", "Jelaskan {disease} secara ringkas dan aman untuk {audience}."),
+    ("bedakan_ringan_berat", "triage", "Bagaimana membedakan gejala ringan dan berat pada dugaan {disease}?"),
+    ("pemeriksaan", "medical", "Pemeriksaan medis apa yang umumnya diperlukan bila dicurigai {disease}?"),
+    ("follow_up", "follow_up", "Apa saran follow-up aman untuk {audience} setelah gejala mengarah ke {disease}?"),
+    ("batas_herbal", "herbal_boundary", "Mengapa herbal tidak boleh dijadikan terapi utama untuk {disease}?"),
+    ("edukasi_komunitas", "prevention", "Buat pesan edukasi komunitas tentang pencegahan dan tanda bahaya {disease}."),
+]
+
 
 @dataclass(frozen=True)
 class DiseaseDocSpec:
@@ -265,6 +293,13 @@ def main() -> int:
                 "source_rows": len(sources),
                 "training_record_rows": len(records),
                 "training_sft_rows": len(sft_rows),
+                "sft_audience_variants": len(SFT_AUDIENCE_VARIANTS),
+                "sft_task_variants": len(SFT_TASK_VARIANTS),
+                "sft_variants_per_disease": len(SFT_AUDIENCE_VARIANTS) * len(SFT_TASK_VARIANTS),
+                "safety_policy": (
+                    "Variasi SFT penyakit tropis hanya untuk triase, edukasi gejala, red flag, pencegahan, follow-up, "
+                    "dan arahan pemeriksaan. Dataset ini belum memetakan rekomendasi herbal untuk penyakit tropis."
+                ),
                 "included_documents": [spec.filename for spec in SPECS],
                 "skipped_files": sorted(
                     file.name
@@ -359,32 +394,36 @@ def build_sft_examples(records: list[dict[str, object]]) -> list[dict[str, objec
     rows: list[dict[str, object]] = []
     for spec in SPECS:
         record = by_id[spec.id]
-        rows.append(
-            {
-                "id": f"sft_{spec.id}_triage",
-                "source_record_id": spec.id,
-                "messages": [
-                    {"role": "system", "content": TRIAGE_SYSTEM_PROMPT},
-                    {"role": "user", "content": spec.sample_user_message},
-                    {"role": "assistant", "content": triage_answer(record)},
-                ],
-            }
-        )
-        rows.append(
-            {
-                "id": f"sft_{spec.id}_prevention",
-                "source_record_id": spec.id,
-                "messages": [
-                    {"role": "system", "content": PREVENTION_SYSTEM_PROMPT},
-                    {"role": "user", "content": spec.prevention_question},
-                    {"role": "assistant", "content": prevention_answer(record)},
-                ],
-            }
-        )
+        disease_name = spec.disease_name
+        for audience_id, audience in SFT_AUDIENCE_VARIANTS:
+            for task_id, focus, template in SFT_TASK_VARIANTS:
+                system_prompt = PREVENTION_SYSTEM_PROMPT if focus == "prevention" else TRIAGE_SYSTEM_PROMPT
+                rows.append(
+                    {
+                        "id": f"sft_{spec.id}_{audience_id}_{task_id}",
+                        "source_record_id": spec.id,
+                        "variant": f"{audience_id}_{task_id}",
+                        "focus": focus,
+                        "messages": [
+                            {"role": "system", "content": system_prompt},
+                            {
+                                "role": "user",
+                                "content": template.format(disease=disease_name, audience=audience),
+                            },
+                            {"role": "assistant", "content": disease_answer(record, focus=focus, audience=audience)},
+                        ],
+                    }
+                )
     return rows
 
 
-def triage_answer(record: dict[str, object]) -> str:
+def disease_answer(record: dict[str, object], *, focus: str, audience: str) -> str:
+    if focus == "prevention":
+        return prevention_answer(record, audience=audience, focus=focus)
+    return triage_answer(record, audience=audience, focus=focus)
+
+
+def triage_answer(record: dict[str, object], audience: str = "pengguna umum", focus: str = "triage") -> str:
     disease_name = str(record.get("formula_name") or record.get("topic") or "penyakit")
     symptoms = as_list(record.get("symptoms"))[:5]
     screening_questions = as_list(record.get("screening_questions"))[:4]
@@ -392,9 +431,19 @@ def triage_answer(record: dict[str, object]) -> str:
     care_recommendation = str(record.get("care_recommendation") or record.get("safety_notes") or "")
     overview = str(record.get("overview") or "")
     diagnosis_summary = str(record.get("diagnosis_summary") or "")
+    focus_intro = {
+        "triage": "Fokus jawaban: triase awal dan pertanyaan anamnesis.",
+        "symptoms": "Fokus jawaban: gejala kunci dan pola keluhan yang perlu dikenali.",
+        "red_flag": "Fokus jawaban: tanda bahaya dan kapan harus segera periksa.",
+        "brief": "Fokus jawaban: edukasi ringkas yang aman.",
+        "medical": "Fokus jawaban: alasan perlunya pemeriksaan medis/laboratorium.",
+        "follow_up": "Fokus jawaban: pemantauan dan langkah lanjutan yang aman.",
+        "herbal_boundary": "Fokus jawaban: batas penggunaan herbal pada penyakit serius/menular.",
+    }.get(focus, "Fokus jawaban: edukasi awal yang aman.")
 
     blocks = [
-        f"Fokus anamnesis awal adalah kemungkinan {disease_name.lower()}, tetapi ini bukan diagnosis medis final.",
+        focus_intro,
+        f"Untuk {audience}, fokus anamnesis awal adalah kemungkinan {disease_name.lower()}, tetapi ini bukan diagnosis medis final.",
     ]
     if overview:
         blocks.append(f"Ringkasan singkat: {overview}")
@@ -423,13 +472,14 @@ def triage_answer(record: dict[str, object]) -> str:
     return "\n\n".join(blocks)
 
 
-def prevention_answer(record: dict[str, object]) -> str:
+def prevention_answer(record: dict[str, object], audience: str = "pengguna umum", focus: str = "prevention") -> str:
     disease_name = str(record.get("formula_name") or record.get("topic") or "penyakit")
     prevention_steps = as_list(record.get("prevention_steps"))[:5]
     warning_signs = as_list(record.get("warning_signs"))[:3]
     care_recommendation = str(record.get("care_recommendation") or record.get("safety_notes") or "")
 
-    blocks = [f"Pencegahan {disease_name} yang bisa diprioritaskan:"]
+    blocks = [f"Fokus jawaban: pencegahan, edukasi komunitas, dan tanda bahaya untuk {audience}."]
+    blocks.append(f"Pencegahan {disease_name} yang bisa diprioritaskan:")
     if prevention_steps:
         blocks.append("\n".join(f"- {step}" for step in prevention_steps))
     else:

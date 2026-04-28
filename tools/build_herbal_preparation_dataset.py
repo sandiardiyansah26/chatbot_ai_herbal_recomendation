@@ -26,6 +26,33 @@ SYSTEM_PROMPT = (
     "Jelaskan cara pengolahan ramuan secara praktis, higienis, aman, dan tetap memberi batasan bahwa ini bukan diagnosis medis final."
 )
 
+PREPARATION_AUDIENCE_VARIANTS = [
+    ("umum", "pengguna umum"),
+    ("pemula", "orang yang baru pertama kali membuat ramuan"),
+    ("keluarga", "keluarga yang membantu menyiapkan ramuan"),
+    ("higiene", "pengguna yang perlu penekanan kebersihan alat dan bahan"),
+    ("dosis", "pengguna yang perlu batas takaran dan durasi pendek"),
+    ("sensitif", "pengguna dengan lambung sensitif atau alergi"),
+    ("obat_rutin", "pengguna yang sedang minum obat rutin"),
+    ("anak_hamil", "anak kecil, ibu hamil, atau ibu menyusui"),
+    ("red_flag", "pengguna yang perlu disaring tanda bahaya"),
+    ("paper", "pengguna yang meminta dasar sumber resmi atau paper"),
+]
+
+PREPARATION_QUESTION_VARIANTS = [
+    ("cara_detail", "full", "Bagaimana cara membuat {formula} yang detail, higienis, dan aman untuk {audience}?"),
+    ("bahan_takaran", "dose", "Apa bahan dan kisaran takaran {formula} yang tidak berlebihan untuk {audience}?"),
+    ("langkah_higienis", "hygiene", "Tuliskan langkah pengolahan {formula} yang higienis untuk {audience}."),
+    ("dosis_durasi", "dose", "Berapa dosis, frekuensi, dan durasi pendek {formula} untuk {audience}?"),
+    ("kesalahan_umum", "safety", "Kesalahan apa yang harus dihindari saat membuat {formula} untuk {audience}?"),
+    ("tanda_bahaya", "red_flag", "Kapan {audience} tidak boleh memakai {formula} dan harus periksa ke tenaga kesehatan?"),
+    ("penyimpanan", "hygiene", "Bagaimana aturan penyajian dan penyimpanan singkat {formula} agar tetap aman?"),
+    ("interaksi", "safety", "Apa risiko alergi, interaksi obat, atau kondisi khusus sebelum memakai {formula}?"),
+    ("sumber_bukti", "evidence", "Sebutkan sumber resmi atau paper yang mendukung batas penggunaan {formula}, lalu jelaskan dalam Bahasa Indonesia."),
+    ("jawaban_ringkas", "brief", "Buat jawaban singkat untuk {audience} tentang cara aman memakai {formula}."),
+    ("checklist", "triage", "Buat checklist sebelum {audience} membuat dan memakai {formula}."),
+]
+
 
 @dataclass(frozen=True)
 class PreparationSource:
@@ -257,6 +284,23 @@ PREPARATION_RECORDS = [
         "curation_method": "safety_source_guided_manual_curation",
     },
     {
+        "id": "prep_madu_air_hangat_detail",
+        "source_id": "keslan_madu",
+        "topic": "tenggorokan tidak nyaman dan batuk kering ringan",
+        "formula_name": "Madu Air Hangat",
+        "ingredients": ["madu 1-2 sendok teh", "air matang hangat 150-200 ml"],
+        "symptoms": ["tenggorokan tidak nyaman", "batuk kering ringan", "suara serak ringan"],
+        "preparation": (
+            "Siapkan gelas bersih dan air matang yang sudah hangat, bukan mendidih. "
+            "Masukkan 1-2 sendok teh madu, lalu tuang 150-200 ml air hangat dan aduk sampai larut. "
+            "Minum perlahan saat hangat. Buat untuk sekali minum dan hindari memakai sendok atau gelas yang tidak bersih."
+        ),
+        "dosage": "150-200 ml, 1-2 kali sehari untuk keluhan ringan dan penggunaan pendek.",
+        "safety_notes": "Madu tidak untuk bayi di bawah 12 bulan. Hati-hati pada diabetes atau alergi madu. Periksa bila sesak, demam tinggi, sulit menelan, batuk darah, atau keluhan memburuk.",
+        "evidence_level": "official_source_guided",
+        "curation_method": "official_honey_source_manual_curation",
+    },
+    {
         "id": "prep_general_hygiene_safety",
         "source_id": "jdih_formularium",
         "topic": "prinsip umum pengolahan ramuan herbal rumahan",
@@ -291,6 +335,20 @@ def main() -> int:
                 "source_rows": len(source_rows),
                 "training_record_rows": len(records),
                 "training_sft_rows": len(sft_rows),
+                "sft_audience_variants": len(PREPARATION_AUDIENCE_VARIANTS),
+                "sft_question_variants": len(PREPARATION_QUESTION_VARIANTS),
+                "sft_variants_per_record": len(PREPARATION_AUDIENCE_VARIANTS) * len(PREPARATION_QUESTION_VARIANTS),
+                "reference_policy": (
+                    "Setiap contoh SFT diturunkan dari record pengolahan terkurasi, menyertakan sumber utama, "
+                    "referensi tambahan resmi/paper bila relevan, dan tetap membatasi penggunaan pada edukasi awal keluhan ringan."
+                ),
+                "supplemental_reference_urls": sorted(
+                    {
+                        reference["url"]
+                        for record in records
+                        for reference in as_references(record.get("supplemental_references"))
+                    }
+                ),
                 "records_path": str(RECORDS_PATH.relative_to(ROOT)),
                 "sft_path": str(SFT_PATH.relative_to(ROOT)),
                 "retrieved_at": datetime.now(timezone.utc).isoformat(),
@@ -377,39 +435,168 @@ def build_records(source_rows: list[dict[str, object]]) -> list[dict[str, object
                 **record,
                 "source_title": source.get("title") or source.get("id") or "",
                 "source_url": source.get("source_url") or "",
+                "supplemental_references": supplemental_references(record),
                 "content_type": "herbal_preparation_guidance",
             }
         )
     return rows
 
 
+def supplemental_references(record: dict[str, object]) -> list[dict[str, str]]:
+    formula = str(record.get("formula_name") or "").lower()
+    source_id = str(record.get("source_id") or "")
+    references: list[dict[str, str]] = [
+        {
+            "title": "NCCIH - Safe Use of Complementary Health Products and Practices",
+            "url": "https://www.nccih.nih.gov/health/safety",
+            "note": "Prinsip keamanan umum: pertimbangkan interaksi obat, kontaminasi produk, kondisi khusus, dan konsultasi tenaga kesehatan.",
+        }
+    ]
+
+    if "jahe" in formula or source_id == "keslan_jahe":
+        references.extend(
+            [
+                {
+                    "title": "NCCIH - Ginger: Usefulness and Safety",
+                    "url": "https://www.nccih.nih.gov/health/ginger",
+                    "note": "NCCIH merangkum bukti dan keamanan jahe, terutama untuk mual/muntah tertentu.",
+                },
+                {
+                    "title": "Ginger for treating nausea and vomiting: overview of systematic reviews and meta-analyses",
+                    "url": "https://www.tandfonline.com/doi/full/10.1080/09637486.2023.2284647",
+                    "note": "Paper berbahasa Inggris digunakan sebagai konteks bukti mual/muntah; bukan dasar diagnosis.",
+                },
+            ]
+        )
+    if "madu" in formula or source_id == "keslan_madu":
+        references.append(
+            {
+                "title": "Honey for acute cough in children - systematic review",
+                "url": "https://link.springer.com/article/10.1007/s00431-023-05066-1",
+                "note": "Review sistematis tentang madu untuk batuk akut; tetap tidak untuk bayi di bawah 12 bulan.",
+            }
+        )
+    if "kunyit" in formula:
+        references.extend(
+            [
+                {
+                    "title": "NCCIH - Turmeric: Usefulness and Safety",
+                    "url": "https://www.nccih.nih.gov/health/turmeric",
+                    "note": "NCCIH merangkum bukti dan keamanan kunyit/kurkumin, termasuk interaksi dan batas klaim.",
+                },
+                {
+                    "title": "Effects of turmeric and curcumin on oral mucositis: A systematic review",
+                    "url": "https://pubmed.ncbi.nlm.nih.gov/30838707/",
+                    "note": "Paper berbahasa Inggris dipakai sebagai konteks ilmiah kurkumin; bukan resep bebas untuk kondisi berat.",
+                },
+            ]
+        )
+    if "lidah buaya" in formula:
+        references.append(
+            {
+                "title": "NCCIH - Aloe Vera: Usefulness and Safety",
+                "url": "https://www.nccih.nih.gov/health/aloe-vera",
+                "note": "NCCIH membedakan penggunaan gel topikal dan risiko bentuk oral/lateks aloe.",
+            }
+        )
+    if "jambu" in formula:
+        references.append(
+            {
+                "title": "Psidium guajava in the treatment of diarrhea: a review",
+                "url": "https://www.frontiersin.org/articles/10.3389/fphar.2024.1459066/full",
+                "note": "Review etnobotani/farmakologi jambu biji untuk diare; cairan dan oralit tetap prioritas.",
+            }
+        )
+
+    return unique_references(references)
+
+
+def unique_references(references: list[dict[str, str]]) -> list[dict[str, str]]:
+    deduped: dict[str, dict[str, str]] = {}
+    for reference in references:
+        deduped.setdefault(reference["url"], reference)
+    return list(deduped.values())
+
+
+def as_references(value: object) -> list[dict[str, str]]:
+    if not isinstance(value, list):
+        return []
+    rows: list[dict[str, str]] = []
+    for item in value:
+        if isinstance(item, dict) and item.get("url"):
+            rows.append({key: str(item.get(key) or "") for key in ("title", "url", "note")})
+    return rows
+
+
+def format_references(value: object) -> str:
+    references = as_references(value)
+    if not references:
+        return "-"
+    return "; ".join(f"{reference['title']} - {reference['url']}" for reference in references)
+
+
+def reference_summary(record: dict[str, object]) -> str:
+    references = as_references(record.get("supplemental_references"))
+    if not references:
+        return "Record ini menggunakan sumber utama terkurasi dan membatasi klaim pada edukasi pengolahan aman."
+
+    translated_notes = " ".join(reference["note"] for reference in references if reference.get("note"))
+    return (
+        f"Record ini menggunakan sumber utama terkurasi serta {len(references)} referensi tambahan. "
+        f"Ringkasan referensi berbahasa Inggris diterjemahkan ke Bahasa Indonesia sebagai batas klaim: {translated_notes}"
+    )
+
+
 def build_sft_examples(records: list[dict[str, object]]) -> list[dict[str, object]]:
     rows: list[dict[str, object]] = []
     for record in records:
         formula = str(record["formula_name"])
-        rows.append(
-            {
-                "id": f"sft_{record['id']}",
-                "source_record_id": record["id"],
-                "messages": [
-                    {"role": "system", "content": SYSTEM_PROMPT},
-                    {"role": "user", "content": f"Bagaimana cara membuat {formula} yang lebih detail dan aman?"},
-                    {"role": "assistant", "content": assistant_answer(record)},
-                ],
-            }
-        )
+        for audience_id, audience in PREPARATION_AUDIENCE_VARIANTS:
+            for question_id, focus, template in PREPARATION_QUESTION_VARIANTS:
+                rows.append(
+                    {
+                        "id": f"sft_{record['id']}_{audience_id}_{question_id}",
+                        "source_record_id": record["id"],
+                        "variant": f"{audience_id}_{question_id}",
+                        "focus": focus,
+                        "source_url": record.get("source_url"),
+                        "supplemental_references": record.get("supplemental_references", []),
+                        "messages": [
+                            {"role": "system", "content": SYSTEM_PROMPT},
+                            {
+                                "role": "user",
+                                "content": template.format(formula=formula, audience=audience),
+                            },
+                            {"role": "assistant", "content": assistant_answer(record, focus=focus, audience=audience)},
+                        ],
+                    }
+                )
     return rows
 
 
-def assistant_answer(record: dict[str, object]) -> str:
+def assistant_answer(record: dict[str, object], focus: str = "full", audience: str = "pengguna umum") -> str:
     ingredients = ", ".join(as_list(record.get("ingredients"))) or "-"
+    focus_intro = {
+        "full": "Fokus jawaban: cara pengolahan lengkap, dosis konservatif, dan kewaspadaan.",
+        "dose": "Fokus jawaban: bahan, takaran, frekuensi, dan durasi pendek yang tidak berlebihan.",
+        "hygiene": "Fokus jawaban: kebersihan bahan, alat, penyajian, dan penyimpanan singkat.",
+        "safety": "Fokus jawaban: batas aman, alergi, interaksi obat, dan kelompok yang perlu hati-hati.",
+        "red_flag": "Fokus jawaban: tanda bahaya dan kapan self-care harus dihentikan.",
+        "evidence": "Fokus jawaban: sumber resmi/paper sebagai batas klaim, bukan dasar diagnosis.",
+        "brief": "Fokus jawaban: ringkas, praktis, tetapi tetap aman.",
+        "triage": "Fokus jawaban: checklist kelayakan sebelum ramuan digunakan.",
+    }.get(focus, "Fokus jawaban: edukasi pengolahan ramuan yang aman.")
     return (
-        f"Untuk {record.get('formula_name')}, pastikan keluhan masih ringan dan tidak ada tanda bahaya.\n\n"
+        f"{focus_intro}\n"
+        f"Untuk {record.get('formula_name')}, pastikan keluhan masih ringan dan tidak ada tanda bahaya, terutama untuk {audience}.\n\n"
         f"Bahan: {ingredients}.\n"
-        f"Cara pengolahan detail: {record.get('preparation')}.\n"
-        f"Dosis/kisaran: {record.get('dosage')}.\n"
-        f"Kewaspadaan: {record.get('safety_notes')}.\n"
-        f"Sumber/kurasi: {record.get('source_title')}.\n\n"
+        f"Cara pengolahan detail: {as_sentence(record.get('preparation'))}\n"
+        f"Dosis/kisaran: {as_sentence(record.get('dosage'))}\n"
+        f"Kewaspadaan: {as_sentence(record.get('safety_notes'))}\n"
+        f"Checklist sebelum memakai: pastikan tidak ada sesak, demam tinggi, perdarahan, nyeri berat, muntah terus, dehidrasi, reaksi alergi, atau keluhan yang memburuk. Tanyakan juga usia, kehamilan/menyusui, penyakit kronis, dan obat rutin.\n"
+        f"Ringkasan bukti: {reference_summary(record)}\n"
+        f"Sumber utama: {record.get('source_title')} ({record.get('source_url')}).\n"
+        f"Referensi tambahan: {format_references(record.get('supplemental_references'))}.\n\n"
         "Informasi ini bersifat edukasi, bukan diagnosis medis final atau pengganti konsultasi tenaga kesehatan."
     )
 
@@ -456,6 +643,13 @@ def as_list(value: object) -> list[str]:
     if isinstance(value, str):
         return [item.strip() for item in value.split(";") if item.strip()]
     return []
+
+
+def as_sentence(value: object) -> str:
+    text = str(value or "-").strip()
+    if text.endswith((".", "!", "?")):
+        return text
+    return f"{text}."
 
 
 if __name__ == "__main__":

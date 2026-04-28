@@ -20,6 +20,8 @@ Prototype ini adalah chatbot web berbasis FastAPI + Ollama/OpenAI untuk `humaniz
 - Fallback DeepSeek: `deepseek-r1:1.5b`
 - Fallback Gemma: `gemma4:e2b`, `gemma3:1b`
 
+Konfigurasi model runtime sekarang dipusatkan di `app.config.sh`. Untuk mengganti model, edit `OLLAMA_MODEL_A`, `OLLAMA_MODEL_B`, atau `OPENAI_MODEL`, lalu jalankan `./app.config.sh restart`.
+
 ## Flow Sistem Saat Ini
 1. User mengirim keluhan awal ke `/api/chat`.
 2. Backend menggabungkan riwayat gejala user dalam satu sesi.
@@ -55,7 +57,7 @@ Catatan implementasi lokal:
 
 ## Menjalankan dengan Docker
 ```bash
-docker compose up --build -d
+./app.config.sh start
 ```
 
 Frontend:
@@ -73,6 +75,17 @@ Health check:
 curl http://127.0.0.1:8000/health
 ```
 
+Perintah operasional satu file:
+
+```bash
+./app.config.sh restart
+./app.config.sh logs backend
+./app.config.sh ps
+./app.config.sh down
+```
+
+Script ini berada sejajar dengan `docker-compose.yml`, mengekspor environment backend, membuat `frontend/runtime-config.js`, lalu menjalankan Docker Compose.
+
 ## Menjalankan Backend Lokal
 ```bash
 cd backend
@@ -86,16 +99,7 @@ uvicorn app.main:app --reload --port 8000
 Pull model utama:
 
 ```bash
-ollama pull deepseek-r1:7b
-ollama pull gemma4:latest
-```
-
-Pull fallback:
-
-```bash
-ollama pull deepseek-r1:1.5b
-ollama pull gemma4:e2b
-ollama pull gemma3:1b
+./app.config.sh pull-models
 ```
 
 Opsional, buat wrapper model herbal dari `ollama/Modelfile.*`:
@@ -106,24 +110,22 @@ ollama create gemma4-herbal -f ollama/Modelfile.gemma4-herbal
 ```
 
 ## Environment Penting
+Semua environment runtime utama sekarang bisa diubah dari file root `app.config.sh`:
+
 ```bash
-export OLLAMA_MODEL_A=deepseek-r1:7b
-export OLLAMA_MODEL_B=gemma4:latest
-export OLLAMA_TIMEOUT_SECONDS=75
-export OLLAMA_NUM_PREDICT_DEFAULT=220
-export OLLAMA_NUM_PREDICT_FOLLOW_UP=240
-export OLLAMA_NUM_PREDICT_RECOMMENDATION=640
-export MAX_ANAMNESIS_QUESTIONS=3
+OLLAMA_MODEL_A="deepseek-r1:7b"
+OLLAMA_MODEL_B="gemma4:latest"
+BACKEND_PORT="8000"
+FRONTEND_PORT="5173"
+MAX_ANAMNESIS_QUESTIONS="3"
 ```
 
 Komparasi GPT-4/OpenAI opsional:
 
 ```bash
-export ENABLE_OPENAI_COMPARISON=true
-export OPENAI_API_KEY=sk-...
-export OPENAI_MODEL=gpt-4o
-export OPENAI_BASE_URL=https://api.openai.com/v1
-export OPENAI_TIMEOUT_SECONDS=75
+ENABLE_OPENAI_COMPARISON="true"
+OPENAI_API_KEY=""
+OPENAI_MODEL="gpt-4o"
 ```
 
 Jika `OPENAI_API_KEY` tidak diset, aplikasi tetap berjalan hanya dengan model Ollama lokal.
