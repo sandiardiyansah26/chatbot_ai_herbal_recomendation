@@ -8,10 +8,12 @@ from app.main import (
     _anamnesis_summary,
     _is_duplicate_of_previous_follow_up_question,
     _new_session,
+    _pipeline_steps,
     _should_force_final_recommendation,
     _sync_session_from_client,
 )
 from app.services.anamnesis import analyze_message
+from app.services.clinical_nlp import IndonesianClinicalNLPProcessor
 from app.models import ConversationTurn, ModelAssessment, Recommendation, SessionSync
 from app.services.knowledge_base import KnowledgeBase, TrainingRecord
 from app.services.llm_comparison import (
@@ -26,6 +28,7 @@ from app.services.llm_comparison import (
 from app.services.recommendation import build_recommendation, enhance_recommendation_preparation
 from app.services.retrieval import RetrievedItem
 from app.services.retrieval import RAGRetriever
+from app.services.safety import evaluate_safety
 
 
 
@@ -33,6 +36,7 @@ def _default_data_dir() -> Path:
     current = Path(__file__).resolve()
     candidates = [
         current.parents[1] / "data" / "referensi",
+        current.parents[2] / "data" / "referensi" if len(current.parents) > 2 else None,
         current.parents[3] / "data" / "referensi" if len(current.parents) > 3 else None,
     ]
     for candidate in candidates:
@@ -90,6 +94,41 @@ class ServiceTest(unittest.TestCase):
         self.assertEqual(anamnesis.duration_text, "sudah 3 hari")
         self.assertIn("durasi sudah disebut: sudah 3 hari", anamnesis.answered_slots)
         self.assertTrue(anamnesis.has_progression_signal or anamnesis.has_intensity_signal)
+
+    def test_clinical_nlp_normalizes_indonesian_and_extracts_tropical_symptoms(self) -> None:
+        processor = IndonesianClinicalNLPProcessor()
+        result = processor.process("Sy demam tinggi mendadak, nyeri belakang mata, ga sesak, banyak nyamuk")
+        self.assertIn("demam tinggi mendadak", result.extracted_symptoms)
+        self.assertIn("nyeri belakang mata", result.extracted_symptoms)
+        self.assertIn("sesak napas", result.negated_symptoms)
+        self.assertIn("lingkungan banyak nyamuk", result.risk_contexts)
+        self.assertIn("tidak sesak", result.normalized_text)
+
+    def test_pipeline_exposes_new_indobert_xlmr_rag_safety_flow(self) -> None:
+        flow_text = " ".join(_pipeline_steps()).lower()
+        self.assertIn("indobert/xlm-r", flow_text)
+        self.assertIn("deepseek-r1", flow_text)
+        self.assertIn("rag medical knowledge base", flow_text)
+        self.assertIn("safety layer", flow_text)
+
+    def test_retrieves_tropical_disease_guidance_for_dengue_pattern(self) -> None:
+        processor = IndonesianClinicalNLPProcessor()
+        nlp = processor.process("demam tinggi mendadak, sakit kepala, nyeri belakang mata, dan ruam")
+        anamnesis = analyze_message(nlp.normalized_text)
+        guidance = self.retriever.retrieve_guidance(nlp.retrieval_query(), anamnesis)
+        self.assertTrue(guidance)
+        self.assertIn("Demam Berdarah Dengue", guidance[0].title)
+
+    def test_safety_layer_marks_high_risk_tropical_context_as_caution(self) -> None:
+        decision = evaluate_safety(
+            red_flags=[],
+            assessment=ModelAssessment(scope="supported", suspected_conditions=["Demam Berdarah Dengue"]),
+            retrieved_items=[],
+            nlp_summary={"extracted_symptoms": ["demam", "ruam"], "risk_contexts": ["lingkungan banyak nyamuk"]},
+        )
+        self.assertEqual(decision.level, "caution")
+        self.assertFalse(decision.requires_medical_referral)
+        self.assertTrue(decision.allow_herbal_support)
 
     def test_follow_up_scoring_penalizes_repeated_answered_symptom_question(self) -> None:
         summary = {

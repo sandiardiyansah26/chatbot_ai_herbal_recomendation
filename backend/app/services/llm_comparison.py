@@ -38,13 +38,15 @@ from app.services.text import contains_phrase, normalize, tokenize
 
 
 SYSTEM_PROMPT = (
-    "Anda adalah kandidat model GenAI untuk chatbot deteksi penyakit berbasis humanizing anamnesis berbahasa Indonesia. "
-    "Tugas Anda adalah membantu menggali keluhan, mengusulkan dugaan kondisi, menyusun maksimal satu pertanyaan follow-up "
-    "yang paling relevan, dan bila informasi cukup menyusun jawaban akhir yang aman. "
-    "Gunakan hanya riwayat percakapan, ringkasan anamnesis, dan konteks retrieval yang diberikan. "
-    "Jangan memberi diagnosis medis final. Jangan mengarang ramuan yang tidak ada di konteks retrieval. "
-    "Jika kondisi mengarah ke red flag, penyakit kritis, atau penyakit dalam, arahkan ke tenaga kesehatan dan jangan "
-    "memaksakan rekomendasi herbal. Output HARUS berupa satu object JSON valid tanpa markdown, penjelasan tambahan, atau teks di luar JSON."
+    "Anda adalah reasoner DeepSeek-R1/Gemma untuk chatbot deteksi awal kemungkinan penyakit tropis "
+    "berbasis humanizing anamnesis berbahasa Indonesia. Tugas Anda adalah memetakan gejala ke kemungkinan "
+    "kondisi tropis atau keluhan terkait, menyusun maksimal satu pertanyaan follow-up paling relevan, dan "
+    "bila informasi cukup memberi saran awal yang aman. Gunakan hanya riwayat percakapan, ringkasan "
+    "IndoBERT/XLM-R preprocessing, dan konteks RAG medical knowledge base yang diberikan. Jangan memberi "
+    "diagnosis medis final. Jangan mengarang ramuan yang tidak ada di konteks retrieval. Jika kondisi mengarah "
+    "ke red flag, emergency, penyakit tropis berat, atau butuh diagnosis/obat spesifik, arahkan ke tenaga "
+    "kesehatan dan jangan memaksakan herbal sebagai terapi utama. Output HARUS berupa satu object JSON valid "
+    "tanpa markdown, penjelasan tambahan, atau teks di luar JSON."
 )
 COMPARISON_RESPONSE_TYPES = {"follow_up", "recommendation"}
 SUPPORTED_SCOPES = {"supported", "internal_medicine", "critical", "unsupported"}
@@ -172,7 +174,7 @@ class DualLLMComparator:
             "num_predict_by_response_type": self.num_predict_by_response_type,
             "learning_log_path": str(self.learning_log_path),
             "max_questions": self.max_questions,
-            "mode": "multi_llm_anamnesis_first_structured_json",
+            "mode": "indonesian_tropical_disease_anamnesis_rag_safety_structured_json",
         }
 
     def generate_assessment(
@@ -506,7 +508,7 @@ def build_medical_prompt(
         if turn.get("content")
     ) or f"user: {user_message}"
     contexts = "\n".join(
-        f"- {item.type}:{item.title} | ev={item.evidence_level or '-'}"
+        f"- {item.type}:{item.title} | ev={item.evidence_level or '-'} | source={item.source or '-'}"
         for item in retrieved_context[:4]
     ) or "-"
     mode = "final_answer" if response_type == "recommendation" or force_final else "anamnesis_follow_up"
@@ -541,7 +543,7 @@ def build_medical_prompt(
         }
 
     return (
-        "Analisis percakapan medis ringan dengan metode humanizing anamnesis.\n\n"
+        "Analisis percakapan medis dengan metode humanizing anamnesis untuk deteksi awal kemungkinan penyakit tropis.\n\n"
         f"Mode: {mode}\n"
         f"Pertanyaan anamnesis yang sudah ditanyakan: {question_count} dari maksimum {max_questions}\n"
         f"Paksa jawaban final: {'ya' if force_final else 'tidak'}\n"
@@ -552,9 +554,11 @@ def build_medical_prompt(
         f"Riwayat percakapan:\n{conversation}\n\n"
         f"Konteks retrieval:\n{contexts}\n\n"
         "Aturan penting:\n"
-        "- Fokus pada penyakit/keluhan non-kritis dan non-penyakit dalam.\n"
+        "- Fokus utama adalah kemungkinan penyakit tropis/kondisi terkait berdasarkan gejala, bukan langsung memberi ramuan.\n"
+        "- Pertimbangkan DBD/dengue, malaria, tifoid/tipes, TBC, leptospirosis, filariasis, kusta, dan infeksi kulit/jamur bila konteks RAG mendukung.\n"
         "- scope harus tepat satu label saja: supported, internal, critical, atau unsupported.\n"
         "- Jika kasus mengarah ke penyakit dalam, pakai scope=internal. Jika kritis/red flag berat, pakai scope=critical.\n"
+        "- Penyakit tropis yang memerlukan pemeriksaan/lab/obat spesifik harus diberi refer=true bila ada red flag atau gejala kuat.\n"
         "- Jika mode anamnesis_follow_up dan informasi belum cukup, berikan tepat satu pertanyaan lanjutan yang paling penting.\n"
         "- Jangan menanyakan ulang gejala, durasi, atau tanda bahaya yang sudah ada pada informasi yang sudah dijawab user.\n"
         "- Jangan mengulang pertanyaan follow-up yang sebelumnya sudah pernah ditanyakan, kecuali jawaban user benar-benar kosong atau ambigu.\n"
@@ -562,8 +566,10 @@ def build_medical_prompt(
         "- Jika user sudah menyebut demam, jangan bertanya apakah ada demam; tanyakan suhu tertinggi atau pola demam.\n"
         "- Jika user sudah menyebut durasi, jangan bertanya sejak kapan; tanyakan apakah memburuk atau tanda bahaya lain.\n"
         "- Contoh: bila user berkata sakit kepala dan demam sudah 3 hari, tanyakan suhu tertinggi, nyeri belakang mata, ruam, muntah, kaku leher, atau lemas berat.\n"
-        "- Jika mode final_answer, isi field final dan bila aman sertakan ramuan hanya dari konteks retrieval.\n"
+        "- Jika mode final_answer, isi field final dengan kemungkinan kondisi, saran awal, dan batasan keselamatan.\n"
+        "- Sertakan herbal hanya sebagai pendamping aman bila scope=supported, tidak ada red flag, dan ramuan ada di konteks retrieval.\n"
         "- Jangan mengarang bahan, dosis, atau cara pengolahan di luar konteks retrieval.\n"
+        "- Untuk DBD, malaria, TBC, leptospirosis, tifoid berat, filariasis, atau kusta, herbal tidak boleh diposisikan sebagai terapi utama.\n"
         "- suspected maksimal 2 item.\n"
         "- why maksimal 25 kata.\n"
         "- question maksimal 35 kata dan tetap berupa satu kalimat tanya.\n"

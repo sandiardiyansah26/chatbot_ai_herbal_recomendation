@@ -8,6 +8,7 @@ def _default_data_dir() -> Path:
     current = Path(__file__).resolve()
     candidates = [
         current.parents[1] / "data" / "referensi",
+        current.parents[2] / "data" / "referensi" if len(current.parents) > 2 else None,
         current.parents[3] / "data" / "referensi" if len(current.parents) > 3 else None,
     ]
     for candidate in candidates:
@@ -56,15 +57,19 @@ def _env_path(name: str, default: Path) -> Path:
 
 DATA_DIR = _env_path("HERBAL_DATA_DIR", _default_data_dir())
 CHROMA_DB_DIR = _env_path("CHROMA_DB_DIR", _default_chroma_db_dir())
+NLP_MODEL_FAMILY = os.getenv("NLP_MODEL_FAMILY", "IndoBERT/XLM-R")
+NLP_PRIMARY_MODEL = os.getenv("NLP_PRIMARY_MODEL", "indobenchmark/indobert-base-p1")
+NLP_FALLBACK_MODEL = os.getenv("NLP_FALLBACK_MODEL", "xlm-roberta-base")
+ENABLE_TRANSFORMER_NLP = _env_bool("ENABLE_TRANSFORMER_NLP", False)
 OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://127.0.0.1:11434").rstrip("/")
-OLLAMA_MODEL_A = os.getenv("OLLAMA_MODEL_A", "deepseek-r1:7b")
-OLLAMA_MODEL_B = os.getenv("OLLAMA_MODEL_B", "gemma4:latest")
-OLLAMA_MODEL_A_FALLBACKS = _split_env_list(os.getenv("OLLAMA_MODEL_A_FALLBACKS", "deepseek-r1:1.5b"))
-OLLAMA_MODEL_B_FALLBACKS = _split_env_list(os.getenv("OLLAMA_MODEL_B_FALLBACKS", "gemma4:e2b,gemma3:1b"))
-OLLAMA_TIMEOUT_SECONDS = float(os.getenv("OLLAMA_TIMEOUT_SECONDS", "75"))
-OLLAMA_NUM_PREDICT_DEFAULT = _env_int("OLLAMA_NUM_PREDICT_DEFAULT", 220)
-OLLAMA_NUM_PREDICT_RECOMMENDATION = _env_int("OLLAMA_NUM_PREDICT_RECOMMENDATION", 640)
-OLLAMA_NUM_PREDICT_FOLLOW_UP = _env_int("OLLAMA_NUM_PREDICT_FOLLOW_UP", 240)
+OLLAMA_MODEL_A = os.getenv("OLLAMA_MODEL_A", "deepseek-r1:1.5b")
+OLLAMA_MODEL_B = os.getenv("OLLAMA_MODEL_B", "gemma4:e2b")
+OLLAMA_MODEL_A_FALLBACKS = _split_env_list(os.getenv("OLLAMA_MODEL_A_FALLBACKS", ""))
+OLLAMA_MODEL_B_FALLBACKS = _split_env_list(os.getenv("OLLAMA_MODEL_B_FALLBACKS", ""))
+OLLAMA_TIMEOUT_SECONDS = float(os.getenv("OLLAMA_TIMEOUT_SECONDS", "35"))
+OLLAMA_NUM_PREDICT_DEFAULT = _env_int("OLLAMA_NUM_PREDICT_DEFAULT", 160)
+OLLAMA_NUM_PREDICT_RECOMMENDATION = _env_int("OLLAMA_NUM_PREDICT_RECOMMENDATION", 420)
+OLLAMA_NUM_PREDICT_FOLLOW_UP = _env_int("OLLAMA_NUM_PREDICT_FOLLOW_UP", 120)
 OLLAMA_NUM_PREDICT_RED_FLAG = _env_int("OLLAMA_NUM_PREDICT_RED_FLAG", 120)
 OLLAMA_NUM_PREDICT_OUT_OF_SCOPE = _env_int("OLLAMA_NUM_PREDICT_OUT_OF_SCOPE", 120)
 MAX_ANAMNESIS_QUESTIONS = _env_int("MAX_ANAMNESIS_QUESTIONS", 3)
@@ -74,6 +79,7 @@ OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4o")
 OPENAI_TIMEOUT_SECONDS = float(os.getenv("OPENAI_TIMEOUT_SECONDS", str(OLLAMA_TIMEOUT_SECONDS)))
 ENABLE_OPENAI_COMPARISON = _env_bool("ENABLE_OPENAI_COMPARISON", True)
 ENABLE_DUAL_LLM_COMPARISON = _env_bool("ENABLE_DUAL_LLM_COMPARISON", True)
+ENABLE_LLM_FOLLOW_UP = _env_bool("ENABLE_LLM_FOLLOW_UP", False)
 LEARNING_LOG_PATH = Path(
     os.getenv("LEARNING_LOG_PATH") or (DATA_DIR.parent / "learning" / "dual_llm_interactions.jsonl")
 ).resolve()

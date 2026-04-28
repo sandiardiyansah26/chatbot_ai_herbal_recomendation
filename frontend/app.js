@@ -79,7 +79,7 @@ function appendThinkingMessage() {
     <span class="thinking-dot"></span>
     <span class="thinking-dot"></span>
     <span class="thinking-dot"></span>
-    <span class="thinking-text">Menganalisis gejala dan knowledge base herbal...</span>
+    <span class="thinking-text">Menormalisasi bahasa, mengekstrak gejala, dan menjalankan RAG medical knowledge base...</span>
   `;
   return rowEl;
 }

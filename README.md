@@ -1,15 +1,16 @@
 # Program AI Chatbot Rekomendasi Ramuan Herbal
 
-Prototype ini adalah chatbot web berbasis FastAPI + Ollama/OpenAI untuk `humanizing anamnesis` dan rekomendasi ramuan herbal. Flow utama sekarang memakai `multi-LLM anamnesis-first`: keluhan user dikirim ke `deepseek-r1:7b`, `gemma4:latest`, dan opsional `gpt-4o` bila `OPENAI_API_KEY` tersedia. Hasil model di-ranking, lalu chatbot bertanya lanjutan maksimal `3` kali sebelum memberi dugaan kondisi, rekomendasi herbal, cara pengolahan, dan catatan kewaspadaan.
+Prototype ini adalah chatbot web berbasis FastAPI + Ollama/OpenAI untuk deteksi awal kemungkinan penyakit tropis melalui `humanizing anamnesis` berbahasa Indonesia, RAG medical knowledge base, safety layer, dan rekomendasi herbal aman sebagai pendamping edukatif. Flow utama sekarang dimulai dari normalisasi/ekstraksi gejala ala IndoBERT/XLM-R, dilanjutkan DeepSeek-R1 sebagai reasoner anamnesis, retrieval ke knowledge base medis-herbal, lalu guardrail keselamatan sebelum output akhir.
 
 ## Fitur Utama
 - Frontend web Bahasa Indonesia dengan riwayat chat lokal.
 - Backend FastAPI dengan session memory percakapan.
+- Lapisan IndoBERT/XLM-R-compatible untuk normalisasi bahasa Indonesia, slang/negasi, ekstraksi gejala, dan konteks risiko tropis.
 - RAG lokal memakai ChromaDB persistent vector store dan fallback TF-IDF.
-- Knowledge base gabungan dari data referensi herbal, data anamnesis, dan data training terkurasi.
+- Knowledge base gabungan dari data Kemenkes/WHO/CDC yang tersedia, dokumen penyakit tropis terkurasi, data anamnesis, referensi herbal, dan data training.
 - Multi-model comparison untuk `follow_up` dan `recommendation`.
 - Ranking kandidat berbasis `safety`, `grounding`, `completeness`, `relevance`, `language`, plus `question_quality` atau `herbal_fit`.
-- Guardrail red flag, out-of-scope, dan referral untuk kasus `penyakit dalam` atau kondisi kritis.
+- Safety layer untuk red flag, emergency, disclaimer, rujukan dokter, dan pembatasan herbal agar tidak menjadi terapi utama pada dugaan penyakit tropis berat.
 - Learning capture untuk setiap turn percakapan, kandidat model, feedback rekomendasi, dan kandidat enrichment knowledge base.
 - Pipeline training/LoRA tersedia di folder `training/`.
 
@@ -23,20 +24,14 @@ Prototype ini adalah chatbot web berbasis FastAPI + Ollama/OpenAI untuk `humaniz
 ## Flow Sistem Saat Ini
 1. User mengirim keluhan awal ke `/api/chat`.
 2. Backend menggabungkan riwayat gejala user dalam satu sesi.
-3. Modul anamnesis mendeteksi gejala, durasi, negasi, permintaan rekomendasi, dan red flag.
-4. Jika ada red flag, sistem langsung memberi guardrail tanpa memaksa jalur herbal.
-5. Jika aman, backend melakukan retrieval ke knowledge base.
-6. Pada turn follow-up, DeepSeek, Gemma, dan GPT-4 opsional dipanggil untuk menghasilkan assessment terstruktur JSON.
-7. Output model di-ranking, lalu chatbot memilih satu pertanyaan anamnesis terbaik.
-8. Sistem mengulang langkah ini sampai informasi cukup atau jumlah pertanyaan mencapai `3`.
-9. Setelah itu backend menjalankan final recommendation comparison, memilih jawaban akhir terbaik, lalu menyusun:
-   - dugaan kondisi
-   - rekomendasi herbal
-   - bahan
-   - cara pengolahan
-   - dosis
-   - catatan kewaspadaan
-10. Semua turn, skor model, dan snapshot sesi disimpan sebagai data pembelajaran.
+3. IndoBERT/XLM-R-compatible layer menormalisasi bahasa Indonesia, slang, negasi, dan mengekstrak gejala/konteks risiko.
+4. Modul anamnesis mendeteksi slot klinis, durasi, negasi, red flag, dan informasi yang sudah dijawab.
+5. RAG mengambil konteks penyakit tropis, anamnesis, formula herbal, cara pengolahan, dan sumber evidensi.
+6. DeepSeek-R1 menjalankan humanizing anamnesis dan reasoning pertanyaan lanjutan; Gemma/OpenAI opsional tetap dapat dibandingkan.
+7. Safety layer memeriksa red flag, emergency, kebutuhan rujukan dokter, disclaimer, dan batasan herbal.
+8. Sistem bertanya maksimal `3` kali bila informasi belum cukup.
+9. Output akhir menyusun kemungkinan penyakit tropis/kondisi terkait, saran awal, dan rekomendasi herbal aman bila konteks RAG dan safety layer mengizinkan.
+10. Semua turn, skor model, konteks RAG, dan snapshot sesi disimpan sebagai data pembelajaran.
 
 Catatan implementasi lokal:
 - `follow_up` dijalankan secara paralel untuk kandidat model yang aktif.
@@ -73,6 +68,11 @@ Health check:
 curl http://127.0.0.1:8000/health
 ```
 
+Melihat flow runtime:
+```bash
+curl http://127.0.0.1:8000/api/system-flow
+```
+
 ## Menjalankan Backend Lokal
 ```bash
 cd backend
@@ -107,13 +107,18 @@ ollama create gemma4-herbal -f ollama/Modelfile.gemma4-herbal
 
 ## Environment Penting
 ```bash
-export OLLAMA_MODEL_A=deepseek-r1:7b
-export OLLAMA_MODEL_B=gemma4:latest
-export OLLAMA_TIMEOUT_SECONDS=75
-export OLLAMA_NUM_PREDICT_DEFAULT=220
-export OLLAMA_NUM_PREDICT_FOLLOW_UP=240
-export OLLAMA_NUM_PREDICT_RECOMMENDATION=640
+export OLLAMA_MODEL_A=deepseek-r1:1.5b
+export OLLAMA_MODEL_B=gemma4:e2b
+export OLLAMA_TIMEOUT_SECONDS=35
+export OLLAMA_NUM_PREDICT_DEFAULT=160
+export OLLAMA_NUM_PREDICT_FOLLOW_UP=120
+export OLLAMA_NUM_PREDICT_RECOMMENDATION=420
 export MAX_ANAMNESIS_QUESTIONS=3
+export ENABLE_LLM_FOLLOW_UP=false
+export NLP_MODEL_FAMILY=IndoBERT/XLM-R
+export NLP_PRIMARY_MODEL=indobenchmark/indobert-base-p1
+export NLP_FALLBACK_MODEL=xlm-roberta-base
+export ENABLE_TRANSFORMER_NLP=false
 ```
 
 Komparasi GPT-4/OpenAI opsional:
@@ -140,20 +145,18 @@ export RECOMMENDATION_FEEDBACK_LOG_PATH=data/learning/recommendation_feedback.js
 ## Benchmark Runtime Terbaru
 Angka ini diambil dari runtime aplikasi yang sekarang:
 
-- `follow_up` turn pertama: sekitar `41.34 detik`
-  - DeepSeek: `41.09 detik`
-  - Gemma: `6.75 detik`
-  - model terpilih: `deepseek-r1:7b`
+- `follow_up` turn pertama: sekitar `0.06-0.25 detik`
+  - memakai fast anamnesis layer berbasis slot gejala + RAG
+  - tidak menunggu inference LLM besar
 - `final recommendation` turn akhir: sekitar `61.69 detik`
-  - DeepSeek: `23.02 detik`
-  - Gemma: `38.62 detik`
-  - model terpilih: `gemma4:latest`
+  - sekarang diarahkan ke model ringan `deepseek-r1:1.5b` dan `gemma4:e2b`
+  - timeout default turun menjadi `35 detik`
 - `red_flag`: sekitar `0.14 detik`
 
 Interpretasi penting:
-- Bottleneck terbesar ada di inference model, bukan di retrieval.
-- Final recommendation memang lebih lambat karena kandidat model aktif tetap dievaluasi, lalu hasilnya di-ranking.
-- Walaupun lebih lambat, flow ini memenuhi objective penelitian untuk membandingkan performa model pada task anamnesis dan rekomendasi.
+- Follow-up anamnesis dibuat cepat agar percakapan terasa hidup dan tidak menggantung.
+- Bottleneck inference dipindahkan ke tahap final/reasoning, bukan pertanyaan anamnesis awal.
+- Komparasi model tetap tersedia, tetapi memakai varian model yang lebih ringan secara default.
 
 ## Dataset Builder
 Generate ulang dataset anamnesis:

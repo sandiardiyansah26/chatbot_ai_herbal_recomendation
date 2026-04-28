@@ -12,10 +12,12 @@ from app.config import (
     CHROMA_DB_DIR,
     CORS_ORIGINS,
     DATA_DIR,
+    ENABLE_LLM_FOLLOW_UP,
     MAX_ANAMNESIS_QUESTIONS,
 )
 from app.models import ChatRequest, ChatResponse, ModelAssessment, ModelComparison, Recommendation, SessionSync
 from app.services.anamnesis import SYMPTOM_CONCEPTS, analyze_message
+from app.services.clinical_nlp import IndonesianClinicalNLPProcessor
 from app.services.knowledge_base import CaseEntry, KnowledgeBase
 from app.services.learning import LearningCaptureService
 from app.services.llm_comparison import DualLLMComparator
@@ -36,6 +38,7 @@ from app.services.recommendation import (
     to_context,
 )
 from app.services.retrieval import RAGRetriever, RetrievedItem
+from app.services.safety import evaluate_safety, safety_assessment_to_model_assessment
 from app.services.text import contains_phrase, normalize, tokenize
 app = FastAPI(title=APP_NAME, version=APP_VERSION)
 app.add_middleware(
@@ -48,6 +51,7 @@ app.add_middleware(
 
 kb = KnowledgeBase(DATA_DIR)
 retriever = RAGRetriever(kb, chroma_db_dir=CHROMA_DB_DIR)
+clinical_nlp = IndonesianClinicalNLPProcessor()
 llm_comparator = DualLLMComparator()
 learning_capture = LearningCaptureService()
 SESSIONS: dict[str, dict[str, object]] = {}
@@ -125,10 +129,52 @@ def health() -> dict[str, object]:
         "app": APP_NAME,
         "version": APP_VERSION,
         "knowledge_base": kb.health(),
+        "clinical_nlp": clinical_nlp.health(),
         "retriever": retriever.health(),
         "llm_comparison": llm_comparator.health(),
+        "fast_anamnesis": {
+            "enabled": not ENABLE_LLM_FOLLOW_UP,
+            "llm_follow_up_enabled": ENABLE_LLM_FOLLOW_UP,
+            "mode": "deterministic_humanizing_slot_based_follow_up",
+        },
         "max_anamnesis_questions": MAX_ANAMNESIS_QUESTIONS,
         "pipeline": _pipeline_steps(),
+    }
+
+
+@app.get("/api/system-flow")
+def system_flow() -> dict[str, object]:
+    return {
+        "objective": (
+            "Deteksi awal kemungkinan penyakit tropis melalui anamnesis humanis Bahasa Indonesia, "
+            "grounding RAG medical knowledge base, safety layer, dan rekomendasi herbal aman sebagai pendamping edukatif."
+        ),
+        "flow": _pipeline_steps(),
+        "components": {
+            "input": "User input Bahasa Indonesia",
+            "clinical_nlp": clinical_nlp.health(),
+            "anamnesis_reasoner": {
+                "primary_model": "DeepSeek-R1",
+                "runtime_models": llm_comparator.health().get("models", []),
+                "task": "humanizing_anamnesis_dan_reasoning_pertanyaan_lanjutan",
+                "fast_follow_up": not ENABLE_LLM_FOLLOW_UP,
+            },
+            "rag_medical_knowledge_base": {
+                "sources": [
+                    "Kemenkes/ayosehat/keslan/malaria.kemkes.go.id yang tersedia di dataset",
+                    "WHO/CDC disease guidance yang tersedia di dataset",
+                    "dokumen penyakit tropis lokal yang sudah dikurasi",
+                    "referensi formula dan jurnal herbal pada knowledge base",
+                ],
+                "retriever": retriever.health(),
+                "knowledge_base": kb.health(),
+            },
+            "safety_layer": {
+                "checks": ["red_flag", "emergency", "medical_referral", "disclaimer", "batasan herbal"],
+                "output_policy": "herbal tidak menjadi terapi utama pada red flag atau dugaan penyakit tropis berat",
+            },
+            "output": "Kemungkinan penyakit tropis + saran awal + rekomendasi herbal aman bila konteksnya mendukung",
+        },
     }
 
 
@@ -186,7 +232,9 @@ def chat(request: ChatRequest) -> ChatResponse:
         return _finalize_response(session_id, session, request.message, post_recommendation_response)
 
     combined_user_message = _combined_user_messages(session)
-    anamnesis = analyze_message(combined_user_message)
+    nlp_result = clinical_nlp.process(combined_user_message)
+    session["last_nlp_summary"] = nlp_result.as_summary()
+    anamnesis = analyze_message(nlp_result.normalized_text)
     question_count = int(session.get("question_count", 0))
     pipeline = _pipeline_steps()
 
@@ -254,6 +302,39 @@ def chat(request: ChatRequest) -> ChatResponse:
         )
         return _finalize_response(session_id, session, request.message, response)
 
+    if not ENABLE_LLM_FOLLOW_UP and not _is_fast_anamnesis_complete(anamnesis_summary, question_count):
+        fast_assessment = _fast_follow_up_assessment(
+            anamnesis_summary=anamnesis_summary,
+            fallback_case=best_case,
+            guidance_items=guidance_items,
+            asked_questions=_asked_follow_up_questions(session),
+        )
+        fast_comparison = ModelComparison(
+            enabled=False,
+            selected_assessment=fast_assessment,
+            selected_reply=fast_assessment.follow_up_question,
+            note=(
+                "Fast anamnesis mode: pertanyaan lanjutan dibuat dari slot klinis dan RAG agar respons lebih cepat; "
+                "LLM ringan dipakai pada tahap final/reasoning."
+            ),
+        )
+        session["question_count"] = question_count + 1
+        session["suspected_conditions"] = fast_assessment.suspected_conditions[:3]
+        session["conversation_stage"] = f"anamnesis_follow_up_{session['question_count']}"
+        response = _follow_up_response(
+            session_id=session_id,
+            assessment=fast_assessment,
+            comparison=fast_comparison,
+            anamnesis_summary=anamnesis_summary,
+            contexts=contexts,
+            question_count=int(session["question_count"]),
+            pipeline=pipeline,
+            fallback_case=best_case,
+            asked_questions=_asked_follow_up_questions(session),
+        )
+        _remember_follow_up_question(session, response.follow_up_question)
+        return _finalize_response(session_id, session, request.message, response)
+
     follow_up_comparison = llm_comparator.generate_assessment(
         session_id=session_id,
         user_message=request.message,
@@ -266,11 +347,19 @@ def chat(request: ChatRequest) -> ChatResponse:
         force_final=False,
     )
     selected_assessment = follow_up_comparison.selected_assessment
+    safety_decision = evaluate_safety(
+        red_flags=anamnesis.red_flags,
+        assessment=selected_assessment,
+        retrieved_items=retrieved_items,
+        nlp_summary=session.get("last_nlp_summary") if isinstance(session.get("last_nlp_summary"), dict) else {},
+    )
 
-    if _needs_referral(selected_assessment):
+    if _needs_referral(selected_assessment) or safety_decision.requires_medical_referral:
         response = _referral_response(
             session_id=session_id,
-            assessment=selected_assessment,
+            assessment=safety_assessment_to_model_assessment(safety_decision, selected_assessment)
+            if safety_decision.requires_medical_referral
+            else selected_assessment,
             comparison=follow_up_comparison,
             anamnesis_summary=anamnesis_summary,
             contexts=contexts,
@@ -366,22 +455,22 @@ def _new_session() -> dict[str, object]:
         "conversation_stage": "initial",
         "completed": False,
         "last_recommendation": None,
+        "last_nlp_summary": {},
         "feedback": [],
     }
 
 
 def _pipeline_steps() -> list[str]:
     return [
-        "1. Aggregasi riwayat percakapan dan gejala user untuk humanizing anamnesis",
-        "2. Ekstraksi slot anamnesis yang sudah dijawab agar pertanyaan lanjutan tidak berulang",
-        f"3. Retrieval ke chunk knowledge base dengan {retriever.health()['backend']}",
-        "4. Grounding context gabungan dari case, formula, herbal, dan guidance record",
-        "5. Kirim prompt terstruktur ke model pembanding: DeepSeek-R1, Gemma4, dan GPT-4 bila API key tersedia",
-        "6. Ranking kandidat berbasis safety, grounding, relevance, completeness, non-repetition, dan latency",
-        f"7. Tanyakan maksimal {MAX_ANAMNESIS_QUESTIONS} follow-up sebelum jawaban akhir",
-        "8. Finalisasi dugaan kondisi, rekomendasi herbal, dan catatan kewaspadaan",
-        "9. Tanyakan feedback apakah rekomendasi membantu dan simpan sebagai evaluasi model",
-        "10. Simpan conversation turn sebagai learning log dan kandidat enrichment knowledge base",
+        "1. User input Bahasa Indonesia diterima dan digabung dengan riwayat sesi",
+        f"2. IndoBERT/XLM-R layer melakukan normalisasi bahasa dan ekstraksi gejala ({clinical_nlp.health()['backend']})",
+        "3. Fast anamnesis layer menyusun pertanyaan lanjutan humanis tanpa menunggu LLM besar",
+        f"4. RAG Medical Knowledge Base mengambil konteks Kemenkes/WHO/dokumen penyakit tropis/jurnal herbal melalui {retriever.health()['backend']}",
+        "5. Safety Layer memeriksa red flag, emergency, kebutuhan rujukan dokter, disclaimer, dan batasan herbal",
+        "6. DeepSeek-R1 ringan dan Gemma ringan dipakai untuk reasoning/final answer saat informasi sudah cukup",
+        f"7. Sistem bertanya maksimal {MAX_ANAMNESIS_QUESTIONS} kali sebelum finalisasi bila informasi belum cukup",
+        "8. Output berisi kemungkinan penyakit tropis/kondisi terkait, saran awal, dan rekomendasi herbal aman bila layak",
+        "9. Hasil model, konteks RAG, feedback, dan conversation turn disimpan sebagai learning log",
     ]
 
 
@@ -519,8 +608,9 @@ def _conversation_history(session: dict[str, object]) -> list[dict[str, str]]:
 
 
 def _retrieve_bundle(query: str, anamnesis, session: dict[str, object]) -> dict[str, object]:
-    top_cases = retriever.retrieve_cases(query, anamnesis, limit=3)
-    guidance_items = retriever.retrieve_guidance(query, anamnesis, limit=4)
+    retrieval_query = _rag_query(query, session)
+    guidance_items = retriever.retrieve_guidance(retrieval_query, anamnesis, limit=5)
+    top_cases = retriever.retrieve_cases(retrieval_query, anamnesis, limit=3)
 
     best_case: CaseEntry | None = top_cases[0].payload if top_cases else None
     previous_case_id = str(session.get("matched_case_id") or "")
@@ -529,18 +619,35 @@ def _retrieve_bundle(query: str, anamnesis, session: dict[str, object]) -> dict[
 
     supporting_context: list[RetrievedItem] = []
     if best_case:
-        supporting_context = retriever.retrieve_context_for_case(query, best_case, anamnesis, limit=6)
+        supporting_context = retriever.retrieve_context_for_case(retrieval_query, best_case, anamnesis, limit=6)
 
     items: list[RetrievedItem] = []
+    items.extend(guidance_items[:5])
     items.extend(top_cases[:2])
     items.extend(supporting_context[:6])
-    items.extend(guidance_items[:4])
     return {
         "top_cases": top_cases,
         "guidance_items": guidance_items,
         "best_case": best_case,
         "items": _dedupe_items(items),
     }
+
+
+def _rag_query(query: str, session: dict[str, object]) -> str:
+    nlp_summary = session.get("last_nlp_summary")
+    if not isinstance(nlp_summary, dict):
+        return query
+    parts = [
+        query,
+        str(nlp_summary.get("normalized_text") or ""),
+        " ".join(str(item) for item in nlp_summary.get("extracted_symptoms", []) if str(item).strip())
+        if isinstance(nlp_summary.get("extracted_symptoms"), list)
+        else "",
+        " ".join(str(item) for item in nlp_summary.get("risk_contexts", []) if str(item).strip())
+        if isinstance(nlp_summary.get("risk_contexts"), list)
+        else "",
+    ]
+    return " ".join(part.strip() for part in parts if part and part.strip())
 
 
 def _dedupe_items(items: list[RetrievedItem]) -> list[RetrievedItem]:
@@ -553,7 +660,7 @@ def _dedupe_items(items: list[RetrievedItem]) -> list[RetrievedItem]:
 def _supports_medical_flow(top_cases: list[RetrievedItem], guidance_items: list[RetrievedItem], anamnesis) -> bool:
     if not top_cases and not guidance_items:
         return False
-    if anamnesis.detected_symptoms or anamnesis.hinted_case_ids:
+    if anamnesis.detected_symptoms or anamnesis.present_symptoms or anamnesis.hinted_case_ids:
         return True
     best_score = max(
         [item.score for item in [*top_cases[:1], *guidance_items[:1]]],
@@ -565,8 +672,17 @@ def _supports_medical_flow(top_cases: list[RetrievedItem], guidance_items: list[
 def _anamnesis_summary(anamnesis, keluhan_ringan: str | None = None, session: dict[str, object] | None = None) -> dict[str, object]:
     question_count = int((session or {}).get("question_count", 0))
     suspected_conditions = list((session or {}).get("suspected_conditions", []))
+    nlp_summary = (session or {}).get("last_nlp_summary")
+    if not isinstance(nlp_summary, dict):
+        nlp_summary = {}
     return {
         "keluhan_ringan": keluhan_ringan,
+        "clinical_nlp": nlp_summary,
+        "nlp_extracted_symptoms": nlp_summary.get("extracted_symptoms", []),
+        "nlp_negated_symptoms": nlp_summary.get("negated_symptoms", []),
+        "nlp_risk_contexts": nlp_summary.get("risk_contexts", []),
+        "nlp_backend": nlp_summary.get("backend"),
+        "nlp_confidence": nlp_summary.get("confidence"),
         "detected_symptoms": anamnesis.detected_symptoms,
         "present_symptoms": getattr(anamnesis, "present_symptoms", []),
         "absent_symptoms": getattr(anamnesis, "absent_symptoms", []),
@@ -583,6 +699,65 @@ def _anamnesis_summary(anamnesis, keluhan_ringan: str | None = None, session: di
         "suspected_conditions": suspected_conditions,
         "asked_follow_up_questions": _asked_follow_up_questions(session or {}),
     }
+
+
+def _is_fast_anamnesis_complete(anamnesis_summary: dict[str, object], question_count: int) -> bool:
+    if question_count <= 0:
+        return False
+    has_primary_complaint = bool(
+        _summary_list(anamnesis_summary, "present_symptoms")
+        or _summary_list(anamnesis_summary, "detected_symptoms")
+        or anamnesis_summary.get("keluhan_ringan")
+    )
+    has_duration = bool(anamnesis_summary.get("duration_text") or anamnesis_summary.get("has_duration_signal"))
+    has_safety = bool(anamnesis_summary.get("has_safety_clearance_signal"))
+    has_detail = bool(anamnesis_summary.get("has_intensity_signal") or anamnesis_summary.get("has_progression_signal"))
+    return has_primary_complaint and has_duration and has_safety and (has_detail or question_count >= 2)
+
+
+def _fast_follow_up_assessment(
+    *,
+    anamnesis_summary: dict[str, object],
+    fallback_case: CaseEntry | None,
+    guidance_items: list[RetrievedItem],
+    asked_questions: list[str],
+) -> ModelAssessment:
+    question = _smart_follow_up_question(anamnesis_summary, fallback_case, asked_questions)
+    suspected = _fast_suspected_conditions(anamnesis_summary, fallback_case, guidance_items)
+    return ModelAssessment(
+        scope="supported",
+        scope_reason="Informasi awal belum cukup untuk menyimpulkan; perlu anamnesis lanjutan yang singkat dan aman.",
+        suspected_conditions=suspected,
+        reasoning=(
+            "Pertanyaan dipilih dari gejala yang sudah disebut, slot yang belum lengkap, dan konteks RAG paling dekat."
+        ),
+        enough_information=False,
+        follow_up_question=question,
+        follow_up_rationale=(
+            "Saya perlu memastikan pola gejala dan tanda bahaya sebelum memberi dugaan awal atau herbal pendamping."
+        ),
+        red_flags=[],
+        need_medical_referral=False,
+    )
+
+
+def _fast_suspected_conditions(
+    anamnesis_summary: dict[str, object],
+    fallback_case: CaseEntry | None,
+    guidance_items: list[RetrievedItem],
+) -> list[str]:
+    candidates: list[str] = []
+    if fallback_case:
+        candidates.append(fallback_case.keluhan_ringan)
+    keluhan = str(anamnesis_summary.get("keluhan_ringan") or "").strip()
+    if keluhan:
+        candidates.append(keluhan)
+    for item in guidance_items[:5]:
+        if item.type == "anamnesis" and item.title:
+            candidates.append(item.title)
+    for symptom in _summary_list(anamnesis_summary, "nlp_extracted_symptoms")[:3]:
+        candidates.append(f"gejala {symptom}")
+    return list(dict.fromkeys(candidate for candidate in candidates if candidate))[:3]
 
 
 def _needs_referral(assessment: ModelAssessment | None) -> bool:
@@ -1014,13 +1189,21 @@ def _final_recommendation_response(
         force_final=True,
     )
     selected_assessment = comparison.selected_assessment
+    safety_decision = evaluate_safety(
+        red_flags=red_flags,
+        assessment=selected_assessment,
+        retrieved_items=retrieved_items,
+        nlp_summary=session.get("last_nlp_summary") if isinstance(session.get("last_nlp_summary"), dict) else {},
+    )
 
-    if _needs_referral(selected_assessment):
+    if _needs_referral(selected_assessment) or safety_decision.requires_emergency_referral:
         session["completed"] = True
         session["conversation_stage"] = "medical_referral"
         return _referral_response(
             session_id=session_id,
-            assessment=selected_assessment,
+            assessment=safety_assessment_to_model_assessment(safety_decision, selected_assessment)
+            if safety_decision.requires_medical_referral
+            else selected_assessment,
             comparison=comparison,
             anamnesis_summary=anamnesis_summary,
             contexts=contexts,
@@ -1142,6 +1325,7 @@ def _session_snapshot(session: dict[str, object]) -> dict[str, object]:
         "conversation_stage": str(session.get("conversation_stage") or ""),
         "completed": bool(session.get("completed")),
         "last_recommendation": session.get("last_recommendation"),
+        "last_nlp_summary": session.get("last_nlp_summary") if isinstance(session.get("last_nlp_summary"), dict) else {},
         "feedback": list(session.get("feedback", [])) if isinstance(session.get("feedback"), list) else [],
         "turn_count": len(session.get("turns", [])) if isinstance(session.get("turns", []), list) else 0,
         "turns": deepcopy(session.get("turns", [])),

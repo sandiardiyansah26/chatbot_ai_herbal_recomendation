@@ -351,6 +351,11 @@ class RAGRetriever:
         for item in candidates:
             if item.type == "case":
                 continue
+            chunk = item.payload if isinstance(item.payload, KnowledgeChunk) else None
+            if item.type == "training" and chunk:
+                content_type = str(chunk.metadata.get("content_type") or "")
+                if content_type and not content_type.startswith("herbal"):
+                    continue
             score = item.score
             title_hint = self._normalize_hint(item.title)
             if item.type == "formula" and (title_hint in formula_hint or formula_hint in title_hint):
@@ -379,6 +384,31 @@ class RAGRetriever:
                     payload=item.payload,
                     evidence_level=item.evidence_level,
                     matched_terms=item.matched_terms,
+                )
+            )
+
+        for chunk in self.kb.chunks:
+            if chunk.type not in {"formula", "herb", "training"}:
+                continue
+            if chunk.type == "training":
+                content_type = str(chunk.metadata.get("content_type") or "")
+                if content_type and not content_type.startswith("herbal"):
+                    continue
+            title_hint = self._normalize_hint(chunk.title)
+            formula_match = bool(title_hint and (title_hint in formula_hint or formula_hint in title_hint))
+            ingredient_match = bool(title_hint and (title_hint in ingredient_hints or any(term in title_hint for term in ingredient_hints)))
+            if not formula_match and not ingredient_match:
+                continue
+            reranked.append(
+                RetrievedItem(
+                    id=chunk.id,
+                    type=chunk.type,
+                    title=chunk.title,
+                    score=1.25 if formula_match else 1.05,
+                    source=chunk.source,
+                    payload=chunk,
+                    evidence_level=chunk.evidence_level,
+                    matched_terms=sorted(set(tokenize(retrieval_query)) & set(tokenize(chunk.text))),
                 )
             )
 

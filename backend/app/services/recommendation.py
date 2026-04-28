@@ -156,9 +156,9 @@ def build_recommendation_reply(
     return (
         "Ringkasan anamnesis:\n"
         f"{summary_lines}\n\n"
-        f"Berdasarkan knowledge base dan konteks retrieval, keluhan masih saya posisikan sebagai "
-        f"'{recommendation.keluhan_ringan}' selama tidak ada tanda bahaya. "
-        "Rekomendasi awal ramuan herbal yang relevan:\n\n"
+        f"Berdasarkan knowledge base dan konteks retrieval, kemungkinan kondisi awal masih saya posisikan sebagai "
+        f"'{recommendation.keluhan_ringan}' selama tidak ada tanda bahaya atau indikasi penyakit tropis berat. "
+        "Rekomendasi herbal berikut hanya pendamping edukatif yang aman, bukan terapi utama:\n\n"
         f"Ramuan: {recommendation.ramuan}\n"
         f"Bahan: {bahan}\n"
         f"Cara pengolahan: {recommendation.cara_pengolahan}\n"
@@ -189,14 +189,14 @@ def build_assessment_follow_up_reply(
     )
     return (
         "Ringkasan anamnesis saat ini:\n"
-        f"Saya menangkap keluhan ini mengarah ke \"{suspected}\". "
-        "Sebelum memberi rekomendasi ramuan, saya perlu memastikan dulu apakah ada tanda bahaya dan memperjelas pola gejalanya.\n"
+        f"Baik, saya tangkap dulu ya: keluhan ini sementara mengarah ke \"{suspected}\". "
+        "Supaya tidak asal memberi saran, saya perlu memastikan pola gejala dan tanda bahaya yang paling penting.\n"
         f"{summary_lines}\n"
         f"Tahap anamnesis: pertanyaan {question_number} dari maksimal {max_questions}.\n\n"
-        "Pertanyaan anamnesis yang perlu kamu jawab:\n"
+        "Pertanyaan anamnesis lanjutan:\n"
         f"1. {question}\n\n"
-        "Jawab singkat saja, misalnya:\n"
-        "Tidak ada demam, tidak sesak, keluhan muncul sejak pagi, dan belum ada tanda bahaya lain.\n\n"
+        "Jawab santai dan singkat saja. Contoh:\n"
+        "Tidak ada sesak atau perdarahan, keluhan sejak pagi, masih bisa minum, dan belum ada tanda bahaya lain.\n\n"
         f"Alasan pertanyaan: {rationale} {red_flags}\n\n"
         f"{DISCLAIMER}"
     )
@@ -208,12 +208,11 @@ def build_follow_up_reply(case: CaseEntry, questions: list[str] | None = None, s
     source_line = f"\n\nPertanyaan ini memakai rujukan anamnesis: {source_title}." if source_title else ""
     return (
         f"Saya menangkap keluhan kamu mengarah ke '{case.keluhan_ringan}'. "
-        "Sebelum memberi rekomendasi ramuan, saya perlu memastikan keluhan ini masih ringan dan tidak ada tanda bahaya.\n\n"
-        "Pertanyaan anamnesis yang perlu kamu jawab:\n"
+        "Saya akan cek beberapa hal dulu agar sarannya tetap aman dan tidak terburu-buru.\n\n"
+        "Pertanyaan anamnesis lanjutan:\n"
         f"{question_lines}"
         f"{source_line}\n\n"
-        "Jawab singkat saja, misalnya:\n"
-        "Tidak ada demam, tidak sesak, keluhan muncul sejak pagi, dan tidak ada bengkak wajah.\n\n"
+        "Jawab singkat saja sesuai yang kamu rasakan.\n\n"
         "Kalau ada tanda berat seperti demam tinggi, sesak, darah, dehidrasi, nyeri hebat, "
         "atau keluhan pada bayi/kehamilan, sebaiknya prioritaskan pemeriksaan medis."
     )
@@ -236,14 +235,14 @@ def build_assessment_recommendation_reply(
 
     blocks = [
         "Ringkasan anamnesis:\n" f"{summary_lines}",
-        f"Dugaan kondisi yang paling mungkin saat ini: {suspected}.",
+        f"Kemungkinan penyakit/kondisi yang perlu dipertimbangkan saat ini: {suspected}.",
         f"Pertimbangan utama: {reasoning}",
         final_answer,
     ]
 
     if recommendation:
         blocks.append(
-            "Rekomendasi ramuan herbal awal:\n"
+            "Rekomendasi herbal aman sebagai pendamping edukatif:\n"
             f"Ramuan: {recommendation.ramuan}\n"
             f"Bahan: {', '.join(recommendation.bahan)}\n"
             f"Cara pengolahan: {recommendation.cara_pengolahan}\n"
@@ -253,11 +252,15 @@ def build_assessment_recommendation_reply(
         )
     else:
         blocks.append(
-            "Saya belum menemukan ramuan herbal yang cukup aman dan cukup ter-ground ke knowledge base untuk langsung direkomendasikan pada kondisi ini."
+            "Saya belum menemukan ramuan herbal yang cukup aman dan cukup ter-ground ke knowledge base untuk direkomendasikan pada kondisi ini. Fokuskan dulu pada pemantauan gejala dan pemeriksaan bila memburuk."
         )
 
     blocks.append(f"Konteks RAG yang dipakai:\n{source_lines}")
-    blocks.append(f"Catatan keselamatan: {warning}\n\n{DISCLAIMER}")
+    blocks.append(
+        f"Saran awal dan catatan keselamatan: {warning}\n\n"
+        "Bila muncul tanda bahaya, keluhan menetap/memburuk, atau dugaan mengarah ke DBD, malaria, TBC, leptospirosis, tifoid berat, filariasis, atau kusta, prioritaskan pemeriksaan tenaga kesehatan.\n\n"
+        f"{DISCLAIMER}"
+    )
     return "\n\n".join(blocks)
 
 
@@ -282,6 +285,7 @@ def build_red_flag_reply(red_flags: list[str]) -> str:
     flags = ", ".join(red_flags)
     return (
         f"Saya mendeteksi tanda yang perlu diwaspadai: {flags}. "
+        "Safety layer menghentikan jalur rekomendasi herbal mandiri. "
         "Untuk keamanan, sistem ini tidak akan memposisikan ramuan herbal sebagai penanganan utama pada kondisi tersebut. "
         "Sebaiknya segera konsultasi ke tenaga kesehatan atau fasilitas kesehatan terdekat, terutama bila gejala berat, menetap, atau memburuk.\n\n"
         f"{DISCLAIMER}"
@@ -299,7 +303,7 @@ def build_scope_referral_reply(
     return (
         "Ringkasan anamnesis:\n"
         f"{summary_lines}\n\n"
-        f"Dari hasil penilaian model pembanding, keluhan ini lebih aman diposisikan sebagai kasus rujukan medis dengan dugaan: {suspected}.\n"
+        f"Dari hasil anamnesis, RAG medical knowledge base, dan safety layer, keluhan ini lebih aman diposisikan sebagai kasus yang perlu evaluasi medis dengan dugaan: {suspected}.\n"
         f"Alasan utama: {referral_reason}\n"
         f"Arahan awal: {warning}\n\n"
         "Untuk keamanan, chatbot ini tidak akan memaksakan rekomendasi herbal sebagai terapi utama pada kondisi tersebut.\n\n"
@@ -309,9 +313,8 @@ def build_scope_referral_reply(
 
 def build_out_of_scope_reply() -> str:
     return (
-        "Saya belum menemukan keluhan ringan yang sesuai dengan knowledge base ramuan herbal saat ini. "
-        "Coba jelaskan keluhan utama dengan singkat, misalnya mual ringan, tenggorokan tidak nyaman, "
-        "nafsu makan menurun, pegal ringan, diare ringan tanpa darah, atau badan kurang fit.\n\n"
+        "Saya belum menemukan pola gejala yang cukup jelas pada medical knowledge base dan knowledge base herbal saat ini. "
+        "Coba jelaskan keluhan utama dengan singkat, misalnya demam sejak kapan, ada menggigil/ruam/nyeri belakang mata, batuk berapa lama, diare, mual, atau riwayat perjalanan/paparan nyamuk.\n\n"
         f"{DISCLAIMER}"
     )
 
@@ -418,13 +421,19 @@ def _format_anamnesis_summary(summary: dict[str, object]) -> str:
     durasi = summary.get("duration_text") or ("ada" if summary.get("has_duration_signal") else "belum jelas")
     safety = "ada klarifikasi tanda bahaya" if summary.get("has_safety_clearance_signal") else "belum ada klarifikasi tanda bahaya eksplisit"
     symptoms = summary.get("present_symptoms") or summary.get("detected_symptoms") or []
+    nlp_symptoms = summary.get("nlp_extracted_symptoms") or []
+    risk_contexts = summary.get("nlp_risk_contexts") or []
     symptoms_text = ", ".join(symptoms) if isinstance(symptoms, list) and symptoms else "-"
+    nlp_symptoms_text = ", ".join(nlp_symptoms) if isinstance(nlp_symptoms, list) and nlp_symptoms else "-"
+    risk_contexts_text = ", ".join(risk_contexts) if isinstance(risk_contexts, list) and risk_contexts else "-"
     negative_symptoms = summary.get("absent_symptoms") or []
     negative_text = ", ".join(negative_symptoms) if isinstance(negative_symptoms, list) and negative_symptoms else "-"
     detail_answered = "sudah ada" if summary.get("has_intensity_signal") or summary.get("has_progression_signal") else "belum jelas"
     return (
         f"- Keluhan: {keluhan}\n"
         f"- Gejala terdeteksi: {symptoms_text}\n"
+        f"- Ekstraksi IndoBERT/XLM-R layer: {nlp_symptoms_text}\n"
+        f"- Konteks risiko tropis: {risk_contexts_text}\n"
         f"- Gejala yang sudah disangkal: {negative_text}\n"
         f"- Durasi: {durasi}\n"
         f"- Detail intensitas/perburukan: {detail_answered}\n"
