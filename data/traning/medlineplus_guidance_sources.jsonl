@@ -1,0 +1,533 @@
+{"id": "medlineplus_xml_2026-04-24", "title": "MedlinePlus Health Topic XML", "url": "https://medlineplus.gov/xml/mplus_topics_2026-04-24.xml", "note": "Sumber resmi topik kesehatan MedlinePlus dalam format XML harian."}
+{"id": "medlineplus_3061", "title": "Abdominal Pain", "url": "https://medlineplus.gov/abdominalpain.html", "note": "Topik MedlinePlus untuk Digestive System, Symptoms."}
+{"id": "medlineplus_122", "title": "Abortion", "url": "https://medlineplus.gov/abortion.html", "note": "Topik MedlinePlus untuk Pregnancy and Reproduction, Female Reproductive System."}
+{"id": "medlineplus_3063", "title": "Abscess", "url": "https://medlineplus.gov/abscess.html", "note": "Topik MedlinePlus untuk Infections."}
+{"id": "medlineplus_124", "title": "Acne", "url": "https://medlineplus.gov/acne.html", "note": "Topik MedlinePlus untuk Skin, Hair and Nails."}
+{"id": "medlineplus_1624", "title": "Acoustic Neuroma", "url": "https://medlineplus.gov/acousticneuroma.html", "note": "Topik MedlinePlus untuk Ear, Nose and Throat."}
+{"id": "medlineplus_5755", "title": "Acute Bronchitis", "url": "https://medlineplus.gov/acutebronchitis.html", "note": "Topik MedlinePlus untuk Infections, Lungs and Breathing."}
+{"id": "medlineplus_7207", "title": "Acute Flaccid Myelitis", "url": "https://medlineplus.gov/acuteflaccidmyelitis.html", "note": "Topik MedlinePlus untuk Infections."}
+{"id": "medlineplus_1233", "title": "Addison Disease", "url": "https://medlineplus.gov/addisondisease.html", "note": "Topik MedlinePlus untuk Immune System."}
+{"id": "medlineplus_1515", "title": "Adenoids", "url": "https://medlineplus.gov/adenoids.html", "note": "Topik MedlinePlus untuk Ear, Nose and Throat."}
+{"id": "medlineplus_3920", "title": "Adhesions", "url": "https://medlineplus.gov/adhesions.html", "note": "Topik MedlinePlus untuk Digestive System."}
+{"id": "medlineplus_130", "title": "Air Pollution", "url": "https://medlineplus.gov/airpollution.html", "note": "Topik MedlinePlus untuk Poisoning, Toxicology, Environmental Health."}
+{"id": "medlineplus_24", "title": "Allergy", "url": "https://medlineplus.gov/allergy.html", "note": "Topik MedlinePlus untuk Ear, Nose and Throat, Immune System."}
+{"id": "medlineplus_1692", "title": "Alpha-1 Antitrypsin Deficiency", "url": "https://medlineplus.gov/alpha1antitrypsindeficiency.html", "note": "Topik MedlinePlus untuk Lungs and Breathing."}
+{"id": "medlineplus_22", "title": "Alzheimer's Disease", "url": "https://medlineplus.gov/alzheimersdisease.html", "note": "Topik MedlinePlus untuk Mental Health and Behavior."}
+{"id": "medlineplus_6189", "title": "Amblyopia", "url": "https://medlineplus.gov/amblyopia.html", "note": "Topik MedlinePlus untuk Eyes and Vision."}
+{"id": "medlineplus_137", "title": "Anal Disorders", "url": "https://medlineplus.gov/analdisorders.html", "note": "Topik MedlinePlus untuk Digestive System."}
+{"id": "medlineplus_6257", "title": "Anaphylaxis", "url": "https://medlineplus.gov/anaphylaxis.html", "note": "Topik MedlinePlus untuk Immune System."}
+{"id": "medlineplus_161", "title": "Animal Bites", "url": "https://medlineplus.gov/animalbites.html", "note": "Topik MedlinePlus untuk Immune System."}
+{"id": "medlineplus_4055", "title": "Animal Diseases and Your Health", "url": "https://medlineplus.gov/animaldiseasesandyourhealth.html", "note": "Topik MedlinePlus untuk Infections."}
+{"id": "medlineplus_1612", "title": "Ankle Injuries and Disorders", "url": "https://medlineplus.gov/ankleinjuriesanddisorders.html", "note": "Topik MedlinePlus untuk Bones, Joints and Muscles."}
+{"id": "medlineplus_143", "title": "Ankylosing Spondylitis", "url": "https://medlineplus.gov/ankylosingspondylitis.html", "note": "Topik MedlinePlus untuk Bones, Joints and Muscles, Immune System."}
+{"id": "medlineplus_1565", "title": "Anthrax", "url": "https://medlineplus.gov/anthrax.html", "note": "Topik MedlinePlus untuk Infections."}
+{"id": "medlineplus_6252", "title": "Antibiotic Resistance", "url": "https://medlineplus.gov/antibioticresistance.html", "note": "Topik MedlinePlus untuk Infections."}
+{"id": "medlineplus_4146", "title": "Antidepressants", "url": "https://medlineplus.gov/antidepressants.html", "note": "Topik MedlinePlus untuk Mental Health and Behavior."}
+{"id": "medlineplus_144", "title": "Anxiety", "url": "https://medlineplus.gov/anxiety.html", "note": "Topik MedlinePlus untuk Mental Health and Behavior."}
+{"id": "medlineplus_5955", "title": "Aplastic Anemia", "url": "https://medlineplus.gov/aplasticanemia.html", "note": "Topik MedlinePlus untuk Immune System."}
+{"id": "medlineplus_1223", "title": "Appendicitis", "url": "https://medlineplus.gov/appendicitis.html", "note": "Topik MedlinePlus untuk Digestive System."}
+{"id": "medlineplus_4329", "title": "Arm Injuries and Disorders", "url": "https://medlineplus.gov/arminjuriesanddisorders.html", "note": "Topik MedlinePlus untuk Bones, Joints and Muscles."}
+{"id": "medlineplus_1569", "title": "Arsenic", "url": "https://medlineplus.gov/arsenic.html", "note": "Topik MedlinePlus untuk Poisoning, Toxicology, Environmental Health."}
+{"id": "medlineplus_23", "title": "Arthritis", "url": "https://medlineplus.gov/arthritis.html", "note": "Topik MedlinePlus untuk Bones, Joints and Muscles."}
+{"id": "medlineplus_1330", "title": "Asbestos", "url": "https://medlineplus.gov/asbestos.html", "note": "Topik MedlinePlus untuk Lungs and Breathing, Poisoning, Toxicology, Environmental Health."}
+{"id": "medlineplus_5628", "title": "Aspergillosis", "url": "https://medlineplus.gov/aspergillosis.html", "note": "Topik MedlinePlus untuk Infections."}
+{"id": "medlineplus_6242", "title": "Assisted Reproductive Technology", "url": "https://medlineplus.gov/assistedreproductivetechnology.html", "note": "Topik MedlinePlus untuk Female Reproductive System."}
+{"id": "medlineplus_2", "title": "Asthma", "url": "https://medlineplus.gov/asthma.html", "note": "Topik MedlinePlus untuk Lungs and Breathing, Immune System."}
+{"id": "medlineplus_1507", "title": "Asthma in Children", "url": "https://medlineplus.gov/asthmainchildren.html", "note": "Topik MedlinePlus untuk Lungs and Breathing, Immune System."}
+{"id": "medlineplus_151", "title": "Athlete's Foot", "url": "https://medlineplus.gov/athletesfoot.html", "note": "Topik MedlinePlus untuk Infections, Skin, Hair and Nails."}
+{"id": "medlineplus_152", "title": "Attention Deficit Hyperactivity Disorder", "url": "https://medlineplus.gov/attentiondeficithyperactivitydisorder.html", "note": "Topik MedlinePlus untuk Mental Health and Behavior."}
+{"id": "medlineplus_153", "title": "Autism Spectrum Disorder", "url": "https://medlineplus.gov/autismspectrumdisorder.html", "note": "Topik MedlinePlus untuk Mental Health and Behavior."}
+{"id": "medlineplus_154", "title": "Autoimmune Diseases", "url": "https://medlineplus.gov/autoimmunediseases.html", "note": "Topik MedlinePlus untuk Immune System."}
+{"id": "medlineplus_156", "title": "Back Injuries", "url": "https://medlineplus.gov/backinjuries.html", "note": "Topik MedlinePlus untuk Bones, Joints and Muscles."}
+{"id": "medlineplus_157", "title": "Back Pain", "url": "https://medlineplus.gov/backpain.html", "note": "Topik MedlinePlus untuk Bones, Joints and Muscles."}
+{"id": "medlineplus_158", "title": "Bacterial Infections", "url": "https://medlineplus.gov/bacterialinfections.html", "note": "Topik MedlinePlus untuk Infections."}
+{"id": "medlineplus_6033", "title": "Bad Breath", "url": "https://medlineplus.gov/badbreath.html", "note": "Topik MedlinePlus untuk Mouth and Teeth, Symptoms."}
+{"id": "medlineplus_5953", "title": "Balance Problems", "url": "https://medlineplus.gov/balanceproblems.html", "note": "Topik MedlinePlus untuk Ear, Nose and Throat."}
+{"id": "medlineplus_6095", "title": "Barotrauma", "url": "https://medlineplus.gov/barotrauma.html", "note": "Topik MedlinePlus untuk Ear, Nose and Throat."}
+{"id": "medlineplus_1084", "title": "Behcet's Syndrome", "url": "https://medlineplus.gov/behcetssyndrome.html", "note": "Topik MedlinePlus untuk Eyes and Vision, Mouth and Teeth, Skin, Hair and Nails."}
+{"id": "medlineplus_159", "title": "Bereavement", "url": "https://medlineplus.gov/bereavement.html", "note": "Topik MedlinePlus untuk Mental Health and Behavior."}
+{"id": "medlineplus_3787", "title": "Bile Duct Diseases", "url": "https://medlineplus.gov/bileductdiseases.html", "note": "Topik MedlinePlus untuk Digestive System."}
+{"id": "medlineplus_1550", "title": "Biodefense and Bioterrorism", "url": "https://medlineplus.gov/biodefenseandbioterrorism.html", "note": "Topik MedlinePlus untuk Poisoning, Toxicology, Environmental Health."}
+{"id": "medlineplus_600", "title": "Bipolar Disorder", "url": "https://medlineplus.gov/bipolardisorder.html", "note": "Topik MedlinePlus untuk Mental Health and Behavior."}
+{"id": "medlineplus_4198", "title": "Bird Flu", "url": "https://medlineplus.gov/birdflu.html", "note": "Topik MedlinePlus untuk Infections, Lungs and Breathing."}
+{"id": "medlineplus_6105", "title": "Birth Weight", "url": "https://medlineplus.gov/birthweight.html", "note": "Topik MedlinePlus untuk Pregnancy and Reproduction."}
+{"id": "medlineplus_5402", "title": "Birthmarks", "url": "https://medlineplus.gov/birthmarks.html", "note": "Topik MedlinePlus untuk Skin, Hair and Nails."}
+{"id": "medlineplus_164", "title": "Bladder Diseases", "url": "https://medlineplus.gov/bladderdiseases.html", "note": "Topik MedlinePlus untuk Kidneys and Urinary System."}
+{"id": "medlineplus_6039", "title": "Bleeding", "url": "https://medlineplus.gov/bleeding.html", "note": "Topik MedlinePlus untuk Symptoms."}
+{"id": "medlineplus_6419", "title": "Blisters", "url": "https://medlineplus.gov/blisters.html", "note": "Topik MedlinePlus untuk Skin, Hair and Nails."}
+{"id": "medlineplus_6071", "title": "Body Lice", "url": "https://medlineplus.gov/bodylice.html", "note": "Topik MedlinePlus untuk Infections, Skin, Hair and Nails."}
+{"id": "medlineplus_5935", "title": "Bone Density", "url": "https://medlineplus.gov/bonedensity.html", "note": "Topik MedlinePlus untuk Bones, Joints and Muscles."}
+{"id": "medlineplus_170", "title": "Bone Diseases", "url": "https://medlineplus.gov/bonediseases.html", "note": "Topik MedlinePlus untuk Bones, Joints and Muscles."}
+{"id": "medlineplus_4274", "title": "Bone Grafts", "url": "https://medlineplus.gov/bonegrafts.html", "note": "Topik MedlinePlus untuk Bones, Joints and Muscles."}
+{"id": "medlineplus_5739", "title": "Bone Infections", "url": "https://medlineplus.gov/boneinfections.html", "note": "Topik MedlinePlus untuk Bones, Joints and Muscles, Infections."}
+{"id": "medlineplus_171", "title": "Bone Marrow Diseases", "url": "https://medlineplus.gov/bonemarrowdiseases.html", "note": "Topik MedlinePlus untuk Immune System."}
+{"id": "medlineplus_3015", "title": "Botox", "url": "https://medlineplus.gov/botox.html", "note": "Topik MedlinePlus untuk Skin, Hair and Nails."}
+{"id": "medlineplus_1557", "title": "Botulism", "url": "https://medlineplus.gov/botulism.html", "note": "Topik MedlinePlus untuk Infections."}
+{"id": "medlineplus_5316", "title": "Bowel Incontinence", "url": "https://medlineplus.gov/bowelincontinence.html", "note": "Topik MedlinePlus untuk Digestive System."}
+{"id": "medlineplus_5262", "title": "Bowel Movement", "url": "https://medlineplus.gov/bowelmovement.html", "note": "Topik MedlinePlus untuk Digestive System."}
+{"id": "medlineplus_474", "title": "Breast Diseases", "url": "https://medlineplus.gov/breastdiseases.html", "note": "Topik MedlinePlus untuk Female Reproductive System."}
+{"id": "medlineplus_175", "title": "Breastfeeding", "url": "https://medlineplus.gov/breastfeeding.html", "note": "Topik MedlinePlus untuk Female Reproductive System."}
+{"id": "medlineplus_3077", "title": "Breathing Problems", "url": "https://medlineplus.gov/breathingproblems.html", "note": "Topik MedlinePlus untuk Lungs and Breathing, Symptoms."}
+{"id": "medlineplus_5977", "title": "Bronchial Disorders", "url": "https://medlineplus.gov/bronchialdisorders.html", "note": "Topik MedlinePlus untuk Lungs and Breathing."}
+{"id": "medlineplus_1621", "title": "Bruises", "url": "https://medlineplus.gov/bruises.html", "note": "Topik MedlinePlus untuk Skin, Hair and Nails, Symptoms."}
+{"id": "medlineplus_176", "title": "Burns", "url": "https://medlineplus.gov/burns.html", "note": "Topik MedlinePlus untuk Skin, Hair and Nails."}
+{"id": "medlineplus_1230", "title": "Bursitis", "url": "https://medlineplus.gov/bursitis.html", "note": "Topik MedlinePlus untuk Bones, Joints and Muscles."}
+{"id": "medlineplus_4617", "title": "C. diff Infections", "url": "https://medlineplus.gov/cdiffinfections.html", "note": "Topik MedlinePlus untuk Digestive System, Infections."}
+{"id": "medlineplus_2780", "title": "Calcium", "url": "https://medlineplus.gov/calcium.html", "note": "Topik MedlinePlus untuk Bones, Joints and Muscles."}
+{"id": "medlineplus_6046", "title": "Campylobacter Infections", "url": "https://medlineplus.gov/campylobacterinfections.html", "note": "Topik MedlinePlus untuk Infections."}
+{"id": "medlineplus_6053", "title": "Canker Sores", "url": "https://medlineplus.gov/cankersores.html", "note": "Topik MedlinePlus untuk Mouth and Teeth."}
+{"id": "medlineplus_177", "title": "Carbon Monoxide Poisoning", "url": "https://medlineplus.gov/carbonmonoxidepoisoning.html", "note": "Topik MedlinePlus untuk Poisoning, Toxicology, Environmental Health."}
+{"id": "medlineplus_179", "title": "Carpal Tunnel Syndrome", "url": "https://medlineplus.gov/carpaltunnelsyndrome.html", "note": "Topik MedlinePlus untuk Bones, Joints and Muscles."}
+{"id": "medlineplus_1412", "title": "Cartilage Disorders", "url": "https://medlineplus.gov/cartilagedisorders.html", "note": "Topik MedlinePlus untuk Bones, Joints and Muscles."}
+{"id": "medlineplus_4320", "title": "Cat Scratch Disease", "url": "https://medlineplus.gov/catscratchdisease.html", "note": "Topik MedlinePlus untuk Infections."}
+{"id": "medlineplus_116", "title": "Cataract", "url": "https://medlineplus.gov/cataract.html", "note": "Topik MedlinePlus untuk Eyes and Vision."}
+{"id": "medlineplus_897", "title": "Celiac Disease", "url": "https://medlineplus.gov/celiacdisease.html", "note": "Topik MedlinePlus untuk Digestive System."}
+{"id": "medlineplus_1227", "title": "Cellulitis", "url": "https://medlineplus.gov/cellulitis.html", "note": "Topik MedlinePlus untuk Infections, Skin, Hair and Nails."}
+{"id": "medlineplus_5415", "title": "Cervix Disorders", "url": "https://medlineplus.gov/cervixdisorders.html", "note": "Topik MedlinePlus untuk Female Reproductive System."}
+{"id": "medlineplus_3159", "title": "Cesarean Delivery", "url": "https://medlineplus.gov/cesareandelivery.html", "note": "Topik MedlinePlus untuk Pregnancy and Reproduction, Female Reproductive System."}
+{"id": "medlineplus_3660", "title": "Chagas Disease", "url": "https://medlineplus.gov/chagasdisease.html", "note": "Topik MedlinePlus untuk Infections."}
+{"id": "medlineplus_5858", "title": "Chest Injuries and Disorders", "url": "https://medlineplus.gov/chestinjuriesanddisorders.html", "note": "Topik MedlinePlus untuk Bones, Joints and Muscles."}
+{"id": "medlineplus_4744", "title": "Chest Pain", "url": "https://medlineplus.gov/chestpain.html", "note": "Topik MedlinePlus untuk Symptoms."}
+{"id": "medlineplus_182", "title": "Chickenpox", "url": "https://medlineplus.gov/chickenpox.html", "note": "Topik MedlinePlus untuk Infections, Skin, Hair and Nails."}
+{"id": "medlineplus_6345", "title": "Chikungunya", "url": "https://medlineplus.gov/chikungunya.html", "note": "Topik MedlinePlus untuk Infections."}
+{"id": "medlineplus_184", "title": "Child Behavior Disorders", "url": "https://medlineplus.gov/childbehaviordisorders.html", "note": "Topik MedlinePlus untuk Mental Health and Behavior."}
+{"id": "medlineplus_1535", "title": "Child Dental Health", "url": "https://medlineplus.gov/childdentalhealth.html", "note": "Topik MedlinePlus untuk Mouth and Teeth."}
+{"id": "medlineplus_3162", "title": "Child Mental Health", "url": "https://medlineplus.gov/childmentalhealth.html", "note": "Topik MedlinePlus untuk Mental Health and Behavior."}
+{"id": "medlineplus_305", "title": "Childbirth", "url": "https://medlineplus.gov/childbirth.html", "note": "Topik MedlinePlus untuk Pregnancy and Reproduction, Female Reproductive System."}
+{"id": "medlineplus_5893", "title": "Childbirth Problems", "url": "https://medlineplus.gov/childbirthproblems.html", "note": "Topik MedlinePlus untuk Pregnancy and Reproduction."}
+{"id": "medlineplus_1307", "title": "Chlamydia Infections", "url": "https://medlineplus.gov/chlamydiainfections.html", "note": "Topik MedlinePlus untuk Infections, Female Reproductive System."}
+{"id": "medlineplus_1544", "title": "Choking", "url": "https://medlineplus.gov/choking.html", "note": "Topik MedlinePlus untuk Lungs and Breathing, Symptoms."}
+{"id": "medlineplus_5709", "title": "Cholera", "url": "https://medlineplus.gov/cholera.html", "note": "Topik MedlinePlus untuk Infections."}
+{"id": "medlineplus_1608", "title": "Chronic Bronchitis", "url": "https://medlineplus.gov/chronicbronchitis.html", "note": "Topik MedlinePlus untuk Infections, Lungs and Breathing."}
+{"id": "medlineplus_5987", "title": "Chronic Kidney Disease", "url": "https://medlineplus.gov/chronickidneydisease.html", "note": "Topik MedlinePlus untuk Kidneys and Urinary System."}
+{"id": "medlineplus_5995", "title": "Chronic Pain", "url": "https://medlineplus.gov/chronicpain.html", "note": "Topik MedlinePlus untuk Symptoms."}
+{"id": "medlineplus_190", "title": "Cirrhosis", "url": "https://medlineplus.gov/cirrhosis.html", "note": "Topik MedlinePlus untuk Digestive System."}
+{"id": "medlineplus_7607", "title": "Cleaning, Disinfecting, and Sanitizing", "url": "https://medlineplus.gov/cleaningdisinfectingandsanitizing.html", "note": "Topik MedlinePlus untuk Infections."}
+{"id": "medlineplus_191", "title": "Cleft Lip and Palate", "url": "https://medlineplus.gov/cleftlipandpalate.html", "note": "Topik MedlinePlus untuk Mouth and Teeth."}
+{"id": "medlineplus_5144", "title": "Climate Change", "url": "https://medlineplus.gov/climatechange.html", "note": "Topik MedlinePlus untuk Poisoning, Toxicology, Environmental Health."}
+{"id": "medlineplus_5214", "title": "Cochlear Implants", "url": "https://medlineplus.gov/cochlearimplants.html", "note": "Topik MedlinePlus untuk Ear, Nose and Throat."}
+{"id": "medlineplus_5147", "title": "Cold Sores", "url": "https://medlineplus.gov/coldsores.html", "note": "Topik MedlinePlus untuk Infections, Mouth and Teeth."}
+{"id": "medlineplus_6143", "title": "Collapsed Lung", "url": "https://medlineplus.gov/collapsedlung.html", "note": "Topik MedlinePlus untuk Lungs and Breathing."}
+{"id": "medlineplus_194", "title": "Colonic Diseases", "url": "https://medlineplus.gov/colonicdiseases.html", "note": "Topik MedlinePlus untuk Digestive System."}
+{"id": "medlineplus_3134", "title": "Colonic Polyps", "url": "https://medlineplus.gov/colonicpolyps.html", "note": "Topik MedlinePlus untuk Digestive System."}
+{"id": "medlineplus_4916", "title": "Colonoscopy", "url": "https://medlineplus.gov/colonoscopy.html", "note": "Topik MedlinePlus untuk Digestive System."}
+{"id": "medlineplus_4400", "title": "Color Blindness", "url": "https://medlineplus.gov/colorblindness.html", "note": "Topik MedlinePlus untuk Eyes and Vision."}
+{"id": "medlineplus_196", "title": "Common Cold", "url": "https://medlineplus.gov/commoncold.html", "note": "Topik MedlinePlus untuk Infections, Ear, Nose and Throat."}
+{"id": "medlineplus_4308", "title": "Compulsive Gambling", "url": "https://medlineplus.gov/compulsivegambling.html", "note": "Topik MedlinePlus untuk Mental Health and Behavior."}
+{"id": "medlineplus_1411", "title": "Connective Tissue Disorders", "url": "https://medlineplus.gov/connectivetissuedisorders.html", "note": "Topik MedlinePlus untuk Bones, Joints and Muscles."}
+{"id": "medlineplus_200", "title": "Constipation", "url": "https://medlineplus.gov/constipation.html", "note": "Topik MedlinePlus untuk Digestive System, Symptoms."}
+{"id": "medlineplus_27", "title": "COPD", "url": "https://medlineplus.gov/copd.html", "note": "Topik MedlinePlus untuk Lungs and Breathing."}
+{"id": "medlineplus_4208", "title": "Coping with Chronic Illness", "url": "https://medlineplus.gov/copingwithchronicillness.html", "note": "Topik MedlinePlus untuk Mental Health and Behavior."}
+{"id": "medlineplus_3797", "title": "Coping with Disasters", "url": "https://medlineplus.gov/copingwithdisasters.html", "note": "Topik MedlinePlus untuk Mental Health and Behavior."}
+{"id": "medlineplus_5532", "title": "Corneal Disorders", "url": "https://medlineplus.gov/cornealdisorders.html", "note": "Topik MedlinePlus untuk Eyes and Vision."}
+{"id": "medlineplus_5833", "title": "Corns and Calluses", "url": "https://medlineplus.gov/cornsandcalluses.html", "note": "Topik MedlinePlus untuk Skin, Hair and Nails."}
+{"id": "medlineplus_1543", "title": "Cough", "url": "https://medlineplus.gov/cough.html", "note": "Topik MedlinePlus untuk Lungs and Breathing, Ear, Nose and Throat, Symptoms."}
+{"id": "medlineplus_3181", "title": "COVID-19 (Coronavirus Disease 2019)", "url": "https://medlineplus.gov/covid19coronavirusdisease2019.html", "note": "Topik MedlinePlus untuk Infections, Lungs and Breathing."}
+{"id": "medlineplus_5757", "title": "Craniofacial Abnormalities", "url": "https://medlineplus.gov/craniofacialabnormalities.html", "note": "Topik MedlinePlus untuk Bones, Joints and Muscles."}
+{"id": "medlineplus_119", "title": "Crohn's Disease", "url": "https://medlineplus.gov/crohnsdisease.html", "note": "Topik MedlinePlus untuk Digestive System."}
+{"id": "medlineplus_6292", "title": "Croup", "url": "https://medlineplus.gov/croup.html", "note": "Topik MedlinePlus untuk Lungs and Breathing."}
+{"id": "medlineplus_1591", "title": "Cryptosporidiosis", "url": "https://medlineplus.gov/cryptosporidiosis.html", "note": "Topik MedlinePlus untuk Infections, Immune System."}
+{"id": "medlineplus_203", "title": "Cystic Fibrosis", "url": "https://medlineplus.gov/cysticfibrosis.html", "note": "Topik MedlinePlus untuk Lungs and Breathing."}
+{"id": "medlineplus_3980", "title": "Cytomegalovirus Infections", "url": "https://medlineplus.gov/cytomegalovirusinfections.html", "note": "Topik MedlinePlus untuk Infections."}
+{"id": "medlineplus_6410", "title": "Dandruff, Cradle Cap, and Other Scalp Conditions", "url": "https://medlineplus.gov/dandruffcradlecapandotherscalpconditions.html", "note": "Topik MedlinePlus untuk Skin, Hair and Nails."}
+{"id": "medlineplus_6051", "title": "Dehydration", "url": "https://medlineplus.gov/dehydration.html", "note": "Topik MedlinePlus untuk Symptoms."}
+{"id": "medlineplus_5562", "title": "Delirium", "url": "https://medlineplus.gov/delirium.html", "note": "Topik MedlinePlus untuk Mental Health and Behavior."}
+{"id": "medlineplus_205", "title": "Dementia", "url": "https://medlineplus.gov/dementia.html", "note": "Topik MedlinePlus untuk Mental Health and Behavior."}
+{"id": "medlineplus_3104", "title": "Dengue", "url": "https://medlineplus.gov/dengue.html", "note": "Topik MedlinePlus untuk Infections."}
+{"id": "medlineplus_28", "title": "Dental Health", "url": "https://medlineplus.gov/dentalhealth.html", "note": "Topik MedlinePlus untuk Mouth and Teeth."}
+{"id": "medlineplus_3583", "title": "Dentures", "url": "https://medlineplus.gov/dentures.html", "note": "Topik MedlinePlus untuk Mouth and Teeth."}
+{"id": "medlineplus_113", "title": "Depression", "url": "https://medlineplus.gov/depression.html", "note": "Topik MedlinePlus untuk Mental Health and Behavior."}
+{"id": "medlineplus_209", "title": "Developmental Disabilities", "url": "https://medlineplus.gov/developmentaldisabilities.html", "note": "Topik MedlinePlus untuk Mental Health and Behavior."}
+{"id": "medlineplus_3046", "title": "Diabetes Insipidus", "url": "https://medlineplus.gov/diabetesinsipidus.html", "note": "Topik MedlinePlus untuk Kidneys and Urinary System."}
+{"id": "medlineplus_1339", "title": "Diabetes Type 1", "url": "https://medlineplus.gov/diabetestype1.html", "note": "Topik MedlinePlus untuk Immune System."}
+{"id": "medlineplus_1340", "title": "Diabetic Eye Problems", "url": "https://medlineplus.gov/diabeticeyeproblems.html", "note": "Topik MedlinePlus untuk Eyes and Vision."}
+{"id": "medlineplus_1341", "title": "Diabetic Foot", "url": "https://medlineplus.gov/diabeticfoot.html", "note": "Topik MedlinePlus untuk Bones, Joints and Muscles."}
+{"id": "medlineplus_1559", "title": "Diabetic Kidney Problems", "url": "https://medlineplus.gov/diabetickidneyproblems.html", "note": "Topik MedlinePlus untuk Kidneys and Urinary System."}
+{"id": "medlineplus_211", "title": "Diarrhea", "url": "https://medlineplus.gov/diarrhea.html", "note": "Topik MedlinePlus untuk Digestive System, Symptoms."}
+{"id": "medlineplus_29", "title": "Digestive Diseases", "url": "https://medlineplus.gov/digestivediseases.html", "note": "Topik MedlinePlus untuk Digestive System."}
+{"id": "medlineplus_1512", "title": "Diphtheria", "url": "https://medlineplus.gov/diphtheria.html", "note": "Topik MedlinePlus untuk Infections, Ear, Nose and Throat."}
+{"id": "medlineplus_6927", "title": "Dislocated Shoulder", "url": "https://medlineplus.gov/dislocatedshoulder.html", "note": "Topik MedlinePlus untuk Bones, Joints and Muscles."}
+{"id": "medlineplus_3052", "title": "Dislocations", "url": "https://medlineplus.gov/dislocations.html", "note": "Topik MedlinePlus untuk Bones, Joints and Muscles."}
+{"id": "medlineplus_214", "title": "Diverticulosis and Diverticulitis", "url": "https://medlineplus.gov/diverticulosisanddiverticulitis.html", "note": "Topik MedlinePlus untuk Digestive System."}
+{"id": "medlineplus_216", "title": "Dizziness and Vertigo", "url": "https://medlineplus.gov/dizzinessandvertigo.html", "note": "Topik MedlinePlus untuk Ear, Nose and Throat, Symptoms."}
+{"id": "medlineplus_1435", "title": "Drinking Water", "url": "https://medlineplus.gov/drinkingwater.html", "note": "Topik MedlinePlus untuk Poisoning, Toxicology, Environmental Health."}
+{"id": "medlineplus_5798", "title": "Dry Mouth", "url": "https://medlineplus.gov/drymouth.html", "note": "Topik MedlinePlus untuk Mouth and Teeth."}
+{"id": "medlineplus_4270", "title": "Dual Diagnosis", "url": "https://medlineplus.gov/dualdiagnosis.html", "note": "Topik MedlinePlus untuk Mental Health and Behavior."}
+{"id": "medlineplus_1244", "title": "Dwarfism", "url": "https://medlineplus.gov/dwarfism.html", "note": "Topik MedlinePlus untuk Bones, Joints and Muscles."}
+{"id": "medlineplus_6290", "title": "E-Cigarettes", "url": "https://medlineplus.gov/ecigarettes.html", "note": "Topik MedlinePlus untuk Lungs and Breathing."}
+{"id": "medlineplus_1010", "title": "E. coli Infections", "url": "https://medlineplus.gov/ecoliinfections.html", "note": "Topik MedlinePlus untuk Infections."}
+{"id": "medlineplus_1545", "title": "Ear Disorders", "url": "https://medlineplus.gov/eardisorders.html", "note": "Topik MedlinePlus untuk Ear, Nose and Throat."}
+{"id": "medlineplus_115", "title": "Ear Infections", "url": "https://medlineplus.gov/earinfections.html", "note": "Topik MedlinePlus untuk Ear, Nose and Throat."}
+{"id": "medlineplus_6202", "title": "Ebola", "url": "https://medlineplus.gov/ebola.html", "note": "Topik MedlinePlus untuk Infections."}
+{"id": "medlineplus_1215", "title": "Eczema", "url": "https://medlineplus.gov/eczema.html", "note": "Topik MedlinePlus untuk Skin, Hair and Nails."}
+{"id": "medlineplus_1229", "title": "Edema", "url": "https://medlineplus.gov/edema.html", "note": "Topik MedlinePlus untuk Symptoms."}
+{"id": "medlineplus_1594", "title": "Ehlers-Danlos Syndrome", "url": "https://medlineplus.gov/ehlersdanlossyndrome.html", "note": "Topik MedlinePlus untuk Bones, Joints and Muscles."}
+{"id": "medlineplus_506", "title": "Elbow Injuries and Disorders", "url": "https://medlineplus.gov/elbowinjuriesanddisorders.html", "note": "Topik MedlinePlus untuk Bones, Joints and Muscles."}
+{"id": "medlineplus_899", "title": "Electromagnetic Fields", "url": "https://medlineplus.gov/electromagneticfields.html", "note": "Topik MedlinePlus untuk Poisoning, Toxicology, Environmental Health."}
+{"id": "medlineplus_3623", "title": "Emphysema", "url": "https://medlineplus.gov/emphysema.html", "note": "Topik MedlinePlus untuk Lungs and Breathing."}
+{"id": "medlineplus_243", "title": "Endometriosis", "url": "https://medlineplus.gov/endometriosis.html", "note": "Topik MedlinePlus untuk Female Reproductive System."}
+{"id": "medlineplus_521", "title": "Environmental Health", "url": "https://medlineplus.gov/environmentalhealth.html", "note": "Topik MedlinePlus untuk Poisoning, Toxicology, Environmental Health."}
+{"id": "medlineplus_4589", "title": "Eosinophilic Disorders", "url": "https://medlineplus.gov/eosinophilicdisorders.html", "note": "Topik MedlinePlus untuk Digestive System, Lungs and Breathing, Immune System."}
+{"id": "medlineplus_6967", "title": "Eosinophilic Esophagitis", "url": "https://medlineplus.gov/eosinophilicesophagitis.html", "note": "Topik MedlinePlus untuk Digestive System, Immune System."}
+{"id": "medlineplus_3397", "title": "Ergonomics", "url": "https://medlineplus.gov/ergonomics.html", "note": "Topik MedlinePlus untuk Bones, Joints and Muscles."}
+{"id": "medlineplus_246", "title": "Esophagus Disorders", "url": "https://medlineplus.gov/esophagusdisorders.html", "note": "Topik MedlinePlus untuk Digestive System, Ear, Nose and Throat."}
+{"id": "medlineplus_6425", "title": "Eye Care", "url": "https://medlineplus.gov/eyecare.html", "note": "Topik MedlinePlus untuk Eyes and Vision."}
+{"id": "medlineplus_247", "title": "Eye Diseases", "url": "https://medlineplus.gov/eyediseases.html", "note": "Topik MedlinePlus untuk Eyes and Vision."}
+{"id": "medlineplus_4398", "title": "Eye Infections", "url": "https://medlineplus.gov/eyeinfections.html", "note": "Topik MedlinePlus untuk Eyes and Vision."}
+{"id": "medlineplus_492", "title": "Eye Injuries", "url": "https://medlineplus.gov/eyeinjuries.html", "note": "Topik MedlinePlus untuk Eyes and Vision."}
+{"id": "medlineplus_5873", "title": "Eye Movement Disorders", "url": "https://medlineplus.gov/eyemovementdisorders.html", "note": "Topik MedlinePlus untuk Eyes and Vision."}
+{"id": "medlineplus_5404", "title": "Eyelid Disorders", "url": "https://medlineplus.gov/eyeliddisorders.html", "note": "Topik MedlinePlus untuk Eyes and Vision."}
+{"id": "medlineplus_201", "title": "Eyewear", "url": "https://medlineplus.gov/eyewear.html", "note": "Topik MedlinePlus untuk Eyes and Vision."}
+{"id": "medlineplus_1574", "title": "Facial Injuries and Disorders", "url": "https://medlineplus.gov/facialinjuriesanddisorders.html", "note": "Topik MedlinePlus untuk Ear, Nose and Throat."}
+{"id": "medlineplus_1481", "title": "Fainting", "url": "https://medlineplus.gov/fainting.html", "note": "Topik MedlinePlus untuk Symptoms."}
+{"id": "medlineplus_5324", "title": "Fatigue", "url": "https://medlineplus.gov/fatigue.html", "note": "Topik MedlinePlus untuk Symptoms."}
+{"id": "medlineplus_6465", "title": "Fatty Liver Disease", "url": "https://medlineplus.gov/fattyliverdisease.html", "note": "Topik MedlinePlus untuk Digestive System."}
+{"id": "medlineplus_5654", "title": "Female Infertility", "url": "https://medlineplus.gov/femaleinfertility.html", "note": "Topik MedlinePlus untuk Pregnancy and Reproduction, Female Reproductive System."}
+{"id": "medlineplus_1300", "title": "Fetal Alcohol Spectrum Disorders", "url": "https://medlineplus.gov/fetalalcoholspectrumdisorders.html", "note": "Topik MedlinePlus untuk Pregnancy and Reproduction."}
+{"id": "medlineplus_6057", "title": "Fetal Health and Development", "url": "https://medlineplus.gov/fetalhealthanddevelopment.html", "note": "Topik MedlinePlus untuk Pregnancy and Reproduction."}
+{"id": "medlineplus_511", "title": "Fever", "url": "https://medlineplus.gov/fever.html", "note": "Topik MedlinePlus untuk Infections, Symptoms."}
+{"id": "medlineplus_32", "title": "Fibromyalgia", "url": "https://medlineplus.gov/fibromyalgia.html", "note": "Topik MedlinePlus untuk Bones, Joints and Muscles."}
+{"id": "medlineplus_1609", "title": "Fifth Disease", "url": "https://medlineplus.gov/fifthdisease.html", "note": "Topik MedlinePlus untuk Infections, Skin, Hair and Nails."}
+{"id": "medlineplus_5356", "title": "Finger Injuries and Disorders", "url": "https://medlineplus.gov/fingerinjuriesanddisorders.html", "note": "Topik MedlinePlus untuk Bones, Joints and Muscles."}
+{"id": "medlineplus_3054", "title": "Fistulas", "url": "https://medlineplus.gov/fistulas.html", "note": "Topik MedlinePlus untuk Digestive System, Lungs and Breathing."}
+{"id": "medlineplus_299", "title": "Flu", "url": "https://medlineplus.gov/flu.html", "note": "Topik MedlinePlus untuk Infections, Lungs and Breathing."}
+{"id": "medlineplus_6236", "title": "Flu Shot", "url": "https://medlineplus.gov/flushot.html", "note": "Topik MedlinePlus untuk Immune System."}
+{"id": "medlineplus_1256", "title": "Food Allergy", "url": "https://medlineplus.gov/foodallergy.html", "note": "Topik MedlinePlus untuk Immune System."}
+{"id": "medlineplus_1434", "title": "Food Safety", "url": "https://medlineplus.gov/foodsafety.html", "note": "Topik MedlinePlus untuk Poisoning, Toxicology, Environmental Health."}
+{"id": "medlineplus_254", "title": "Foodborne Illness", "url": "https://medlineplus.gov/foodborneillness.html", "note": "Topik MedlinePlus untuk Digestive System, Poisoning, Toxicology, Environmental Health."}
+{"id": "medlineplus_1327", "title": "Foot Health", "url": "https://medlineplus.gov/foothealth.html", "note": "Topik MedlinePlus untuk Bones, Joints and Muscles."}
+{"id": "medlineplus_508", "title": "Foot Injuries and Disorders", "url": "https://medlineplus.gov/footinjuriesanddisorders.html", "note": "Topik MedlinePlus untuk Bones, Joints and Muscles."}
+{"id": "medlineplus_257", "title": "Fractures", "url": "https://medlineplus.gov/fractures.html", "note": "Topik MedlinePlus untuk Bones, Joints and Muscles."}
+{"id": "medlineplus_5829", "title": "Frostbite", "url": "https://medlineplus.gov/frostbite.html", "note": "Topik MedlinePlus untuk Symptoms."}
+{"id": "medlineplus_258", "title": "Fungal Infections", "url": "https://medlineplus.gov/fungalinfections.html", "note": "Topik MedlinePlus untuk Infections, Skin, Hair and Nails."}
+{"id": "medlineplus_259", "title": "Gallbladder Diseases", "url": "https://medlineplus.gov/gallbladderdiseases.html", "note": "Topik MedlinePlus untuk Digestive System."}
+{"id": "medlineplus_4643", "title": "Gallstones", "url": "https://medlineplus.gov/gallstones.html", "note": "Topik MedlinePlus untuk Digestive System."}
+{"id": "medlineplus_4291", "title": "Gas", "url": "https://medlineplus.gov/gas.html", "note": "Topik MedlinePlus untuk Digestive System, Symptoms."}
+{"id": "medlineplus_3056", "title": "Gastroenteritis", "url": "https://medlineplus.gov/gastroenteritis.html", "note": "Topik MedlinePlus untuk Digestive System, Infections."}
+{"id": "medlineplus_3811", "title": "Genetic Counseling", "url": "https://medlineplus.gov/geneticcounseling.html", "note": "Topik MedlinePlus untuk Pregnancy and Reproduction."}
+{"id": "medlineplus_5863", "title": "Genital Herpes", "url": "https://medlineplus.gov/genitalherpes.html", "note": "Topik MedlinePlus untuk Infections, Female Reproductive System."}
+{"id": "medlineplus_4322", "title": "Genital Warts", "url": "https://medlineplus.gov/genitalwarts.html", "note": "Topik MedlinePlus untuk Infections, Female Reproductive System."}
+{"id": "medlineplus_512", "title": "GERD", "url": "https://medlineplus.gov/gerd.html", "note": "Topik MedlinePlus untuk Digestive System."}
+{"id": "medlineplus_4182", "title": "Germs and Hygiene", "url": "https://medlineplus.gov/germsandhygiene.html", "note": "Topik MedlinePlus untuk Infections, Skin, Hair and Nails."}
+{"id": "medlineplus_5615", "title": "Giant Cell Arteritis", "url": "https://medlineplus.gov/giantcellarteritis.html", "note": "Topik MedlinePlus untuk Immune System."}
+{"id": "medlineplus_1258", "title": "Giardia Infections", "url": "https://medlineplus.gov/giardiainfections.html", "note": "Topik MedlinePlus untuk Infections."}
+{"id": "medlineplus_42", "title": "Glaucoma", "url": "https://medlineplus.gov/glaucoma.html", "note": "Topik MedlinePlus untuk Eyes and Vision."}
+{"id": "medlineplus_6244", "title": "Gluten Sensitivity", "url": "https://medlineplus.gov/glutensensitivity.html", "note": "Topik MedlinePlus untuk Digestive System."}
+{"id": "medlineplus_3019", "title": "Gonorrhea", "url": "https://medlineplus.gov/gonorrhea.html", "note": "Topik MedlinePlus untuk Infections, Female Reproductive System."}
+{"id": "medlineplus_264", "title": "Gout", "url": "https://medlineplus.gov/gout.html", "note": "Topik MedlinePlus untuk Bones, Joints and Muscles."}
+{"id": "medlineplus_1447", "title": "Granulomatosis with Polyangiitis", "url": "https://medlineplus.gov/granulomatosiswithpolyangiitis.html", "note": "Topik MedlinePlus untuk Kidneys and Urinary System, Lungs and Breathing."}
+{"id": "medlineplus_6681", "title": "Guide to Good Posture", "url": "https://medlineplus.gov/guidetogoodposture.html", "note": "Topik MedlinePlus untuk Bones, Joints and Muscles."}
+{"id": "medlineplus_266", "title": "Gum Disease", "url": "https://medlineplus.gov/gumdisease.html", "note": "Topik MedlinePlus untuk Mouth and Teeth."}
+{"id": "medlineplus_5188", "title": "H1N1 Flu (Swine Flu)", "url": "https://medlineplus.gov/h1n1fluswineflu.html", "note": "Topik MedlinePlus untuk Infections, Lungs and Breathing."}
+{"id": "medlineplus_5968", "title": "Haemophilus Infections", "url": "https://medlineplus.gov/haemophilusinfections.html", "note": "Topik MedlinePlus untuk Infections."}
+{"id": "medlineplus_5282", "title": "Hair Loss", "url": "https://medlineplus.gov/hairloss.html", "note": "Topik MedlinePlus untuk Skin, Hair and Nails."}
+{"id": "medlineplus_531", "title": "Hair Problems", "url": "https://medlineplus.gov/hairproblems.html", "note": "Topik MedlinePlus untuk Skin, Hair and Nails."}
+{"id": "medlineplus_507", "title": "Hand Injuries and Disorders", "url": "https://medlineplus.gov/handinjuriesanddisorders.html", "note": "Topik MedlinePlus untuk Bones, Joints and Muscles."}
+{"id": "medlineplus_3217", "title": "Hantavirus Infections", "url": "https://medlineplus.gov/hantavirusinfections.html", "note": "Topik MedlinePlus untuk Infections."}
+{"id": "medlineplus_4746", "title": "Hay Fever", "url": "https://medlineplus.gov/hayfever.html", "note": "Topik MedlinePlus untuk Ear, Nose and Throat, Immune System."}
+{"id": "medlineplus_272", "title": "Head Lice", "url": "https://medlineplus.gov/headlice.html", "note": "Topik MedlinePlus untuk Infections, Skin, Hair and Nails."}
+{"id": "medlineplus_273", "title": "Headache", "url": "https://medlineplus.gov/headache.html", "note": "Topik MedlinePlus untuk Symptoms."}
+{"id": "medlineplus_5216", "title": "Hearing Aids", "url": "https://medlineplus.gov/hearingaids.html", "note": "Topik MedlinePlus untuk Ear, Nose and Throat."}
+{"id": "medlineplus_204", "title": "Hearing Disorders and Deafness", "url": "https://medlineplus.gov/hearingdisordersanddeafness.html", "note": "Topik MedlinePlus untuk Ear, Nose and Throat."}
+{"id": "medlineplus_3693", "title": "Hearing Problems in Children", "url": "https://medlineplus.gov/hearingproblemsinchildren.html", "note": "Topik MedlinePlus untuk Ear, Nose and Throat."}
+{"id": "medlineplus_1653", "title": "Heartburn", "url": "https://medlineplus.gov/heartburn.html", "note": "Topik MedlinePlus untuk Digestive System, Symptoms."}
+{"id": "medlineplus_280", "title": "Heat Illness", "url": "https://medlineplus.gov/heatillness.html", "note": "Topik MedlinePlus untuk Symptoms."}
+{"id": "medlineplus_3650", "title": "Heel Injuries and Disorders", "url": "https://medlineplus.gov/heelinjuriesanddisorders.html", "note": "Topik MedlinePlus untuk Bones, Joints and Muscles."}
+{"id": "medlineplus_6078", "title": "Helicobacter pylori Infections", "url": "https://medlineplus.gov/helicobacterpyloriinfections.html", "note": "Topik MedlinePlus untuk Digestive System, Infections."}
+{"id": "medlineplus_1220", "title": "Hemochromatosis", "url": "https://medlineplus.gov/hemochromatosis.html", "note": "Topik MedlinePlus untuk Digestive System."}
+{"id": "medlineplus_1652", "title": "Hemorrhagic Fevers", "url": "https://medlineplus.gov/hemorrhagicfevers.html", "note": "Topik MedlinePlus untuk Infections."}
+{"id": "medlineplus_1226", "title": "Hemorrhoids", "url": "https://medlineplus.gov/hemorrhoids.html", "note": "Topik MedlinePlus untuk Digestive System."}
+{"id": "medlineplus_109", "title": "Hepatitis", "url": "https://medlineplus.gov/hepatitis.html", "note": "Topik MedlinePlus untuk Digestive System, Infections."}
+{"id": "medlineplus_1686", "title": "Hepatitis A", "url": "https://medlineplus.gov/hepatitisa.html", "note": "Topik MedlinePlus untuk Digestive System, Infections."}
+{"id": "medlineplus_1687", "title": "Hepatitis B", "url": "https://medlineplus.gov/hepatitisb.html", "note": "Topik MedlinePlus untuk Digestive System, Infections."}
+{"id": "medlineplus_1286", "title": "Hepatitis C", "url": "https://medlineplus.gov/hepatitisc.html", "note": "Topik MedlinePlus untuk Digestive System, Infections."}
+{"id": "medlineplus_283", "title": "Hernia", "url": "https://medlineplus.gov/hernia.html", "note": "Topik MedlinePlus untuk Digestive System."}
+{"id": "medlineplus_284", "title": "Herniated Disk", "url": "https://medlineplus.gov/herniateddisk.html", "note": "Topik MedlinePlus untuk Bones, Joints and Muscles."}
+{"id": "medlineplus_286", "title": "Herpes Simplex", "url": "https://medlineplus.gov/herpessimplex.html", "note": "Topik MedlinePlus untuk Infections, Mouth and Teeth, Female Reproductive System."}
+{"id": "medlineplus_4370", "title": "Hiatal Hernia", "url": "https://medlineplus.gov/hiatalhernia.html", "note": "Topik MedlinePlus untuk Digestive System."}
+{"id": "medlineplus_6084", "title": "Hiccups", "url": "https://medlineplus.gov/hiccups.html", "note": "Topik MedlinePlus untuk Digestive System."}
+{"id": "medlineplus_4363", "title": "Hidradenitis Suppurativa", "url": "https://medlineplus.gov/hidradenitissuppurativa.html", "note": "Topik MedlinePlus untuk Skin, Hair and Nails."}
+{"id": "medlineplus_287", "title": "Hip Injuries and Disorders", "url": "https://medlineplus.gov/hipinjuriesanddisorders.html", "note": "Topik MedlinePlus untuk Bones, Joints and Muscles."}
+{"id": "medlineplus_3922", "title": "Hip Replacement", "url": "https://medlineplus.gov/hipreplacement.html", "note": "Topik MedlinePlus untuk Bones, Joints and Muscles."}
+{"id": "medlineplus_5632", "title": "Histoplasmosis", "url": "https://medlineplus.gov/histoplasmosis.html", "note": "Topik MedlinePlus untuk Infections."}
+{"id": "medlineplus_1610", "title": "Hormone Replacement Therapy", "url": "https://medlineplus.gov/hormonereplacementtherapy.html", "note": "Topik MedlinePlus untuk Female Reproductive System."}
+{"id": "medlineplus_1463", "title": "Household Products", "url": "https://medlineplus.gov/householdproducts.html", "note": "Topik MedlinePlus untuk Poisoning, Toxicology, Environmental Health."}
+{"id": "medlineplus_7407", "title": "How to Improve Mental Health", "url": "https://medlineplus.gov/howtoimprovementalhealth.html", "note": "Topik MedlinePlus untuk Mental Health and Behavior."}
+{"id": "medlineplus_1715", "title": "HPV", "url": "https://medlineplus.gov/hpv.html", "note": "Topik MedlinePlus untuk Infections, Female Reproductive System."}
+{"id": "medlineplus_291", "title": "Hypothermia", "url": "https://medlineplus.gov/hypothermia.html", "note": "Topik MedlinePlus untuk Symptoms."}
+{"id": "medlineplus_292", "title": "Hysterectomy", "url": "https://medlineplus.gov/hysterectomy.html", "note": "Topik MedlinePlus untuk Female Reproductive System."}
+{"id": "medlineplus_295", "title": "Immune System and Disorders", "url": "https://medlineplus.gov/immunesystemanddisorders.html", "note": "Topik MedlinePlus untuk Immune System."}
+{"id": "medlineplus_1253", "title": "Impetigo", "url": "https://medlineplus.gov/impetigo.html", "note": "Topik MedlinePlus untuk Infections, Skin, Hair and Nails."}
+{"id": "medlineplus_4293", "title": "Indigestion", "url": "https://medlineplus.gov/indigestion.html", "note": "Topik MedlinePlus untuk Digestive System, Symptoms."}
+{"id": "medlineplus_1537", "title": "Indoor Air Pollution", "url": "https://medlineplus.gov/indoorairpollution.html", "note": "Topik MedlinePlus untuk Poisoning, Toxicology, Environmental Health."}
+{"id": "medlineplus_3040", "title": "Infection Control", "url": "https://medlineplus.gov/infectioncontrol.html", "note": "Topik MedlinePlus untuk Infections."}
+{"id": "medlineplus_5668", "title": "Infectious Arthritis", "url": "https://medlineplus.gov/infectiousarthritis.html", "note": "Topik MedlinePlus untuk Bones, Joints and Muscles, Infections."}
+{"id": "medlineplus_513", "title": "Infectious Diseases", "url": "https://medlineplus.gov/infectiousdiseases.html", "note": "Topik MedlinePlus untuk Infections, Immune System."}
+{"id": "medlineplus_298", "title": "Infectious Mononucleosis", "url": "https://medlineplus.gov/infectiousmononucleosis.html", "note": "Topik MedlinePlus untuk Infections, Immune System."}
+{"id": "medlineplus_250", "title": "Infertility", "url": "https://medlineplus.gov/infertility.html", "note": "Topik MedlinePlus untuk Pregnancy and Reproduction, Female Reproductive System."}
+{"id": "medlineplus_6081", "title": "Inhalation Injuries", "url": "https://medlineplus.gov/inhalationinjuries.html", "note": "Topik MedlinePlus untuk Lungs and Breathing."}
+{"id": "medlineplus_526", "title": "Insect Bites and Stings", "url": "https://medlineplus.gov/insectbitesandstings.html", "note": "Topik MedlinePlus untuk Skin, Hair and Nails."}
+{"id": "medlineplus_1274", "title": "Interstitial Cystitis", "url": "https://medlineplus.gov/interstitialcystitis.html", "note": "Topik MedlinePlus untuk Kidneys and Urinary System."}
+{"id": "medlineplus_5597", "title": "Interstitial Lung Diseases", "url": "https://medlineplus.gov/interstitiallungdiseases.html", "note": "Topik MedlinePlus untuk Lungs and Breathing."}
+{"id": "medlineplus_614", "title": "Irritable Bowel Syndrome", "url": "https://medlineplus.gov/irritablebowelsyndrome.html", "note": "Topik MedlinePlus untuk Digestive System."}
+{"id": "medlineplus_3067", "title": "Itching", "url": "https://medlineplus.gov/itching.html", "note": "Topik MedlinePlus untuk Infections, Skin, Hair and Nails, Symptoms."}
+{"id": "medlineplus_4452", "title": "Jaundice", "url": "https://medlineplus.gov/jaundice.html", "note": "Topik MedlinePlus untuk Digestive System, Symptoms."}
+{"id": "medlineplus_5536", "title": "Jaw Injuries and Disorders", "url": "https://medlineplus.gov/jawinjuriesanddisorders.html", "note": "Topik MedlinePlus untuk Bones, Joints and Muscles, Mouth and Teeth."}
+{"id": "medlineplus_4621", "title": "Joint Disorders", "url": "https://medlineplus.gov/jointdisorders.html", "note": "Topik MedlinePlus untuk Bones, Joints and Muscles."}
+{"id": "medlineplus_1292", "title": "Juvenile Arthritis", "url": "https://medlineplus.gov/juvenilearthritis.html", "note": "Topik MedlinePlus untuk Bones, Joints and Muscles, Immune System."}
+{"id": "medlineplus_481", "title": "Kaposi Sarcoma", "url": "https://medlineplus.gov/kaposisarcoma.html", "note": "Topik MedlinePlus untuk Skin, Hair and Nails."}
+{"id": "medlineplus_4921", "title": "Kawasaki Disease", "url": "https://medlineplus.gov/kawasakidisease.html", "note": "Topik MedlinePlus untuk Skin, Hair and Nails, Immune System."}
+{"id": "medlineplus_5808", "title": "Kidney Cysts", "url": "https://medlineplus.gov/kidneycysts.html", "note": "Topik MedlinePlus untuk Kidneys and Urinary System."}
+{"id": "medlineplus_91", "title": "Kidney Diseases", "url": "https://medlineplus.gov/kidneydiseases.html", "note": "Topik MedlinePlus untuk Kidneys and Urinary System."}
+{"id": "medlineplus_1224", "title": "Kidney Stones", "url": "https://medlineplus.gov/kidneystones.html", "note": "Topik MedlinePlus untuk Kidneys and Urinary System."}
+{"id": "medlineplus_304", "title": "Knee Injuries and Disorders", "url": "https://medlineplus.gov/kneeinjuriesanddisorders.html", "note": "Topik MedlinePlus untuk Bones, Joints and Muscles."}
+{"id": "medlineplus_3924", "title": "Knee Replacement", "url": "https://medlineplus.gov/kneereplacement.html", "note": "Topik MedlinePlus untuk Bones, Joints and Muscles."}
+{"id": "medlineplus_898", "title": "Lactose Intolerance", "url": "https://medlineplus.gov/lactoseintolerance.html", "note": "Topik MedlinePlus untuk Digestive System."}
+{"id": "medlineplus_1439", "title": "Latex Allergy", "url": "https://medlineplus.gov/latexallergy.html", "note": "Topik MedlinePlus untuk Immune System."}
+{"id": "medlineplus_608", "title": "Lead Poisoning", "url": "https://medlineplus.gov/leadpoisoning.html", "note": "Topik MedlinePlus untuk Poisoning, Toxicology, Environmental Health."}
+{"id": "medlineplus_306", "title": "Learning Disabilities", "url": "https://medlineplus.gov/learningdisabilities.html", "note": "Topik MedlinePlus untuk Mental Health and Behavior."}
+{"id": "medlineplus_509", "title": "Leg Injuries and Disorders", "url": "https://medlineplus.gov/leginjuriesanddisorders.html", "note": "Topik MedlinePlus untuk Bones, Joints and Muscles."}
+{"id": "medlineplus_1526", "title": "Legionnaires' Disease", "url": "https://medlineplus.gov/legionnairesdisease.html", "note": "Topik MedlinePlus untuk Infections, Lungs and Breathing."}
+{"id": "medlineplus_3748", "title": "Leishmaniasis", "url": "https://medlineplus.gov/leishmaniasis.html", "note": "Topik MedlinePlus untuk Infections, Skin, Hair and Nails."}
+{"id": "medlineplus_518", "title": "Limb Loss", "url": "https://medlineplus.gov/limbloss.html", "note": "Topik MedlinePlus untuk Bones, Joints and Muscles."}
+{"id": "medlineplus_1241", "title": "Listeria Infections", "url": "https://medlineplus.gov/listeriainfections.html", "note": "Topik MedlinePlus untuk Infections."}
+{"id": "medlineplus_310", "title": "Liver Diseases", "url": "https://medlineplus.gov/liverdiseases.html", "note": "Topik MedlinePlus untuk Digestive System."}
+{"id": "medlineplus_484", "title": "Lung Diseases", "url": "https://medlineplus.gov/lungdiseases.html", "note": "Topik MedlinePlus untuk Lungs and Breathing."}
+{"id": "medlineplus_82", "title": "Lupus", "url": "https://medlineplus.gov/lupus.html", "note": "Topik MedlinePlus untuk Immune System."}
+{"id": "medlineplus_84", "title": "Lyme Disease", "url": "https://medlineplus.gov/lymedisease.html", "note": "Topik MedlinePlus untuk Infections."}
+{"id": "medlineplus_591", "title": "Lymphatic Diseases", "url": "https://medlineplus.gov/lymphaticdiseases.html", "note": "Topik MedlinePlus untuk Immune System."}
+{"id": "medlineplus_4610", "title": "Lymphedema", "url": "https://medlineplus.gov/lymphedema.html", "note": "Topik MedlinePlus untuk Immune System."}
+{"id": "medlineplus_313", "title": "Macular Degeneration", "url": "https://medlineplus.gov/maculardegeneration.html", "note": "Topik MedlinePlus untuk Eyes and Vision."}
+{"id": "medlineplus_5459", "title": "Malabsorption Syndromes", "url": "https://medlineplus.gov/malabsorptionsyndromes.html", "note": "Topik MedlinePlus untuk Digestive System."}
+{"id": "medlineplus_315", "title": "Malaria", "url": "https://medlineplus.gov/malaria.html", "note": "Topik MedlinePlus untuk Infections."}
+{"id": "medlineplus_1263", "title": "Mammography", "url": "https://medlineplus.gov/mammography.html", "note": "Topik MedlinePlus untuk Female Reproductive System."}
+{"id": "medlineplus_3752", "title": "Mastectomy", "url": "https://medlineplus.gov/mastectomy.html", "note": "Topik MedlinePlus untuk Female Reproductive System."}
+{"id": "medlineplus_318", "title": "Measles", "url": "https://medlineplus.gov/measles.html", "note": "Topik MedlinePlus untuk Infections, Skin, Hair and Nails."}
+{"id": "medlineplus_321", "title": "Melanoma", "url": "https://medlineplus.gov/melanoma.html", "note": "Topik MedlinePlus untuk Skin, Hair and Nails."}
+{"id": "medlineplus_1452", "title": "Memory", "url": "https://medlineplus.gov/memory.html", "note": "Topik MedlinePlus untuk Mental Health and Behavior."}
+{"id": "medlineplus_1674", "title": "Meniere's Disease", "url": "https://medlineplus.gov/menieresdisease.html", "note": "Topik MedlinePlus untuk Ear, Nose and Throat."}
+{"id": "medlineplus_324", "title": "Meningitis", "url": "https://medlineplus.gov/meningitis.html", "note": "Topik MedlinePlus untuk Infections."}
+{"id": "medlineplus_5651", "title": "Meningococcal Disease", "url": "https://medlineplus.gov/meningococcaldisease.html", "note": "Topik MedlinePlus untuk Infections."}
+{"id": "medlineplus_62", "title": "Menopause", "url": "https://medlineplus.gov/menopause.html", "note": "Topik MedlinePlus untuk Female Reproductive System."}
+{"id": "medlineplus_325", "title": "Menstruation", "url": "https://medlineplus.gov/menstruation.html", "note": "Topik MedlinePlus untuk Female Reproductive System."}
+{"id": "medlineplus_5676", "title": "Mental Disorders", "url": "https://medlineplus.gov/mentaldisorders.html", "note": "Topik MedlinePlus untuk Mental Health and Behavior."}
+{"id": "medlineplus_35", "title": "Mental Health", "url": "https://medlineplus.gov/mentalhealth.html", "note": "Topik MedlinePlus untuk Mental Health and Behavior."}
+{"id": "medlineplus_1436", "title": "Mercury", "url": "https://medlineplus.gov/mercury.html", "note": "Topik MedlinePlus untuk Poisoning, Toxicology, Environmental Health."}
+{"id": "medlineplus_4014", "title": "Mesothelioma", "url": "https://medlineplus.gov/mesothelioma.html", "note": "Topik MedlinePlus untuk Lungs and Breathing."}
+{"id": "medlineplus_5741", "title": "Mild Cognitive Impairment", "url": "https://medlineplus.gov/mildcognitiveimpairment.html", "note": "Topik MedlinePlus untuk Mental Health and Behavior."}
+{"id": "medlineplus_515", "title": "Miscarriage", "url": "https://medlineplus.gov/miscarriage.html", "note": "Topik MedlinePlus untuk Pregnancy and Reproduction, Female Reproductive System."}
+{"id": "medlineplus_1538", "title": "Molds", "url": "https://medlineplus.gov/molds.html", "note": "Topik MedlinePlus untuk Poisoning, Toxicology, Environmental Health."}
+{"id": "medlineplus_4491", "title": "Moles", "url": "https://medlineplus.gov/moles.html", "note": "Topik MedlinePlus untuk Skin, Hair and Nails."}
+{"id": "medlineplus_6063", "title": "Mood Disorders", "url": "https://medlineplus.gov/mooddisorders.html", "note": "Topik MedlinePlus untuk Mental Health and Behavior."}
+{"id": "medlineplus_6545", "title": "Mosquito Bites", "url": "https://medlineplus.gov/mosquitobites.html", "note": "Topik MedlinePlus untuk Skin, Hair and Nails."}
+{"id": "medlineplus_3106", "title": "Motion Sickness", "url": "https://medlineplus.gov/motionsickness.html", "note": "Topik MedlinePlus untuk Symptoms."}
+{"id": "medlineplus_594", "title": "Mouth Disorders", "url": "https://medlineplus.gov/mouthdisorders.html", "note": "Topik MedlinePlus untuk Ear, Nose and Throat, Mouth and Teeth."}
+{"id": "medlineplus_520", "title": "Movement Disorders", "url": "https://medlineplus.gov/movementdisorders.html", "note": "Topik MedlinePlus untuk Bones, Joints and Muscles."}
+{"id": "medlineplus_3229", "title": "Mpox", "url": "https://medlineplus.gov/mpox.html", "note": "Topik MedlinePlus untuk Infections."}
+{"id": "medlineplus_4539", "title": "MRSA", "url": "https://medlineplus.gov/mrsa.html", "note": "Topik MedlinePlus untuk Infections."}
+{"id": "medlineplus_332", "title": "Multiple Myeloma", "url": "https://medlineplus.gov/multiplemyeloma.html", "note": "Topik MedlinePlus untuk Immune System."}
+{"id": "medlineplus_83", "title": "Multiple Sclerosis", "url": "https://medlineplus.gov/multiplesclerosis.html", "note": "Topik MedlinePlus untuk Bones, Joints and Muscles."}
+{"id": "medlineplus_334", "title": "Mumps", "url": "https://medlineplus.gov/mumps.html", "note": "Topik MedlinePlus untuk Infections."}
+{"id": "medlineplus_1707", "title": "Muscle Cramps", "url": "https://medlineplus.gov/musclecramps.html", "note": "Topik MedlinePlus untuk Bones, Joints and Muscles."}
+{"id": "medlineplus_510", "title": "Muscle Disorders", "url": "https://medlineplus.gov/muscledisorders.html", "note": "Topik MedlinePlus untuk Bones, Joints and Muscles."}
+{"id": "medlineplus_335", "title": "Muscular Dystrophy", "url": "https://medlineplus.gov/musculardystrophy.html", "note": "Topik MedlinePlus untuk Bones, Joints and Muscles."}
+{"id": "medlineplus_89", "title": "Myalgic Encephalomyelitis/Chronic Fatigue Syndrome", "url": "https://medlineplus.gov/myalgicencephalomyelitischronicfatiguesyndrome.html", "note": "Topik MedlinePlus untuk Bones, Joints and Muscles, Infections."}
+{"id": "medlineplus_5360", "title": "Mycobacterial Infections", "url": "https://medlineplus.gov/mycobacterialinfections.html", "note": "Topik MedlinePlus untuk Infections."}
+{"id": "medlineplus_5550", "title": "Myelodysplastic Syndromes", "url": "https://medlineplus.gov/myelodysplasticsyndromes.html", "note": "Topik MedlinePlus untuk Immune System."}
+{"id": "medlineplus_1617", "title": "Myositis", "url": "https://medlineplus.gov/myositis.html", "note": "Topik MedlinePlus untuk Bones, Joints and Muscles."}
+{"id": "medlineplus_532", "title": "Nail Diseases", "url": "https://medlineplus.gov/naildiseases.html", "note": "Topik MedlinePlus untuk Skin, Hair and Nails."}
+{"id": "medlineplus_489", "title": "Nausea and Vomiting", "url": "https://medlineplus.gov/nauseaandvomiting.html", "note": "Topik MedlinePlus untuk Digestive System, Symptoms."}
+{"id": "medlineplus_339", "title": "Neck Injuries and Disorders", "url": "https://medlineplus.gov/neckinjuriesanddisorders.html", "note": "Topik MedlinePlus untuk Bones, Joints and Muscles."}
+{"id": "medlineplus_1518", "title": "Neuromuscular Disorders", "url": "https://medlineplus.gov/neuromusculardisorders.html", "note": "Topik MedlinePlus untuk Bones, Joints and Muscles."}
+{"id": "medlineplus_500", "title": "Noise", "url": "https://medlineplus.gov/noise.html", "note": "Topik MedlinePlus untuk Ear, Nose and Throat, Poisoning, Toxicology, Environmental Health."}
+{"id": "medlineplus_6103", "title": "Norovirus Infections", "url": "https://medlineplus.gov/norovirusinfections.html", "note": "Topik MedlinePlus untuk Digestive System, Infections."}
+{"id": "medlineplus_1400", "title": "Nose Injuries and Disorders", "url": "https://medlineplus.gov/noseinjuriesanddisorders.html", "note": "Topik MedlinePlus untuk Ear, Nose and Throat."}
+{"id": "medlineplus_471", "title": "Obsessive-Compulsive Disorder", "url": "https://medlineplus.gov/obsessivecompulsivedisorder.html", "note": "Topik MedlinePlus untuk Mental Health and Behavior."}
+{"id": "medlineplus_5554", "title": "Oil Spills", "url": "https://medlineplus.gov/oilspills.html", "note": "Topik MedlinePlus untuk Poisoning, Toxicology, Environmental Health."}
+{"id": "medlineplus_7427", "title": "Older Adult Mental Health", "url": "https://medlineplus.gov/olderadultmentalhealth.html", "note": "Topik MedlinePlus untuk Mental Health and Behavior."}
+{"id": "medlineplus_6427", "title": "Optic Nerve Disorders", "url": "https://medlineplus.gov/opticnervedisorders.html", "note": "Topik MedlinePlus untuk Eyes and Vision."}
+{"id": "medlineplus_3614", "title": "Orthodontia", "url": "https://medlineplus.gov/orthodontia.html", "note": "Topik MedlinePlus untuk Mouth and Teeth."}
+{"id": "medlineplus_1250", "title": "Osteoarthritis", "url": "https://medlineplus.gov/osteoarthritis.html", "note": "Topik MedlinePlus untuk Bones, Joints and Muscles."}
+{"id": "medlineplus_940", "title": "Osteogenesis Imperfecta", "url": "https://medlineplus.gov/osteogenesisimperfecta.html", "note": "Topik MedlinePlus untuk Bones, Joints and Muscles."}
+{"id": "medlineplus_1647", "title": "Osteonecrosis", "url": "https://medlineplus.gov/osteonecrosis.html", "note": "Topik MedlinePlus untuk Bones, Joints and Muscles."}
+{"id": "medlineplus_37", "title": "Osteoporosis", "url": "https://medlineplus.gov/osteoporosis.html", "note": "Topik MedlinePlus untuk Bones, Joints and Muscles."}
+{"id": "medlineplus_3038", "title": "Ostomy", "url": "https://medlineplus.gov/ostomy.html", "note": "Topik MedlinePlus untuk Digestive System, Kidneys and Urinary System."}
+{"id": "medlineplus_349", "title": "Ovarian Cysts", "url": "https://medlineplus.gov/ovariancysts.html", "note": "Topik MedlinePlus untuk Female Reproductive System."}
+{"id": "medlineplus_5804", "title": "Ovarian Disorders", "url": "https://medlineplus.gov/ovariandisorders.html", "note": "Topik MedlinePlus untuk Female Reproductive System."}
+{"id": "medlineplus_6132", "title": "Overactive Bladder", "url": "https://medlineplus.gov/overactivebladder.html", "note": "Topik MedlinePlus untuk Kidneys and Urinary System."}
+{"id": "medlineplus_5334", "title": "Oxygen Therapy", "url": "https://medlineplus.gov/oxygentherapy.html", "note": "Topik MedlinePlus untuk Lungs and Breathing."}
+{"id": "medlineplus_1539", "title": "Ozone", "url": "https://medlineplus.gov/ozone.html", "note": "Topik MedlinePlus untuk Poisoning, Toxicology, Environmental Health."}
+{"id": "medlineplus_1607", "title": "Paget's Disease of Bone", "url": "https://medlineplus.gov/pagetsdiseaseofbone.html", "note": "Topik MedlinePlus untuk Bones, Joints and Muscles."}
+{"id": "medlineplus_351", "title": "Pain", "url": "https://medlineplus.gov/pain.html", "note": "Topik MedlinePlus untuk Symptoms."}
+{"id": "medlineplus_110", "title": "Pancreatic Diseases", "url": "https://medlineplus.gov/pancreaticdiseases.html", "note": "Topik MedlinePlus untuk Digestive System."}
+{"id": "medlineplus_5876", "title": "Pancreatitis", "url": "https://medlineplus.gov/pancreatitis.html", "note": "Topik MedlinePlus untuk Digestive System."}
+{"id": "medlineplus_601", "title": "Panic Disorder", "url": "https://medlineplus.gov/panicdisorder.html", "note": "Topik MedlinePlus untuk Mental Health and Behavior."}
+{"id": "medlineplus_482", "title": "Parasitic Diseases", "url": "https://medlineplus.gov/parasiticdiseases.html", "note": "Topik MedlinePlus untuk Infections."}
+{"id": "medlineplus_1677", "title": "Pelvic Floor Disorders", "url": "https://medlineplus.gov/pelvicfloordisorders.html", "note": "Topik MedlinePlus untuk Female Reproductive System."}
+{"id": "medlineplus_3044", "title": "Pelvic Inflammatory Disease", "url": "https://medlineplus.gov/pelvicinflammatorydisease.html", "note": "Topik MedlinePlus untuk Infections, Female Reproductive System."}
+{"id": "medlineplus_4486", "title": "Pelvic Pain", "url": "https://medlineplus.gov/pelvicpain.html", "note": "Topik MedlinePlus untuk Symptoms, Female Reproductive System."}
+{"id": "medlineplus_4948", "title": "Pemphigus", "url": "https://medlineplus.gov/pemphigus.html", "note": "Topik MedlinePlus untuk Skin, Hair and Nails, Immune System."}
+{"id": "medlineplus_357", "title": "Peptic Ulcer", "url": "https://medlineplus.gov/pepticulcer.html", "note": "Topik MedlinePlus untuk Digestive System."}
+{"id": "medlineplus_6415", "title": "Period Pain", "url": "https://medlineplus.gov/periodpain.html", "note": "Topik MedlinePlus untuk Female Reproductive System."}
+{"id": "medlineplus_5583", "title": "Peritoneal Disorders", "url": "https://medlineplus.gov/peritonealdisorders.html", "note": "Topik MedlinePlus untuk Digestive System."}
+{"id": "medlineplus_4117", "title": "Personality Disorders", "url": "https://medlineplus.gov/personalitydisorders.html", "note": "Topik MedlinePlus untuk Mental Health and Behavior."}
+{"id": "medlineplus_498", "title": "Pesticides", "url": "https://medlineplus.gov/pesticides.html", "note": "Topik MedlinePlus untuk Poisoning, Toxicology, Environmental Health."}
+{"id": "medlineplus_360", "title": "Phobias", "url": "https://medlineplus.gov/phobias.html", "note": "Topik MedlinePlus untuk Mental Health and Behavior."}
+{"id": "medlineplus_1283", "title": "Piercing and Tattoos", "url": "https://medlineplus.gov/piercingandtattoos.html", "note": "Topik MedlinePlus untuk Mouth and Teeth, Skin, Hair and Nails."}
+{"id": "medlineplus_4946", "title": "Pink Eye", "url": "https://medlineplus.gov/pinkeye.html", "note": "Topik MedlinePlus untuk Eyes and Vision, Infections."}
+{"id": "medlineplus_3065", "title": "Pinworms", "url": "https://medlineplus.gov/pinworms.html", "note": "Topik MedlinePlus untuk Infections."}
+{"id": "medlineplus_1656", "title": "Plague", "url": "https://medlineplus.gov/plague.html", "note": "Topik MedlinePlus untuk Infections."}
+{"id": "medlineplus_4627", "title": "Pleural Disorders", "url": "https://medlineplus.gov/pleuraldisorders.html", "note": "Topik MedlinePlus untuk Lungs and Breathing."}
+{"id": "medlineplus_5714", "title": "Pneumococcal Infections", "url": "https://medlineplus.gov/pneumococcalinfections.html", "note": "Topik MedlinePlus untuk Infections."}
+{"id": "medlineplus_1510", "title": "Pneumocystis Infections", "url": "https://medlineplus.gov/pneumocystisinfections.html", "note": "Topik MedlinePlus untuk Infections, Lungs and Breathing, Immune System."}
+{"id": "medlineplus_363", "title": "Pneumonia", "url": "https://medlineplus.gov/pneumonia.html", "note": "Topik MedlinePlus untuk Infections, Lungs and Breathing."}
+{"id": "medlineplus_3878", "title": "Poison Ivy, Oak, and Sumac", "url": "https://medlineplus.gov/poisonivyoakandsumac.html", "note": "Topik MedlinePlus untuk Skin, Hair and Nails."}
+{"id": "medlineplus_364", "title": "Poisoning", "url": "https://medlineplus.gov/poisoning.html", "note": "Topik MedlinePlus untuk Poisoning, Toxicology, Environmental Health."}
+{"id": "medlineplus_365", "title": "Polio and Post-Polio Syndrome", "url": "https://medlineplus.gov/polioandpostpoliosyndrome.html", "note": "Topik MedlinePlus untuk Bones, Joints and Muscles, Infections."}
+{"id": "medlineplus_5912", "title": "Polycystic Ovary Syndrome", "url": "https://medlineplus.gov/polycysticovarysyndrome.html", "note": "Topik MedlinePlus untuk Female Reproductive System."}
+{"id": "medlineplus_1382", "title": "Polymyalgia Rheumatica", "url": "https://medlineplus.gov/polymyalgiarheumatica.html", "note": "Topik MedlinePlus untuk Bones, Joints and Muscles, Skin, Hair and Nails."}
+{"id": "medlineplus_1249", "title": "Porphyria", "url": "https://medlineplus.gov/porphyria.html", "note": "Topik MedlinePlus untuk Digestive System, Skin, Hair and Nails."}
+{"id": "medlineplus_7807", "title": "Post-COVID Conditions (Long COVID)", "url": "https://medlineplus.gov/postcovidconditionslongcovid.html", "note": "Topik MedlinePlus untuk Infections."}
+{"id": "medlineplus_367", "title": "Post-Traumatic Stress Disorder", "url": "https://medlineplus.gov/posttraumaticstressdisorder.html", "note": "Topik MedlinePlus untuk Mental Health and Behavior."}
+{"id": "medlineplus_4919", "title": "Postpartum Care", "url": "https://medlineplus.gov/postpartumcare.html", "note": "Topik MedlinePlus untuk Pregnancy and Reproduction."}
+{"id": "medlineplus_1238", "title": "Postpartum Depression", "url": "https://medlineplus.gov/postpartumdepression.html", "note": "Topik MedlinePlus untuk Mental Health and Behavior, Pregnancy and Reproduction."}
+{"id": "medlineplus_1243", "title": "Prader-Willi Syndrome", "url": "https://medlineplus.gov/praderwillisyndrome.html", "note": "Topik MedlinePlus untuk Mental Health and Behavior."}
+{"id": "medlineplus_4455", "title": "Preconception Care", "url": "https://medlineplus.gov/preconceptioncare.html", "note": "Topik MedlinePlus untuk Pregnancy and Reproduction."}
+{"id": "medlineplus_1519", "title": "Premature Babies", "url": "https://medlineplus.gov/prematurebabies.html", "note": "Topik MedlinePlus untuk Pregnancy and Reproduction."}
+{"id": "medlineplus_3793", "title": "Premenstrual Syndrome", "url": "https://medlineplus.gov/premenstrualsyndrome.html", "note": "Topik MedlinePlus untuk Female Reproductive System."}
+{"id": "medlineplus_6", "title": "Prenatal Care", "url": "https://medlineplus.gov/prenatalcare.html", "note": "Topik MedlinePlus untuk Pregnancy and Reproduction, Female Reproductive System."}
+{"id": "medlineplus_371", "title": "Pressure Sores", "url": "https://medlineplus.gov/pressuresores.html", "note": "Topik MedlinePlus untuk Skin, Hair and Nails."}
+{"id": "medlineplus_6234", "title": "Preterm Labor", "url": "https://medlineplus.gov/pretermlabor.html", "note": "Topik MedlinePlus untuk Female Reproductive System."}
+{"id": "medlineplus_3684", "title": "Primary Ovarian Insufficiency", "url": "https://medlineplus.gov/primaryovarianinsufficiency.html", "note": "Topik MedlinePlus untuk Pregnancy and Reproduction, Female Reproductive System."}
+{"id": "medlineplus_373", "title": "Psoriasis", "url": "https://medlineplus.gov/psoriasis.html", "note": "Topik MedlinePlus untuk Skin, Hair and Nails."}
+{"id": "medlineplus_6159", "title": "Psoriatic Arthritis", "url": "https://medlineplus.gov/psoriaticarthritis.html", "note": "Topik MedlinePlus untuk Bones, Joints and Muscles."}
+{"id": "medlineplus_4180", "title": "Psychotic Disorders", "url": "https://medlineplus.gov/psychoticdisorders.html", "note": "Topik MedlinePlus untuk Mental Health and Behavior."}
+{"id": "medlineplus_6947", "title": "Pubic Lice", "url": "https://medlineplus.gov/pubiclice.html", "note": "Topik MedlinePlus untuk Infections, Skin, Hair and Nails."}
+{"id": "medlineplus_377", "title": "Pulmonary Embolism", "url": "https://medlineplus.gov/pulmonaryembolism.html", "note": "Topik MedlinePlus untuk Lungs and Breathing."}
+{"id": "medlineplus_378", "title": "Pulmonary Fibrosis", "url": "https://medlineplus.gov/pulmonaryfibrosis.html", "note": "Topik MedlinePlus untuk Lungs and Breathing."}
+{"id": "medlineplus_3634", "title": "Pulmonary Hypertension", "url": "https://medlineplus.gov/pulmonaryhypertension.html", "note": "Topik MedlinePlus untuk Lungs and Breathing."}
+{"id": "medlineplus_523", "title": "Rabies", "url": "https://medlineplus.gov/rabies.html", "note": "Topik MedlinePlus untuk Infections."}
+{"id": "medlineplus_379", "title": "Radiation Exposure", "url": "https://medlineplus.gov/radiationexposure.html", "note": "Topik MedlinePlus untuk Poisoning, Toxicology, Environmental Health."}
+{"id": "medlineplus_1443", "title": "Radon", "url": "https://medlineplus.gov/radon.html", "note": "Topik MedlinePlus untuk Poisoning, Toxicology, Environmental Health."}
+{"id": "medlineplus_519", "title": "Rare Diseases", "url": "https://medlineplus.gov/rarediseases.html", "note": "Topik MedlinePlus untuk Symptoms."}
+{"id": "medlineplus_208", "title": "Rashes", "url": "https://medlineplus.gov/rashes.html", "note": "Topik MedlinePlus untuk Skin, Hair and Nails."}
+{"id": "medlineplus_381", "title": "Raynaud Phenomenon", "url": "https://medlineplus.gov/raynaudphenomenon.html", "note": "Topik MedlinePlus untuk Symptoms."}
+{"id": "medlineplus_5870", "title": "Rectal Disorders", "url": "https://medlineplus.gov/rectaldisorders.html", "note": "Topik MedlinePlus untuk Digestive System."}
+{"id": "medlineplus_6521", "title": "Reflux in Children", "url": "https://medlineplus.gov/refluxinchildren.html", "note": "Topik MedlinePlus untuk Digestive System."}
+{"id": "medlineplus_6467", "title": "Reflux in Infants", "url": "https://medlineplus.gov/refluxininfants.html", "note": "Topik MedlinePlus untuk Digestive System."}
+{"id": "medlineplus_946", "title": "Refractive Errors", "url": "https://medlineplus.gov/refractiveerrors.html", "note": "Topik MedlinePlus untuk Eyes and Vision."}
+{"id": "medlineplus_39", "title": "Reproductive Hazards", "url": "https://medlineplus.gov/reproductivehazards.html", "note": "Topik MedlinePlus untuk Pregnancy and Reproduction, Poisoning, Toxicology, Environmental Health, Female Reproductive System."}
+{"id": "medlineplus_6016", "title": "Respiratory Failure", "url": "https://medlineplus.gov/respiratoryfailure.html", "note": "Topik MedlinePlus untuk Lungs and Breathing."}
+{"id": "medlineplus_3101", "title": "Respiratory Syncytial Virus Infections", "url": "https://medlineplus.gov/respiratorysyncytialvirusinfections.html", "note": "Topik MedlinePlus untuk Infections, Lungs and Breathing."}
+{"id": "medlineplus_6141", "title": "Retinal Detachment", "url": "https://medlineplus.gov/retinaldetachment.html", "note": "Topik MedlinePlus untuk Eyes and Vision."}
+{"id": "medlineplus_1681", "title": "Retinal Disorders", "url": "https://medlineplus.gov/retinaldisorders.html", "note": "Topik MedlinePlus untuk Eyes and Vision."}
+{"id": "medlineplus_5901", "title": "Rh Incompatibility", "url": "https://medlineplus.gov/rhincompatibility.html", "note": "Topik MedlinePlus untuk Pregnancy and Reproduction."}
+{"id": "medlineplus_1232", "title": "Rheumatoid Arthritis", "url": "https://medlineplus.gov/rheumatoidarthritis.html", "note": "Topik MedlinePlus untuk Bones, Joints and Muscles, Immune System."}
+{"id": "medlineplus_3898", "title": "Rickets", "url": "https://medlineplus.gov/rickets.html", "note": "Topik MedlinePlus untuk Bones, Joints and Muscles."}
+{"id": "medlineplus_1247", "title": "Rosacea", "url": "https://medlineplus.gov/rosacea.html", "note": "Topik MedlinePlus untuk Skin, Hair and Nails."}
+{"id": "medlineplus_5932", "title": "Rotator Cuff Injuries", "url": "https://medlineplus.gov/rotatorcuffinjuries.html", "note": "Topik MedlinePlus untuk Bones, Joints and Muscles."}
+{"id": "medlineplus_3215", "title": "Rotavirus Infections", "url": "https://medlineplus.gov/rotavirusinfections.html", "note": "Topik MedlinePlus untuk Infections."}
+{"id": "medlineplus_387", "title": "Rubella", "url": "https://medlineplus.gov/rubella.html", "note": "Topik MedlinePlus untuk Infections, Skin, Hair and Nails."}
+{"id": "medlineplus_388", "title": "Salivary Gland Disorders", "url": "https://medlineplus.gov/salivaryglanddisorders.html", "note": "Topik MedlinePlus untuk Mouth and Teeth."}
+{"id": "medlineplus_1213", "title": "Salmonella Infections", "url": "https://medlineplus.gov/salmonellainfections.html", "note": "Topik MedlinePlus untuk Infections."}
+{"id": "medlineplus_389", "title": "Sarcoidosis", "url": "https://medlineplus.gov/sarcoidosis.html", "note": "Topik MedlinePlus untuk Lungs and Breathing."}
+{"id": "medlineplus_1254", "title": "Scabies", "url": "https://medlineplus.gov/scabies.html", "note": "Topik MedlinePlus untuk Infections, Skin, Hair and Nails."}
+{"id": "medlineplus_3195", "title": "Scars", "url": "https://medlineplus.gov/scars.html", "note": "Topik MedlinePlus untuk Skin, Hair and Nails."}
+{"id": "medlineplus_392", "title": "Schizophrenia", "url": "https://medlineplus.gov/schizophrenia.html", "note": "Topik MedlinePlus untuk Mental Health and Behavior."}
+{"id": "medlineplus_1532", "title": "Sciatica", "url": "https://medlineplus.gov/sciatica.html", "note": "Topik MedlinePlus untuk Bones, Joints and Muscles, Symptoms."}
+{"id": "medlineplus_394", "title": "Scleroderma", "url": "https://medlineplus.gov/scleroderma.html", "note": "Topik MedlinePlus untuk Skin, Hair and Nails, Immune System."}
+{"id": "medlineplus_395", "title": "Scoliosis", "url": "https://medlineplus.gov/scoliosis.html", "note": "Topik MedlinePlus untuk Bones, Joints and Muscles."}
+{"id": "medlineplus_3140", "title": "Seasonal Affective Disorder", "url": "https://medlineplus.gov/seasonalaffectivedisorder.html", "note": "Topik MedlinePlus untuk Mental Health and Behavior."}
+{"id": "medlineplus_1473", "title": "Secondhand Smoke", "url": "https://medlineplus.gov/secondhandsmoke.html", "note": "Topik MedlinePlus untuk Poisoning, Toxicology, Environmental Health."}
+{"id": "medlineplus_6091", "title": "Self-Harm", "url": "https://medlineplus.gov/selfharm.html", "note": "Topik MedlinePlus untuk Mental Health and Behavior."}
+{"id": "medlineplus_1542", "title": "Sexual Health", "url": "https://medlineplus.gov/sexualhealth.html", "note": "Topik MedlinePlus untuk Female Reproductive System."}
+{"id": "medlineplus_1423", "title": "Sexual Problems in Women", "url": "https://medlineplus.gov/sexualproblemsinwomen.html", "note": "Topik MedlinePlus untuk Female Reproductive System."}
+{"id": "medlineplus_400", "title": "Sexually Transmitted Infections", "url": "https://medlineplus.gov/sexuallytransmittedinfections.html", "note": "Topik MedlinePlus untuk Infections, Female Reproductive System."}
+{"id": "medlineplus_90", "title": "Shingles", "url": "https://medlineplus.gov/shingles.html", "note": "Topik MedlinePlus untuk Infections, Skin, Hair and Nails."}
+{"id": "medlineplus_505", "title": "Shoulder Injuries and Disorders", "url": "https://medlineplus.gov/shoulderinjuriesanddisorders.html", "note": "Topik MedlinePlus untuk Bones, Joints and Muscles."}
+{"id": "medlineplus_404", "title": "Sinusitis", "url": "https://medlineplus.gov/sinusitis.html", "note": "Topik MedlinePlus untuk Infections, Lungs and Breathing, Ear, Nose and Throat."}
+{"id": "medlineplus_918", "title": "Sjogren's Syndrome", "url": "https://medlineplus.gov/sjogrenssyndrome.html", "note": "Topik MedlinePlus untuk Bones, Joints and Muscles, Immune System."}
+{"id": "medlineplus_3775", "title": "Skin Aging", "url": "https://medlineplus.gov/skinaging.html", "note": "Topik MedlinePlus untuk Skin, Hair and Nails."}
+{"id": "medlineplus_40", "title": "Skin Conditions", "url": "https://medlineplus.gov/skinconditions.html", "note": "Topik MedlinePlus untuk Skin, Hair and Nails."}
+{"id": "medlineplus_5358", "title": "Skin Infections", "url": "https://medlineplus.gov/skininfections.html", "note": "Topik MedlinePlus untuk Infections, Skin, Hair and Nails."}
+{"id": "medlineplus_406", "title": "Skin Pigmentation Disorders", "url": "https://medlineplus.gov/skinpigmentationdisorders.html", "note": "Topik MedlinePlus untuk Skin, Hair and Nails."}
+{"id": "medlineplus_2784", "title": "Sleep Apnea", "url": "https://medlineplus.gov/sleepapnea.html", "note": "Topik MedlinePlus untuk Lungs and Breathing."}
+{"id": "medlineplus_1567", "title": "Smallpox", "url": "https://medlineplus.gov/smallpox.html", "note": "Topik MedlinePlus untuk Infections, Poisoning, Toxicology, Environmental Health."}
+{"id": "medlineplus_1474", "title": "Smokeless Tobacco", "url": "https://medlineplus.gov/smokelesstobacco.html", "note": "Topik MedlinePlus untuk Mouth and Teeth."}
+{"id": "medlineplus_108", "title": "Smoking", "url": "https://medlineplus.gov/smoking.html", "note": "Topik MedlinePlus untuk Lungs and Breathing."}
+{"id": "medlineplus_1531", "title": "Snoring", "url": "https://medlineplus.gov/snoring.html", "note": "Topik MedlinePlus untuk Lungs and Breathing, Ear, Nose and Throat, Mouth and Teeth."}
+{"id": "medlineplus_4748", "title": "Sore Throat", "url": "https://medlineplus.gov/sorethroat.html", "note": "Topik MedlinePlus untuk Ear, Nose and Throat."}
+{"id": "medlineplus_409", "title": "Speech and Communication Disorders", "url": "https://medlineplus.gov/speechandcommunicationdisorders.html", "note": "Topik MedlinePlus untuk Mouth and Teeth, Symptoms."}
+{"id": "medlineplus_412", "title": "Spinal Stenosis", "url": "https://medlineplus.gov/spinalstenosis.html", "note": "Topik MedlinePlus untuk Bones, Joints and Muscles."}
+{"id": "medlineplus_1505", "title": "Spine Injuries and Disorders", "url": "https://medlineplus.gov/spineinjuriesanddisorders.html", "note": "Topik MedlinePlus untuk Bones, Joints and Muscles."}
+{"id": "medlineplus_414", "title": "Spleen Diseases", "url": "https://medlineplus.gov/spleendiseases.html", "note": "Topik MedlinePlus untuk Immune System."}
+{"id": "medlineplus_417", "title": "Sprains and Strains", "url": "https://medlineplus.gov/sprainsandstrains.html", "note": "Topik MedlinePlus untuk Bones, Joints and Muscles."}
+{"id": "medlineplus_418", "title": "Staphylococcal Infections", "url": "https://medlineplus.gov/staphylococcalinfections.html", "note": "Topik MedlinePlus untuk Infections."}
+{"id": "medlineplus_5682", "title": "Stillbirth", "url": "https://medlineplus.gov/stillbirth.html", "note": "Topik MedlinePlus untuk Pregnancy and Reproduction, Female Reproductive System."}
+{"id": "medlineplus_420", "title": "Stomach Disorders", "url": "https://medlineplus.gov/stomachdisorders.html", "note": "Topik MedlinePlus untuk Digestive System."}
+{"id": "medlineplus_421", "title": "Streptococcal Infections", "url": "https://medlineplus.gov/streptococcalinfections.html", "note": "Topik MedlinePlus untuk Infections, Ear, Nose and Throat."}
+{"id": "medlineplus_422", "title": "Stress", "url": "https://medlineplus.gov/stress.html", "note": "Topik MedlinePlus untuk Mental Health and Behavior."}
+{"id": "medlineplus_3629", "title": "Stuttering", "url": "https://medlineplus.gov/stuttering.html", "note": "Topik MedlinePlus untuk Symptoms."}
+{"id": "medlineplus_424", "title": "Suicide", "url": "https://medlineplus.gov/suicide.html", "note": "Topik MedlinePlus untuk Mental Health and Behavior."}
+{"id": "medlineplus_1419", "title": "Sun Exposure", "url": "https://medlineplus.gov/sunexposure.html", "note": "Topik MedlinePlus untuk Skin, Hair and Nails."}
+{"id": "medlineplus_1309", "title": "Swallowing Disorders", "url": "https://medlineplus.gov/swallowingdisorders.html", "note": "Topik MedlinePlus untuk Digestive System."}
+{"id": "medlineplus_1344", "title": "Sweat", "url": "https://medlineplus.gov/sweat.html", "note": "Topik MedlinePlus untuk Skin, Hair and Nails."}
+{"id": "medlineplus_3017", "title": "Syphilis", "url": "https://medlineplus.gov/syphilis.html", "note": "Topik MedlinePlus untuk Infections, Female Reproductive System."}
+{"id": "medlineplus_1448", "title": "Tailbone Disorders", "url": "https://medlineplus.gov/tailbonedisorders.html", "note": "Topik MedlinePlus untuk Bones, Joints and Muscles."}
+{"id": "medlineplus_6541", "title": "Tanning", "url": "https://medlineplus.gov/tanning.html", "note": "Topik MedlinePlus untuk Skin, Hair and Nails."}
+{"id": "medlineplus_430", "title": "Taste and Smell Disorders", "url": "https://medlineplus.gov/tasteandsmelldisorders.html", "note": "Topik MedlinePlus untuk Ear, Nose and Throat, Mouth and Teeth."}
+{"id": "medlineplus_5410", "title": "Tears", "url": "https://medlineplus.gov/tears.html", "note": "Topik MedlinePlus untuk Eyes and Vision."}
+{"id": "medlineplus_6931", "title": "Teen Depression", "url": "https://medlineplus.gov/teendepression.html", "note": "Topik MedlinePlus untuk Mental Health and Behavior."}
+{"id": "medlineplus_1587", "title": "Teen Development", "url": "https://medlineplus.gov/teendevelopment.html", "note": "Topik MedlinePlus untuk Mental Health and Behavior."}
+{"id": "medlineplus_3637", "title": "Teen Mental Health", "url": "https://medlineplus.gov/teenmentalhealth.html", "note": "Topik MedlinePlus untuk Mental Health and Behavior."}
+{"id": "medlineplus_1235", "title": "Temporomandibular Disorders", "url": "https://medlineplus.gov/temporomandibulardisorders.html", "note": "Topik MedlinePlus untuk Mouth and Teeth."}
+{"id": "medlineplus_1618", "title": "Tendinitis", "url": "https://medlineplus.gov/tendinitis.html", "note": "Topik MedlinePlus untuk Bones, Joints and Muscles."}
+{"id": "medlineplus_435", "title": "Tetanus", "url": "https://medlineplus.gov/tetanus.html", "note": "Topik MedlinePlus untuk Infections."}
+{"id": "medlineplus_1660", "title": "Throat Disorders", "url": "https://medlineplus.gov/throatdisorders.html", "note": "Topik MedlinePlus untuk Lungs and Breathing, Ear, Nose and Throat."}
+{"id": "medlineplus_1645", "title": "Tick Bites", "url": "https://medlineplus.gov/tickbites.html", "note": "Topik MedlinePlus untuk Infections, Skin, Hair and Nails."}
+{"id": "medlineplus_1228", "title": "Tinea Infections", "url": "https://medlineplus.gov/tineainfections.html", "note": "Topik MedlinePlus untuk Infections, Skin, Hair and Nails."}
+{"id": "medlineplus_1236", "title": "Tinnitus", "url": "https://medlineplus.gov/tinnitus.html", "note": "Topik MedlinePlus untuk Ear, Nose and Throat."}
+{"id": "medlineplus_3648", "title": "Toe Injuries and Disorders", "url": "https://medlineplus.gov/toeinjuriesanddisorders.html", "note": "Topik MedlinePlus untuk Bones, Joints and Muscles."}
+{"id": "medlineplus_5266", "title": "Tongue Disorders", "url": "https://medlineplus.gov/tonguedisorders.html", "note": "Topik MedlinePlus untuk Mouth and Teeth."}
+{"id": "medlineplus_6440", "title": "Tonsillitis", "url": "https://medlineplus.gov/tonsillitis.html", "note": "Topik MedlinePlus untuk Ear, Nose and Throat, Mouth and Teeth, Immune System."}
+{"id": "medlineplus_5951", "title": "Tooth Decay", "url": "https://medlineplus.gov/toothdecay.html", "note": "Topik MedlinePlus untuk Mouth and Teeth."}
+{"id": "medlineplus_3069", "title": "Tooth Disorders", "url": "https://medlineplus.gov/toothdisorders.html", "note": "Topik MedlinePlus untuk Mouth and Teeth."}
+{"id": "medlineplus_1214", "title": "Toxoplasmosis", "url": "https://medlineplus.gov/toxoplasmosis.html", "note": "Topik MedlinePlus untuk Infections."}
+{"id": "medlineplus_5448", "title": "Tracheal Disorders", "url": "https://medlineplus.gov/trachealdisorders.html", "note": "Topik MedlinePlus untuk Lungs and Breathing."}
+{"id": "medlineplus_444", "title": "Traveler's Health", "url": "https://medlineplus.gov/travelershealth.html", "note": "Topik MedlinePlus untuk Infections."}
+{"id": "medlineplus_4325", "title": "Trichomoniasis", "url": "https://medlineplus.gov/trichomoniasis.html", "note": "Topik MedlinePlus untuk Infections, Female Reproductive System."}
+{"id": "medlineplus_5818", "title": "Tubal Ligation", "url": "https://medlineplus.gov/tuballigation.html", "note": "Topik MedlinePlus untuk Pregnancy and Reproduction, Female Reproductive System."}
+{"id": "medlineplus_41", "title": "Tuberculosis", "url": "https://medlineplus.gov/tuberculosis.html", "note": "Topik MedlinePlus untuk Infections, Lungs and Breathing."}
+{"id": "medlineplus_1520", "title": "Twins, Triplets, Multiple Births", "url": "https://medlineplus.gov/twinstripletsmultiplebirths.html", "note": "Topik MedlinePlus untuk Pregnancy and Reproduction."}
+{"id": "medlineplus_446", "title": "Ulcerative Colitis", "url": "https://medlineplus.gov/ulcerativecolitis.html", "note": "Topik MedlinePlus untuk Digestive System."}
+{"id": "medlineplus_5350", "title": "Ureteral Disorders", "url": "https://medlineplus.gov/ureteraldisorders.html", "note": "Topik MedlinePlus untuk Kidneys and Urinary System."}
+{"id": "medlineplus_5352", "title": "Urethral Disorders", "url": "https://medlineplus.gov/urethraldisorders.html", "note": "Topik MedlinePlus untuk Kidneys and Urinary System."}
+{"id": "medlineplus_6355", "title": "Urinalysis", "url": "https://medlineplus.gov/urinalysis.html", "note": "Topik MedlinePlus untuk Kidneys and Urinary System."}
+{"id": "medlineplus_114", "title": "Urinary Incontinence", "url": "https://medlineplus.gov/urinaryincontinence.html", "note": "Topik MedlinePlus untuk Kidneys and Urinary System."}
+{"id": "medlineplus_448", "title": "Urinary Tract Infections", "url": "https://medlineplus.gov/urinarytractinfections.html", "note": "Topik MedlinePlus untuk Kidneys and Urinary System, Infections."}
+{"id": "medlineplus_4889", "title": "Urine and Urination", "url": "https://medlineplus.gov/urineandurination.html", "note": "Topik MedlinePlus untuk Kidneys and Urinary System."}
+{"id": "medlineplus_4368", "title": "Usher Syndrome", "url": "https://medlineplus.gov/ushersyndrome.html", "note": "Topik MedlinePlus untuk Eyes and Vision, Ear, Nose and Throat."}
+{"id": "medlineplus_477", "title": "Uterine Diseases", "url": "https://medlineplus.gov/uterinediseases.html", "note": "Topik MedlinePlus untuk Female Reproductive System."}
+{"id": "medlineplus_1222", "title": "Uterine Fibroids", "url": "https://medlineplus.gov/uterinefibroids.html", "note": "Topik MedlinePlus untuk Female Reproductive System."}
+{"id": "medlineplus_7667", "title": "Vaccine Safety", "url": "https://medlineplus.gov/vaccinesafety.html", "note": "Topik MedlinePlus untuk Infections, Immune System."}
+{"id": "medlineplus_4875", "title": "Vaginal Bleeding", "url": "https://medlineplus.gov/vaginalbleeding.html", "note": "Topik MedlinePlus untuk Symptoms, Female Reproductive System."}
+{"id": "medlineplus_451", "title": "Vaginal Diseases", "url": "https://medlineplus.gov/vaginaldiseases.html", "note": "Topik MedlinePlus untuk Female Reproductive System."}
+{"id": "medlineplus_6417", "title": "Vaginitis", "url": "https://medlineplus.gov/vaginitis.html", "note": "Topik MedlinePlus untuk Female Reproductive System."}
+{"id": "medlineplus_5634", "title": "Valley Fever", "url": "https://medlineplus.gov/valleyfever.html", "note": "Topik MedlinePlus untuk Infections."}
+{"id": "medlineplus_5821", "title": "Vasectomy", "url": "https://medlineplus.gov/vasectomy.html", "note": "Topik MedlinePlus untuk Pregnancy and Reproduction."}
+{"id": "medlineplus_454", "title": "Viral Infections", "url": "https://medlineplus.gov/viralinfections.html", "note": "Topik MedlinePlus untuk Infections, Immune System."}
+{"id": "medlineplus_165", "title": "Vision Impairment and Blindness", "url": "https://medlineplus.gov/visionimpairmentandblindness.html", "note": "Topik MedlinePlus untuk Eyes and Vision."}
+{"id": "medlineplus_1306", "title": "Vitiligo", "url": "https://medlineplus.gov/vitiligo.html", "note": "Topik MedlinePlus untuk Skin, Hair and Nails."}
+{"id": "medlineplus_1650", "title": "Voice Disorders", "url": "https://medlineplus.gov/voicedisorders.html", "note": "Topik MedlinePlus untuk Mouth and Teeth."}
+{"id": "medlineplus_4550", "title": "Vulvar Disorders", "url": "https://medlineplus.gov/vulvardisorders.html", "note": "Topik MedlinePlus untuk Female Reproductive System."}
+{"id": "medlineplus_5673", "title": "Walking Problems", "url": "https://medlineplus.gov/walkingproblems.html", "note": "Topik MedlinePlus untuk Bones, Joints and Muscles."}
+{"id": "medlineplus_459", "title": "Warts", "url": "https://medlineplus.gov/warts.html", "note": "Topik MedlinePlus untuk Infections, Skin, Hair and Nails."}
+{"id": "medlineplus_3172", "title": "Water Pollution", "url": "https://medlineplus.gov/waterpollution.html", "note": "Topik MedlinePlus untuk Poisoning, Toxicology, Environmental Health."}
+{"id": "medlineplus_1377", "title": "West Nile Virus", "url": "https://medlineplus.gov/westnilevirus.html", "note": "Topik MedlinePlus untuk Infections."}
+{"id": "medlineplus_461", "title": "Whooping Cough", "url": "https://medlineplus.gov/whoopingcough.html", "note": "Topik MedlinePlus untuk Infections, Lungs and Breathing."}
+{"id": "medlineplus_3075", "title": "Wilms Tumor", "url": "https://medlineplus.gov/wilmstumor.html", "note": "Topik MedlinePlus untuk Kidneys and Urinary System."}
+{"id": "medlineplus_1691", "title": "Wilson Disease", "url": "https://medlineplus.gov/wilsondisease.html", "note": "Topik MedlinePlus untuk Digestive System."}
+{"id": "medlineplus_3858", "title": "Wounds and Injuries", "url": "https://medlineplus.gov/woundsandinjuries.html", "note": "Topik MedlinePlus untuk Skin, Hair and Nails."}
+{"id": "medlineplus_1657", "title": "Wrist Injuries and Disorders", "url": "https://medlineplus.gov/wristinjuriesanddisorders.html", "note": "Topik MedlinePlus untuk Bones, Joints and Muscles."}
+{"id": "medlineplus_1255", "title": "Yeast Infections", "url": "https://medlineplus.gov/yeastinfections.html", "note": "Topik MedlinePlus untuk Infections, Mouth and Teeth, Female Reproductive System."}
+{"id": "medlineplus_6342", "title": "Zika Virus", "url": "https://medlineplus.gov/zikavirus.html", "note": "Topik MedlinePlus untuk Infections."}

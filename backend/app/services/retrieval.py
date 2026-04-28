@@ -384,7 +384,7 @@ class RAGRetriever:
 
         deduped: dict[str, RetrievedItem] = {}
         for item in sorted(reranked, key=lambda result: result.score, reverse=True):
-            deduped.setdefault(item.id, item)
+            deduped.setdefault(self._dedupe_key(item), item)
         return list(deduped.values())[:limit]
 
     def retrieve_guidance(
@@ -434,7 +434,7 @@ class RAGRetriever:
 
         deduped: dict[str, RetrievedItem] = {}
         for item in sorted(reranked, key=lambda result: result.score, reverse=True):
-            deduped.setdefault(item.id, item)
+            deduped.setdefault(self._dedupe_key(item), item)
         return list(deduped.values())[:limit]
 
     @staticmethod
@@ -447,6 +447,12 @@ class RAGRetriever:
             case_ids = payload.metadata.get("applicable_case_ids", [])
             return isinstance(case_ids, list) and case_id in case_ids
         return False
+
+    @classmethod
+    def _dedupe_key(cls, item: RetrievedItem) -> str:
+        if item.type != "training":
+            return item.id
+        return f"{item.type}:{cls._normalize_hint(item.title)}"
 
 
 # Backward-compatible alias for older tests/imports.
