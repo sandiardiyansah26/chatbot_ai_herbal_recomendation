@@ -166,9 +166,12 @@ def _has_intensity_signal(normalized: str) -> bool:
         contains_phrase(normalized, phrase)
         for phrase in [
             "ringan",
-            "sedang",
             "berat",
             "parah",
+            "nyeri sedang",
+            "sakit sedang",
+            "demam sedang",
+            "keluhan sedang",
             "sangat sakit",
             "lebih sakit",
             "nyeri saat menelan",

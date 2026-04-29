@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
+import re
 from uuid import uuid4
 
 from fastapi import FastAPI
@@ -185,10 +186,30 @@ def chat(request: ChatRequest) -> ChatResponse:
     if post_recommendation_response:
         return _finalize_response(session_id, session, request.message, post_recommendation_response)
 
+    pipeline = _pipeline_steps()
+    if _is_confusion_message(request.message):
+        response = _clarify_last_follow_up_response(
+            session_id=session_id,
+            session=session,
+            pipeline=pipeline,
+        )
+        return _finalize_response(session_id, session, request.message, response)
+
+    invalid_temperature = _invalid_temperature_value(request.message)
+    if invalid_temperature is not None:
+        response = _temperature_clarification_response(
+            session_id=session_id,
+            session=session,
+            invalid_temperature=invalid_temperature,
+            pipeline=pipeline,
+        )
+        return _finalize_response(session_id, session, request.message, response)
+
+    _capture_contextual_short_answer(session, request.message)
+
     combined_user_message = _combined_user_messages(session)
     anamnesis = analyze_message(combined_user_message)
     question_count = int(session.get("question_count", 0))
-    pipeline = _pipeline_steps()
 
     if anamnesis.red_flags:
         session["completed"] = True
@@ -363,6 +384,7 @@ def _new_session() -> dict[str, object]:
         "question_count": 0,
         "suspected_conditions": [],
         "asked_follow_up_questions": [],
+        "contextual_user_notes": [],
         "conversation_stage": "initial",
         "completed": False,
         "last_recommendation": None,
@@ -450,6 +472,188 @@ def _post_recommendation_response(
     )
 
 
+def _is_confusion_message(message: str) -> bool:
+    normalized = normalize(message)
+    return any(
+        phrase in normalized
+        for phrase in (
+            "maksud anda",
+            "maksudnya",
+            "gimana",
+            "bagaimana maksud",
+            "tidak mengerti",
+            "nggak mengerti",
+            "ga mengerti",
+            "gak paham",
+            "tidak paham",
+            "bingung",
+            "kurang paham",
+            "jelaskan",
+            "apa maksud",
+        )
+    )
+
+
+def _clarify_last_follow_up_response(
+    *,
+    session_id: str,
+    session: dict[str, object],
+    pipeline: list[str],
+) -> ChatResponse:
+    asked = _asked_follow_up_questions(session)
+    last_question = asked[-1] if asked else ""
+    question_count = int(session.get("question_count", 0))
+    if not last_question:
+        follow_up_question = "Apa keluhan utama yang paling terasa, sejak kapan, dan apakah ada tanda bahaya?"
+        reply = (
+            "Maaf, tadi saya belum menangkap bagian yang membuat kamu bingung. "
+            "Coba ceritakan keluhan utama dengan kalimat pendek: sejak kapan, gejala apa yang paling terasa, "
+            "dan apakah ada sesak, perdarahan, muntah terus, pingsan, atau lemas sekali."
+        )
+    else:
+        follow_up_question = last_question
+        reply = (
+            "Maaf, pertanyaan saya tadi kurang sederhana. Saya jelaskan ulang ya.\n\n"
+            f"Yang saya maksud: {_plain_language_question_explanation(last_question)}\n\n"
+            f"Pertanyaan sederhananya: {last_question}\n\n"
+            "Jawab pendek saja. Kalau tidak ada gejala berat, tulis: tidak ada. "
+            "Kalau ada salah satu, sebutkan yang ada."
+        )
+
+    session["conversation_stage"] = "anamnesis_clarification"
+    return ChatResponse(
+        session_id=session_id,
+        response_type="clarification",
+        reply=reply,
+        conversation_stage="anamnesis_clarification",
+        suspected_conditions=list(session.get("suspected_conditions", []))[:3],
+        follow_up_question=follow_up_question,
+        quick_replies=[
+            "Tidak ada tanda berat.",
+            "Ada sesak/lemas berat.",
+            "Saya jawab ulang dengan angka/gejala.",
+        ],
+        questions_asked=question_count,
+        max_questions=MAX_ANAMNESIS_QUESTIONS,
+        pipeline=pipeline,
+    )
+
+
+def _plain_language_question_explanation(question: str) -> str:
+    normalized = normalize(question)
+    if any(term in normalized for term in ("sesak", "perdarahan", "muntah terus", "pingsan", "lemas", "memburuk")):
+        return (
+            "saya sedang mengecek tanda bahaya. Tanda bahaya itu misalnya napas terasa berat, "
+            "muntah tidak berhenti, keluar darah, sangat lemas, pingsan, atau keluhan cepat memburuk."
+        )
+    if any(term in normalized for term in ("suhu", "derajat", "demam")):
+        return (
+            "saya ingin tahu angka suhu tubuh tertinggi dan apakah ada tanda yang sering menyertai demam serius, "
+            "seperti ruam, muntah, kaku leher, atau lemas berat."
+        )
+    if any(term in normalized for term in ("skala", "1 sampai 10", "mengganggu", "berat")):
+        return "saya ingin tahu seberapa berat keluhanmu. Angka 1 berarti ringan, angka 10 berarti sangat berat."
+    if any(term in normalized for term in ("sejak", "berapa lama", "mulai")):
+        return "saya ingin tahu kapan keluhan mulai muncul dan apakah sejak itu makin berat atau membaik."
+    return "saya ingin memastikan satu informasi penting dulu agar saran berikutnya tidak asal."
+
+
+def _invalid_temperature_value(message: str) -> float | None:
+    normalized = normalize(message).replace(",", ".")
+    patterns = (
+        r"\bsuhu(?:\s+\w+){0,3}\s+(\d{2,3}(?:\.\d)?)\b",
+        r"\b(\d{2,3}(?:\.\d)?)\s*(?:derajat|derajad|celcius|celsius|c)\b",
+    )
+    for pattern in patterns:
+        for match in re.finditer(pattern, normalized):
+            try:
+                value = float(match.group(1))
+            except ValueError:
+                continue
+            if value >= 45 or value < 30:
+                return value
+    return None
+
+
+def _temperature_clarification_response(
+    *,
+    session_id: str,
+    session: dict[str, object],
+    invalid_temperature: float,
+    pipeline: list[str],
+) -> ChatResponse:
+    question_count = int(session.get("question_count", 0))
+    question = "Boleh tulis ulang suhu tertingginya? Misalnya 38 derajat atau 39 derajat."
+    session["conversation_stage"] = "anamnesis_clarification"
+    return ChatResponse(
+        session_id=session_id,
+        response_type="clarification",
+        reply=(
+            f"Saya perlu klarifikasi dulu ya. Suhu {invalid_temperature:g} derajat tidak sesuai dengan suhu tubuh manusia, "
+            "jadi kemungkinan ada salah ketik atau salah dengar angka.\n\n"
+            f"{question}\n\n"
+            "Kalau maksudnya 38 atau 39 derajat, tulis angkanya saja. Setelah itu saya lanjutkan penilaian gejalanya."
+        ),
+        conversation_stage="anamnesis_clarification",
+        suspected_conditions=list(session.get("suspected_conditions", []))[:3],
+        follow_up_question=question,
+        quick_replies=["38 derajat", "39 derajat", "Saya belum ukur suhu"],
+        questions_asked=question_count,
+        max_questions=MAX_ANAMNESIS_QUESTIONS,
+        pipeline=pipeline,
+    )
+
+
+def _capture_contextual_short_answer(session: dict[str, object], message: str) -> None:
+    normalized = normalize(message)
+    negative_answers = {
+        "tidak ada",
+        "tidak ada tanda berat",
+        "tidak ada tanda bahaya",
+        "tidak ada semuanya",
+        "tidak ada semua",
+        "ga ada",
+        "gak ada",
+        "nggak ada",
+        "ngga ada",
+        "enggak ada",
+        "tidak",
+        "ga",
+        "gak",
+        "nggak",
+    }
+    if normalized not in negative_answers:
+        return
+
+    asked_questions = _asked_follow_up_questions(session)
+    last_question = asked_questions[-1] if asked_questions else ""
+    normalized_question = normalize(last_question)
+    note = ""
+
+    if any(
+        term in normalized_question
+        for term in ("sesak", "nyeri hebat", "perdarahan", "muntah terus", "lemas", "pingsan", "memburuk")
+    ):
+        note = (
+            "tidak ada sesak. tidak ada nyeri hebat. tidak ada perdarahan. tidak ada darah. "
+            "tidak ada muntah terus. tidak ada lemas sekali. tidak ada pingsan. tidak ada perburukan cepat"
+        )
+    elif any(
+        term in normalized_question
+        for term in ("nyeri belakang mata", "ruam", "bintik merah", "kaku leher", "sangat lemas")
+    ):
+        note = (
+            "tidak ada nyeri belakang mata. tidak ada ruam. tidak ada muntah. "
+            "tidak ada kaku leher. tidak ada lemas sekali"
+        )
+
+    if not note:
+        return
+    contextual_notes = session.setdefault("contextual_user_notes", [])
+    if isinstance(contextual_notes, list) and note not in contextual_notes:
+        contextual_notes.append(note)
+
+
 def _is_post_recommendation_turn(session: dict[str, object]) -> bool:
     return bool(session.get("completed")) and str(session.get("conversation_stage") or "") == "final_recommendation"
 
@@ -504,6 +708,9 @@ def _combined_user_messages(session: dict[str, object]) -> str:
     if not isinstance(turns, list):
         return ""
     user_messages = [str(turn.get("content") or "").strip() for turn in turns if turn.get("role") == "user"]
+    contextual_notes = session.get("contextual_user_notes", [])
+    if isinstance(contextual_notes, list):
+        user_messages.extend(str(note).strip() for note in contextual_notes if str(note).strip())
     return "\n".join(message for message in user_messages if message)
 
 
@@ -751,6 +958,13 @@ def _is_repetitive_follow_up_question(question: str, anamnesis_summary: dict[str
     if has_duration_answer and any(term in normalized for term in FOLLOW_UP_DURATION_TERMS):
         return True
 
+    has_intensity_answer = bool(anamnesis_summary.get("has_intensity_signal"))
+    if has_intensity_answer and any(
+        term in normalized
+        for term in ("suhu", "derajat", "derajad", "skala", "seberapa berat", "seberapa mengganggu")
+    ):
+        return True
+
     is_generic_symptom_question = any(term in normalized for term in FOLLOW_UP_GENERIC_SYMPTOM_TERMS)
     if is_generic_symptom_question and not new_symptoms:
         return True
@@ -772,14 +986,23 @@ def _smart_follow_up_question(
     absent_symptoms = set(_summary_list(anamnesis_summary, "absent_symptoms"))
     duration_answered = bool(anamnesis_summary.get("duration_text") or anamnesis_summary.get("has_duration_signal"))
     safety_answered = bool(anamnesis_summary.get("has_safety_clearance_signal"))
+    has_detail = bool(anamnesis_summary.get("has_intensity_signal") or anamnesis_summary.get("has_progression_signal"))
     candidates: list[str] = []
 
+    if not safety_answered and _needs_immediate_safety_question(present_symptoms):
+        candidates.append(
+            "Saat ini apakah ada sesak, nyeri hebat, perdarahan, muntah terus, lemas sekali, pingsan, atau keluhan terasa cepat memburuk?"
+        )
+    if not duration_answered:
+        candidates.append(
+            "Sejak kapan keluhan ini mulai terasa, dan sejak muncul apakah makin berat, naik-turun, atau cenderung menetap?"
+        )
     if {"demam", "sakit kepala"} <= present_symptoms:
         candidates.append(
-            "Berapa suhu tertinggi, dan apakah ada nyeri belakang mata, ruam/bintik merah, muntah, kaku leher, atau sangat lemas?"
+            "Suhu tertinggi berapa, dan apakah disertai nyeri belakang mata, ruam/bintik merah, muntah, kaku leher, atau sangat lemas?"
         )
     if {"demam", "ruam"} <= present_symptoms:
-        candidates.append("Ruamnya berupa bintik perdarahan, dan apakah ada mimisan, gusi berdarah, muntah, atau lemas berat?")
+        candidates.append("Ruamnya berupa bintik merah biasa atau seperti perdarahan, dan apakah ada mimisan, gusi berdarah, muntah, atau lemas berat?")
     if {"demam", "sakit tenggorokan"} <= present_symptoms:
         candidates.extend(
             [
@@ -796,17 +1019,19 @@ def _smart_follow_up_question(
             ]
         )
     if "demam" in present_symptoms:
-        candidates.append("Berapa suhu tertinggi, apakah demam naik-turun atau menetap, dan apakah ada ruam, muntah, atau sangat lemas?")
+        candidates.append("Suhu tertinggi berapa, demamnya naik-turun atau menetap, dan apakah ada menggigil, ruam, muntah, atau sangat lemas?")
     if "sakit kepala" in present_symptoms:
-        candidates.append("Nyeri kepala di bagian mana, seberapa berat, dan apakah ada penglihatan kabur, muntah, atau kaku leher?")
+        candidates.append("Sakit kepala terasa di bagian mana, seberapa berat, dan apakah ada penglihatan kabur, muntah, kaku leher, atau lemah satu sisi?")
     if {"gatal", "ruam"} & present_symptoms:
         if not duration_answered:
             candidates.append("Sejak kapan ruam muncul, apakah menyebar, melepuh, nyeri, atau ada bengkak wajah/bibir?")
         candidates.append("Apakah ruam melebar, terasa nyeri/melepuh, atau ada bengkak wajah, bibir, lidah, atau sesak?")
     if "batuk" in present_symptoms:
         candidates.append("Batuknya kering atau berdahak, dan apakah ada sesak, nyeri dada, darah, atau demam tinggi?")
-    if not duration_answered:
-        candidates.append("Sejak kapan keluhan muncul, apakah makin berat, dan aktivitas apa yang membuatnya memburuk?")
+    if not has_detail:
+        candidates.append(
+            "Dari skala 1 sampai 10, seberapa mengganggu keluhan ini, dan apa yang membuatnya membaik atau memburuk?"
+        )
     if not safety_answered:
         candidates.append("Apakah ada tanda bahaya seperti sesak, nyeri hebat, perdarahan, dehidrasi, pingsan, atau keluhan cepat memburuk?")
     if fallback_case:
@@ -814,6 +1039,24 @@ def _smart_follow_up_question(
     candidates.append("Gejala apa yang paling mengganggu sekarang, dan apakah ada tanda bahaya yang belum kamu sebutkan?")
 
     return _pick_best_follow_up_candidate(candidates, anamnesis_summary, asked_questions or [])
+
+
+def _needs_immediate_safety_question(present_symptoms: set[str]) -> bool:
+    return bool(
+        present_symptoms
+        & {
+            "demam",
+            "sakit kepala",
+            "batuk",
+            "sesak napas",
+            "nyeri perut",
+            "muntah",
+            "diare",
+            "ruam",
+            "gatal",
+            "nyeri otot/sendi",
+        }
+    )
 
 
 def _first_non_repetitive_case_question(
@@ -1139,6 +1382,9 @@ def _session_snapshot(session: dict[str, object]) -> dict[str, object]:
         "question_count": int(session.get("question_count", 0)),
         "suspected_conditions": list(session.get("suspected_conditions", [])),
         "asked_follow_up_questions": _asked_follow_up_questions(session),
+        "contextual_user_notes": list(session.get("contextual_user_notes", []))
+        if isinstance(session.get("contextual_user_notes"), list)
+        else [],
         "conversation_stage": str(session.get("conversation_stage") or ""),
         "completed": bool(session.get("completed")),
         "last_recommendation": session.get("last_recommendation"),

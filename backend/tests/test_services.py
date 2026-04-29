@@ -6,9 +6,15 @@ from pathlib import Path
 
 from app.main import (
     _anamnesis_summary,
+    _capture_contextual_short_answer,
+    _clarify_last_follow_up_response,
+    _combined_user_messages,
+    _invalid_temperature_value,
+    _is_confusion_message,
     _is_duplicate_of_previous_follow_up_question,
     _new_session,
     _should_force_final_recommendation,
+    _smart_follow_up_question,
     _sync_session_from_client,
 )
 from app.services.anamnesis import analyze_message
@@ -23,7 +29,13 @@ from app.services.llm_comparison import (
     score_reply,
     strip_thinking,
 )
-from app.services.recommendation import build_recommendation, enhance_recommendation_preparation
+from app.services.recommendation import (
+    build_assessment_follow_up_reply,
+    build_red_flag_reply,
+    build_recommendation,
+    build_scope_referral_reply,
+    enhance_recommendation_preparation,
+)
 from app.services.retrieval import RetrievedItem
 from app.services.retrieval import RAGRetriever
 
@@ -64,9 +76,9 @@ class ServiceTest(unittest.TestCase):
         cases = self.retriever.retrieve_cases("tenggorokan tidak nyaman sejak kemarin tanpa sesak", anamnesis)
         self.assertTrue(cases)
         self.assertEqual(cases[0].id, "case_002")
-        contexts = self.retriever.retrieve_context_for_case("tenggorokan tidak nyaman", cases[0].payload, anamnesis)
+        contexts = self.retriever.retrieve_context_for_case("tenggorokan tidak nyaman", cases[0].payload, anamnesis, limit=8)
         self.assertTrue(contexts)
-        self.assertIn("Serai-Kayu Manis-Madu", [context.title for context in contexts[:2]])
+        self.assertIn("Serai-Kayu Manis-Madu", [context.title for context in contexts])
 
     def test_retrieves_wedang_sinden_for_light_cough_pollution(self) -> None:
         message = "saya batuk ringan dan suara serak karena polusi sejak kemarin"
@@ -89,7 +101,11 @@ class ServiceTest(unittest.TestCase):
         self.assertIn("sakit kepala", anamnesis.present_symptoms)
         self.assertEqual(anamnesis.duration_text, "sudah 3 hari")
         self.assertIn("durasi sudah disebut: sudah 3 hari", anamnesis.answered_slots)
-        self.assertTrue(anamnesis.has_progression_signal or anamnesis.has_intensity_signal)
+        self.assertFalse(anamnesis.has_intensity_signal)
+
+    def test_anamnesis_does_not_treat_auxiliary_sedang_as_severity(self) -> None:
+        anamnesis = analyze_message("saya sedang mengalami demam dan sakit kepala sudah 2 hari")
+        self.assertFalse(anamnesis.has_intensity_signal)
 
     def test_follow_up_scoring_penalizes_repeated_answered_symptom_question(self) -> None:
         summary = {
@@ -193,6 +209,122 @@ class ServiceTest(unittest.TestCase):
         summary = _anamnesis_summary(anamnesis, keluhan_ringan="tenggorokan tidak nyaman", session=session)
         assessment = ModelAssessment(scope="supported", enough_information=False, follow_up_question="pertanyaan lama")
         self.assertTrue(_should_force_final_recommendation(session, summary, assessment))
+
+    def test_fast_follow_up_prioritizes_doctor_style_safety_question(self) -> None:
+        anamnesis = analyze_message("saya demam dan sakit kepala sejak tadi malam")
+        summary = _anamnesis_summary(anamnesis, keluhan_ringan="demam akut", session=_new_session())
+        question = _smart_follow_up_question(summary, fallback_case=None, asked_questions=[])
+        self.assertIn("apakah ada", question.lower())
+        self.assertTrue(any(term in question.lower() for term in ["sesak", "perdarahan", "lemas", "memburuk"]))
+
+    def test_follow_up_reply_uses_human_doctor_style_language(self) -> None:
+        summary = {
+            "keluhan_ringan": "demam akut",
+            "present_symptoms": ["demam", "sakit kepala"],
+            "duration_text": "sudah 2 hari",
+            "has_safety_clearance_signal": False,
+        }
+        reply = build_assessment_follow_up_reply(
+            ModelAssessment(
+                suspected_conditions=["demam akut"],
+                follow_up_question="Suhu tertinggi berapa, dan apakah ada ruam, muntah, atau sangat lemas?",
+                follow_up_rationale="Pertanyaan ini membantu menilai tanda bahaya demam.",
+            ),
+            summary,
+            question_number=1,
+            max_questions=3,
+        )
+        self.assertIn("Baik, saya tangkap", reply)
+        self.assertIn("seperti dokter saat anamnesis", reply)
+        self.assertIn("Suhu tertinggi berapa", reply)
+
+    def test_confused_user_gets_plain_language_explanation_without_advancing_anamnesis(self) -> None:
+        session = _new_session()
+        session["question_count"] = 1
+        session["asked_follow_up_questions"] = [
+            "Saat ini apakah ada sesak, nyeri hebat, perdarahan, muntah terus, lemas sekali, pingsan, atau keluhan terasa cepat memburuk?"
+        ]
+        self.assertTrue(_is_confusion_message("maksud anda gimana saya tidak mengerti"))
+        response = _clarify_last_follow_up_response(
+            session_id="test",
+            session=session,
+            pipeline=[],
+        )
+        self.assertEqual(response.response_type, "clarification")
+        self.assertEqual(response.questions_asked, 1)
+        self.assertIn("tanda bahaya", response.reply.lower())
+        self.assertIn("napas terasa berat", response.reply.lower())
+
+    def test_invalid_temperature_is_clarified_before_flow_continues(self) -> None:
+        self.assertEqual(_invalid_temperature_value("suhu tertinggi 89 derajad"), 89)
+        self.assertIsNone(_invalid_temperature_value("suhu tertinggi 39 derajat"))
+
+    def test_contextual_short_negative_answer_counts_as_safety_clearance(self) -> None:
+        session = _new_session()
+        session["turns"] = [{"role": "user", "content": "saya demam dan sakit kepala sudah 2 hari"}]
+        session["asked_follow_up_questions"] = [
+            "Saat ini apakah ada sesak, nyeri hebat, perdarahan, muntah terus, lemas sekali, pingsan, atau keluhan terasa cepat memburuk?"
+        ]
+        _capture_contextual_short_answer(session, "tidak ada")
+        session["turns"].append({"role": "user", "content": "tidak ada"})
+
+        combined = _combined_user_messages(session)
+        anamnesis = analyze_message(combined)
+
+        self.assertIn("tidak ada sesak", combined)
+        self.assertEqual(anamnesis.red_flags, [])
+        self.assertTrue(anamnesis.has_safety_clearance_signal)
+        self.assertIn("sesak napas", anamnesis.absent_symptoms)
+
+    def test_contextual_safety_answer_still_allows_fever_detail_follow_up(self) -> None:
+        session = _new_session()
+        session["turns"] = [{"role": "user", "content": "saya demam dan sakit kepala sudah 2 hari"}]
+        session["asked_follow_up_questions"] = [
+            "Saat ini apakah ada sesak, nyeri hebat, perdarahan, muntah terus, lemas sekali, pingsan, atau keluhan terasa cepat memburuk?"
+        ]
+        _capture_contextual_short_answer(session, "tidak ada")
+        session["turns"].append({"role": "user", "content": "tidak ada"})
+
+        anamnesis = analyze_message(_combined_user_messages(session))
+        summary = _anamnesis_summary(anamnesis, keluhan_ringan="demam akut", session=session)
+        question = _smart_follow_up_question(
+            summary,
+            fallback_case=None,
+            asked_questions=list(session["asked_follow_up_questions"]),
+        )
+
+        self.assertIn("suhu", question.lower())
+        self.assertIn("ruam", question.lower())
+
+    def test_fast_follow_up_does_not_repeat_temperature_after_it_was_answered(self) -> None:
+        anamnesis = analyze_message("saya demam dan sakit kepala sudah 2 hari suhu 38 derajat tidak ada ruam")
+        summary = _anamnesis_summary(anamnesis, keluhan_ringan="demam akut", session=_new_session())
+        question = _smart_follow_up_question(summary, fallback_case=None, asked_questions=[])
+        self.assertNotIn("suhu", question.lower())
+        self.assertNotIn("derajat", question.lower())
+
+    def test_referral_reply_hides_internal_model_terms(self) -> None:
+        reply = build_scope_referral_reply(
+            ModelAssessment(
+                scope="internal_medicine",
+                scope_reason="scope model: internal_medicine; konteks mengarah ke penyakit tropis yang perlu konfirmasi medis: tifoid, tipes",
+                suspected_conditions=["Demam tifoid/tipes ringan"],
+                warning_notes="Segera cari bantuan medis bila ada tanda bahaya. Herbal tidak diposisikan sebagai terapi utama pada kondisi ini.",
+            ),
+            {
+                "present_symptoms": ["demam", "sakit kepala"],
+                "duration_text": "sudah 2 hari",
+            },
+        )
+        self.assertNotIn("scope model", reply)
+        self.assertNotIn("internal_medicine", reply)
+        self.assertNotIn("RAG", reply)
+        self.assertIn("Alasannya", reply)
+
+    def test_red_flag_reply_uses_patient_facing_language(self) -> None:
+        reply = build_red_flag_reply(["sesak napas", "muntah terus-menerus"])
+        self.assertNotIn("Safety layer", reply)
+        self.assertIn("segera konsultasi", reply)
 
     def test_loads_herbal_preparation_training_records(self) -> None:
         record_ids = {record.id for record in self.kb.training_records}

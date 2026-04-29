@@ -7,6 +7,8 @@
 \usepackage{graphicx}
 \usepackage{textcomp}
 \usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,shapes.geometric}
 
 \def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
     T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
@@ -30,7 +32,7 @@ yugopuspito@uph.edu}}
 \maketitle
 
 \begin{abstract}
-Indonesia masih menghadapi ketimpangan akses layanan kesehatan, sementara keluhan tropis dan keluhan rawat jalan ringan lainnya tetap sering muncul dalam praktik sehari-hari. Di sisi lain, pengetahuan perawatan mandiri berbasis herbal masih luas digunakan, tetapi sering terfragmentasi, tidak konsisten terdokumentasi, dan belum terhubung dengan asesmen gejala yang terstruktur. Paper ini menyajikan chatbot web berbahasa Indonesia yang menerapkan humanizing anamnesis sebelum memberikan rekomendasi herbal, lalu membandingkan dua model bahasa besar lokal, \texttt{deepseek-r1:7b} dan \texttt{gemma4:latest}, di dalam pipeline retrieval-augmented yang dibatasi oleh aturan keselamatan. Purwarupa menggabungkan anamnesis berbasis sesi, logika anti-repetisi, batas maksimal tiga pertanyaan lanjutan, knowledge base herbal terkurasi, perankingan model yang deterministik, dan learning log untuk pengembangan LoRA pada tahap berikutnya. Knowledge base yang terindeks berisi 120 chunk yang berasal dari 9 record kasus ringan, 10 formula herbal, 13 referensi bahan herbal, 70 training record, dan 18 record anamnesis. Snapshot log runtime yang dikumpulkan pada 25 April 2026 memuat 106 interaksi dual-model (80 follow-up, 25 recommendation, dan 1 sesi red-flag). Gemma lebih sering terpilih secara keseluruhan (40 kemenangan) dibanding DeepSeek (34 kemenangan), memiliki tingkat keberhasilan respons yang lebih tinggi (89,2\% versus 74,1\%), dan menunjukkan rerata latensi yang sedikit lebih rendah pada deployment yang sama. DeepSeek tetap kompetitif untuk pembangkitan pertanyaan follow-up, sedangkan Gemma lebih sering menghasilkan rekomendasi akhir yang stabil. Jejak inferensi awal yang telah diinstrumentasi juga menunjukkan throughput generasi token Gemma yang lebih tinggi. Sistem ini ditujukan untuk edukasi dan eksplorasi gejala awal, bukan untuk diagnosis definitif, dan secara aktif memblokir kasus kritis maupun penyakit dalam.
+Masyarakat Indonesia telah menggunakan pengobatan herbal atau jamu selama berabad-abad, sehingga tantangan utama bukan memperkenalkan herbal dari nol, melainkan membantu masyarakat menggunakannya secara lebih aman, terstruktur, dan tidak mudah terpengaruh informasi tidak tervalidasi seperti pesan berantai. Indonesia juga memiliki keanekaragaman hayati yang sangat besar, tetapi pengetahuan herbal tersebut sering belum terhubung dengan asesmen gejala yang sistematis. Paper ini menyajikan chatbot web berbahasa Indonesia yang menerapkan humanizing anamnesis sebelum memberikan rekomendasi herbal, lalu membandingkan dua model bahasa besar lokal, \texttt{deepseek-r1:7b} dan \texttt{gemma4:latest}, di dalam pipeline retrieval-augmented yang dibatasi oleh aturan keselamatan. Purwarupa menggabungkan anamnesis berbasis sesi, logika anti-repetisi, validasi jawaban pasien yang ambigu, batas maksimal tiga pertanyaan lanjutan, knowledge base herbal terkurasi, perankingan model yang deterministik, dan learning log untuk pengembangan LoRA/QLoRA pada tahap berikutnya. Knowledge base yang terindeks berisi 2.781 chunk yang berasal dari 9 record kasus ringan, 10 formula herbal, 13 referensi bahan herbal, 2.731 training record, dan 18 record anamnesis. Korpus SFT/RAG yang tersedia memuat 8.202 contoh gabungan dari data herbal, pengolahan ramuan, penyakit tropis, guidance non-kritis, anamnesis, dan learning log, tetapi paper ini tidak mengevaluasi model yang telah di-fine-tune. Snapshot log runtime yang tersedia pada 29 April 2026 memuat 113 interaksi dual-model (87 follow-up, 25 recommendation, dan 1 sesi red-flag). Gemma lebih sering terpilih secara keseluruhan (42 kemenangan) dibanding DeepSeek (39 kemenangan) dan memiliki tingkat keberhasilan respons yang lebih tinggi (90,0\% versus 75,0\%). DeepSeek tetap kompetitif untuk pembangkitan pertanyaan follow-up, sedangkan Gemma lebih sering menghasilkan rekomendasi akhir yang stabil. Metrik throughput token yang terinstrumentasi masih bersifat preliminary karena hanya tersedia pada subset log awal, sehingga tidak diposisikan sebagai klaim performa statistik final. Sistem ini ditujukan untuk edukasi dan eksplorasi gejala awal, bukan untuk diagnosis definitif, dan secara aktif mengarahkan kasus kritis maupun penyakit dalam ke pemeriksaan tenaga kesehatan.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -62,6 +64,8 @@ Tujuan penelitian ini adalah merancang dan mengevaluasi sebuah purwarupa chatbot
 
 \subsection{Tantangan dan Keterbatasan Pendekatan Existing}
 Chatbot medis history-taking berbasis LLM telah menunjukkan hasil yang menjanjikan \cite{b4}. Namun, tiga tantangan utama muncul ketika membangun sistem untuk konteks herbal lokal Indonesia:
+
+Sistem medis berbasis LLM mutakhir umumnya mengambil salah satu dari dua arah. ChatDoctor, misalnya, menekankan fine-tuning model percakapan medis berbasis dialog pasien-dokter dan retrieval pengetahuan medis \cite{b20}. MEDRAG/MIRAGE menempatkan retrieval sebagai fokus utama untuk medical QA berskala besar \cite{b21}. AMIE dari Google menargetkan diagnostic dialogue yang lebih komprehensif dengan evaluasi dokter spesialis dan pasien standar \cite{b22}. Berbeda dari pendekatan tersebut, purwarupa ini tidak berusaha menjadi model diagnosis umum; kontribusinya adalah memisahkan tahap anamnesis, safety gate, retrieval herbal lokal, dan ranking multi-model untuk konteks edukasi awal keluhan ringan di Indonesia.
 
 \textbf{Tantangan 1: Humanisasi Anamnesis Tanpa Repetisi.} Chatbot yang bergantung pada satu model tunggal menghasilkan respons yang mudah menjadi repetitif atau generik, sehingga mengurangi nuansa ``seperti dokter'' pada anamnesis. Model single tidak memiliki mekanisme untuk menyimpan dan menghindari pertanyaan yang sudah diajukan dalam turn sebelumnya.
 
@@ -97,7 +101,8 @@ Knowledge base menggabungkan aset referensi, anamnesis, dan training yang disimp
 \label{tab:data_assets_id}
 \centering
 \footnotesize
-\begin{tabular}{|l|c|p{3.6cm}|}
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{|p{2.05cm}|c|p{3.15cm}|}
 \hline
 \textbf{Aset} & \textbf{Jumlah} & \textbf{Peran dalam Sistem} \\
 \hline
@@ -107,50 +112,71 @@ Record formula herbal & 10 & Nama formula, komposisi, dan catatan keamanan \\
 \hline
 Record referensi bahan & 13 & Konteks grounding di level bahan herbal \\
 \hline
-Training record & 70 & Guidance herbal, detail pengolahan, dan guidance penyakit tropis serta non-kritis \\
+Training record & 2.731 & Guidance herbal, detail pengolahan, dan guidance penyakit tropis serta non-kritis \\
 \hline
 Record anamnesis & 18 & Panduan pertanyaan follow-up dan red-flag \\
 \hline
-Knowledge chunk terindeks & 120 & Total chunk yang disimpan di ChromaDB \\
+Knowledge chunk terindeks & 2.781 & Total chunk yang disimpan di ChromaDB \\
 \hline
-Contoh Herbal SFT & 104 & Data awal supervised fine-tuning \\
-\hline
-Contoh Anamnesis SFT & 1200 & Data pelatihan follow-up humanis \\
-\hline
-Contoh Combined SFT & 1331 & Korpus siap LoRA/QLoRA \\
+Korpus SFT/RAG gabungan & 8.202 & Contoh training gabungan untuk LoRA/QLoRA dan evaluasi RAG \\
 \hline
 \end{tabular}
 \end{table}
 
-Basis referensi dimulai dari case herbal ringan, lalu diperluas dengan detail pengolahan, materi kesehatan tropis, dan kondisi non-kritis yang lebih luas. Hal ini penting karena objective sistem saat ini tidak lagi dibatasi hanya pada label penyakit tropis, melainkan mendukung keluhan ringan di luar penyakit tropis, sambil tetap mengecualikan penyakit dalam dan kondisi kritis.
+Basis referensi dimulai dari case herbal ringan, lalu diperluas dengan detail pengolahan, materi kesehatan tropis, dan kondisi non-kritis yang lebih luas. Sumber yang digunakan mencakup artikel edukasi dan layanan kesehatan Kemenkes/Keslan dan AyoSehat \cite{b14}, JDIH Kemenkes untuk konteks Formularium Obat Herbal Asli Indonesia \cite{b15}, ringkasan keamanan NCCIH \cite{b16}, literatur PubMed, serta guidance penyakit dari MedlinePlus \cite{b17}, WHO \cite{b18}, CDC \cite{b19}, dan dokumen penyakit tropis lokal yang diparsing ke format terstruktur. Data anamnesis dibangun dari sumber resmi tersebut dan beberapa rujukan pendukung untuk pertanyaan gejala, tanda bahaya, dan tindakan triase. Setiap record menyimpan metadata sumber, level evidensi, dan catatan kewaspadaan agar retrieval dapat diaudit kembali.
+
+Data ini diperlakukan sebagai knowledge base terkurasi teknis, bukan sebagai clinical guideline final. Pada versi ini belum dilakukan validasi formal oleh panel dokter, dokter herbal, atau farmakolog klinis. Karena itu, klaim sistem dibatasi pada edukasi, triase awal, dan rekomendasi pendamping untuk keluhan ringan; validasi pakar dan audit klinis prospektif ditempatkan sebagai kebutuhan sebelum deployment produksi.
+
+Hal ini penting karena objective sistem saat ini tidak lagi dibatasi hanya pada label penyakit tropis, melainkan mendukung keluhan ringan di luar penyakit tropis, sambil tetap mengecualikan penyakit dalam dan kondisi kritis.
 
 \subsection{Arsitektur Runtime}
 Pipeline runtime terdiri dari session synchronization, analisis anamnesis, scope control, retrieval, komparasi model, composition rekomendasi, dan learning capture. Alur sederhananya ditunjukkan pada Gambar \ref{fig:workflow_id}. Alih-alih memakai generator medis monolitik lama, arsitektur saat ini melakukan multi-model assessment hanya setelah input diringkas menjadi konteks anamnesis terstruktur.
 
 \begin{figure}[t]
 \centering
-\fbox{\parbox{0.46\textwidth}{
-\centering
-\footnotesize
-\textbf{Pesan pengguna + session sync} \\
-$\downarrow$ \\
-Humanizing anamnesis analyzer \\
-(gejala, durasi, negasi, red flag, answered slots) \\
-$\downarrow$ \\
-Safety gate dan scope controller \\
-$\downarrow$ \\
-RAG retrieval + metadata re-ranking \\
-$\downarrow$ \\
-\textit{Mode follow-up:} DeepSeek $\parallel$ Gemma \\
-\textit{Mode final:} DeepSeek $\rightarrow$ Gemma \\
-$\downarrow$ \\
-Perankingan deterministik kandidat model \\
-$\downarrow$ \\
-Rekomendasi herbal aman atau rujukan \\
-$\downarrow$ \\
-Learning log + umpan balik pengguna
-}}
-\caption{Alur runtime sederhana chatbot yang diusulkan.}
+\resizebox{\columnwidth}{!}{%
+\begin{tikzpicture}[
+node distance=5mm and 9mm,
+umlstart/.style={circle, fill=black, minimum size=4pt, inner sep=0pt},
+umlend/.style={circle, draw=black, minimum size=7pt, inner sep=0pt,
+path picture={\fill (path picture bounding box.center) circle (2pt);}},
+umlact/.style={draw, rounded corners=2pt, align=center, minimum width=24mm,
+minimum height=6mm, font=\scriptsize, inner sep=2pt},
+umldec/.style={draw, diamond, aspect=2.35, align=center, font=\scriptsize,
+inner sep=0.5pt},
+umlarrow/.style={-Latex, line width=0.4pt}
+]
+\node[umlstart] (start) {};
+\node[umlact, below=of start] (sync) {Pesan pengguna\\+ session sync};
+\node[umlact, below=of sync] (anam) {Analyzer anamnesis\\gejala, durasi, red flag};
+\node[umldec, below=of anam] (safety) {Red flag\\atau unsupported?};
+\node[umlact, right=of safety] (referral) {Respons rujukan\\yang aman};
+\node[umlact, below=8mm of safety] (retrieval) {RAG retrieval\\+ metadata re-ranking};
+\node[umldec, below=of retrieval] (need) {Butuh\\follow-up?};
+\node[umlact, left=of need] (follow) {Mode follow-up\\DeepSeek $\parallel$ Gemma};
+\node[umlact, right=of need] (final) {Mode final\\DeepSeek $\rightarrow$ Gemma};
+\node[umlact, below=8mm of need] (rank) {Ranking kandidat\\deterministik};
+\node[umlact, below=of rank] (answer) {Pertanyaan lanjutan,\\rekomendasi aman,\\atau rujukan};
+\node[umlact, below=of answer] (log) {Learning log\\+ umpan balik};
+\node[umlend, below=of log] (end) {};
+
+\draw[umlarrow] (start) -- (sync);
+\draw[umlarrow] (sync) -- (anam);
+\draw[umlarrow] (anam) -- (safety);
+\draw[umlarrow] (safety) -- node[above, font=\tiny] {ya} (referral);
+\draw[umlarrow] (referral) |- (answer);
+\draw[umlarrow] (safety) -- node[right, font=\tiny] {tidak} (retrieval);
+\draw[umlarrow] (retrieval) -- (need);
+\draw[umlarrow] (need) -- node[above, font=\tiny] {ya} (follow);
+\draw[umlarrow] (need) -- node[above, font=\tiny] {tidak} (final);
+\draw[umlarrow] (follow) |- (rank);
+\draw[umlarrow] (final) |- (rank);
+\draw[umlarrow] (rank) -- (answer);
+\draw[umlarrow] (answer) -- (log);
+\draw[umlarrow] (log) -- (end);
+\end{tikzpicture}%
+}
+\caption{Diagram aktivitas UML alur runtime chatbot yang diusulkan.}
 \label{fig:workflow_id}
 \end{figure}
 
@@ -160,7 +186,7 @@ Lapisan session synchronization merupakan tambahan praktis yang muncul dari pros
 \subsection{Pengendali Anamnesis}
 Pengendali anamnesis mengekstrak gejala yang hadir, gejala yang disangkal, ekspresi durasi, dan tanda bahaya dari setiap turn pengguna. Sistem juga menyimpan answered slots seperti ``demam sudah disebut,'' ``durasi sudah disebut,'' dan ``tanda bahaya sudah disangkal.'' Slot-slot ini dimasukkan ke prompt model agar sistem dapat menanyakan follow-up yang lebih spesifik, bukan mengulang pertanyaan generik seperti menanyakan demam ketika pengguna telah menyebut demam di awal.
 
-Kebijakan percakapan memiliki tiga state. Pada state pertama, red-flag detection mem-bypass komparasi model dan langsung menghasilkan respons rujukan yang aman. Pada state kedua, jika informasi masih belum lengkap dan anggaran pertanyaan belum mencapai tiga, comparator meminta satu pertanyaan follow-up dari masing-masing model. Pada state ketiga, ketika informasi sudah cukup atau batas tiga pertanyaan telah tercapai, sistem memaksa jalur final recommendation ranking. Desain ini mencegah percakapan berputar tanpa akhir, tetapi tetap menjaga ketajaman anamnesis.
+Kebijakan percakapan memiliki tiga state. Pada state pertama, red-flag detection mem-bypass komparasi model dan langsung menghasilkan respons rujukan yang aman. Pada state kedua, jika informasi masih belum lengkap dan anggaran pertanyaan belum mencapai tiga, comparator meminta satu pertanyaan follow-up dari masing-masing model. Pada state ketiga, ketika informasi sudah cukup atau batas tiga pertanyaan telah tercapai, sistem memaksa jalur final recommendation ranking. Desain ini mencegah percakapan berputar tanpa akhir, tetapi tetap menjaga ketajaman anamnesis. Implementasi terbaru juga menambahkan guardrail percakapan untuk menjelaskan ulang pertanyaan ketika pengguna menyatakan bingung, meminta klarifikasi ketika angka suhu tidak realistis, dan menafsirkan jawaban pendek seperti ``tidak ada'' berdasarkan pertanyaan anamnesis sebelumnya.
 
 \subsection{Retrieval dan Perankingan Model}
 RAG diimplementasikan dengan embedding lokal yang ringan dan ChromaDB. Motivasi utama pemilihan ini adalah kepraktisan operasional, bukan semata-mata memaksimalkan kualitas retrieval semantik dengan layanan embedding besar. Sentence encoder ringan dan model distilasi tetap relevan sebagai titik acuan tradeoff tersebut \cite{b7}, \cite{b8}. Item yang diretrieval mencakup case record, formula, referensi bahan, training record, dan record anamnesis, yang kemudian diurutkan ulang memakai sinyal metadata seperti overlap gejala, case hint, level evidensi, dan kecocokan formula.
@@ -179,6 +205,10 @@ S_r &= 0.28s + 0.22g + 0.20c + 0.14r \nonumber \\
 \end{align}
 dengan $h$ menyatakan herbal fit. Desain ini sengaja memberi bobot terbesar pada safety dan grounding, sesuai dengan profil risiko tugas kesehatan ini.
 
+Bobot pada kedua persamaan ditetapkan sebagai heuristik a-priori berbasis prioritas risiko, bukan hasil optimasi statistik terhadap log benchmark. Safety dan grounding diberi bobot terbesar karena kegagalan pada dua aspek ini memiliki konsekuensi paling serius pada domain kesehatan; completeness dan relevance ditempatkan sebagai lapisan kualitas utama berikutnya, sedangkan language quality, question quality, non-repetition, dan herbal fit berfungsi sebagai tie-breaker operasional. Bobot tersebut tidak dituning untuk memaksimalkan kemenangan model tertentu, sehingga ranking dapat dipahami sebagai kebijakan desain yang konservatif dan dapat diaudit, bukan estimator performa klinis final.
+
+Nilai komponen skor tidak berasal dari self-evaluation model dan tidak menggunakan LLM-as-a-judge. Semua komponen dihitung oleh script deterministik setelah output JSON model diparsing. Komponen safety memberi kredit pada scope \emph{critical}/\emph{internal medicine}, flag rujukan medis, keberadaan red flag, dan bahasa keselamatan seperti arahan ke tenaga kesehatan atau disclaimer. Komponen grounding dihitung dari overlap token antara dugaan kondisi, nama ramuan, bahan, \emph{source hint}, dan judul konteks retrieval teratas. Completeness mengecek kelengkapan field wajib sesuai mode, misalnya follow-up question dan rationale pada mode anamnesis, atau final answer, warning, herbal, preparation, dan dosage pada mode rekomendasi. Relevance mengukur overlap token antara pesan pengguna, gejala yang terdeteksi, kandidat pertanyaan/jawaban, dan konteks retrieval. Language quality pada versi ini adalah heuristik panjang respons yang menolak output terlalu pendek atau terlalu panjang. Question quality mengecek apakah pertanyaan tunggal, berbentuk tanya, dan masih berada dalam anggaran follow-up, sedangkan non-repetition memberi penalti pada pertanyaan yang mengulang gejala, durasi, atau pertanyaan sebelumnya. Herbal fit memberi kredit ketika nama ramuan dan bahan yang diusulkan muncul pada konteks retrieval dan disertai cara pengolahan serta dosis. Dengan demikian, ranking bersifat rule-based, auditable, dan dapat direproduksi dari learning log.
+
 \subsection{Safety, Umpan Balik, dan Loop Training}
 Sistem memblokir rekomendasi ketika scope termasuk \emph{critical}, \emph{internal medicine}, atau \emph{unsupported}. Bahkan saat scope masih \emph{supported}, jawaban akhir tetap harus memuat bahasa keselamatan yang konservatif dan tetap terikat pada konteks herbal yang diretrieval. Hal ini selaras dengan kekhawatiran RAG di domain kesehatan \cite{b6}, sekaligus sejalan dengan gagasan evaluasi RAG seperti grounding dan faithfulness \cite{b9}.
 
@@ -186,7 +216,7 @@ Tiga kelas log menjadi inti benchmark ini. Pertama, \texttt{conversation\_turns.
 
 \section{Pengaturan Eksperimen dan Hasil}
 \subsection{Snapshot Benchmark}
-Benchmark pada paper ini menggunakan snapshot log operasional yang tersedia pada 25 April 2026. Pasangan lokal default adalah \texttt{deepseek-r1:7b} dan \texttt{gemma4:latest}. Komparasi berbasis GPT memang ada di codebase, tetapi tidak dimasukkan ke benchmark utama karena sifatnya opsional dan bukan target deployment lokal default. Snapshot yang dianalisis berisi 106 interaksi dual-model yang tercatat, terdiri dari 80 respons follow-up, 25 final recommendation, dan 1 respons red-flag.
+Benchmark pada paper ini menggunakan snapshot log operasional yang tersedia pada 29 April 2026. Pasangan lokal default adalah \texttt{deepseek-r1:7b} dan \texttt{gemma4:latest}. Komparasi berbasis GPT memang ada di codebase, tetapi tidak dimasukkan ke benchmark utama karena sifatnya opsional dan bukan target deployment lokal default. Snapshot yang dianalisis berisi 113 interaksi dual-model yang tercatat, terdiri dari 87 respons follow-up, 25 final recommendation, dan 1 respons red-flag.
 
 Benchmark ini bukan benchmark laboratorium dengan replay prompt yang seragam, melainkan benchmark operasional dari purwarupa yang benar-benar berjalan. Konsekuensinya, data menjadi lebih ``kotor'' tetapi juga lebih realistis, karena mencakup run yang sukses, pemakaian fallback, timeout, dan perilaku pemulihan state. Tabel \ref{tab:primary_models_id} melaporkan perbandingan model utamanya.
 
@@ -194,19 +224,20 @@ Benchmark ini bukan benchmark laboratorium dengan replay prompt yang seragam, me
 \caption{Benchmark Model Utama dari Runtime Log}
 \label{tab:primary_models_id}
 \centering
-\footnotesize
-\begin{tabular}{|l|c|c|c|c|c|}
+\scriptsize
+\setlength{\tabcolsep}{2pt}
+\begin{tabular}{|p{1.6cm}|c|c|c|c|c|}
 \hline
-\textbf{Model} & \textbf{Sampel} & \textbf{Menang} & \textbf{OK Rate} & \textbf{Rerata Skor} & \textbf{Rerata Latensi} \\
+\textbf{Model} & \textbf{N} & \textbf{Win} & \textbf{OK} & \textbf{Skor} & \textbf{Lat.} \\
 \hline
-DeepSeek-R1 7B & 81 & 34 & 74.1\% & 0.5744 & 26973.54 ms \\
+DeepSeek-R1 7B & 88 & 39 & 75.0\% & 0.5756 & 23.76 s \\
 \hline
-Gemma4 latest & 83 & 40 & 89.2\% & 0.5773 & 24214.13 ms \\
+Gemma4 latest & 90 & 42 & 90.0\% & 0.5764 & 24.66 s \\
 \hline
 \end{tabular}
 \end{table}
 
-Gemma menunjukkan rerata skor yang sedikit lebih baik dan robustness yang lebih tinggi, dengan error rate yang lebih rendah pada environment yang sama. Rerata latensi keseluruhan juga lebih rendah pada Gemma, walaupun selisihnya mengecil bila hanya menghitung respons yang berhasil. Untuk respons sukses saja, DeepSeek memiliki rerata 23780.93 ms sedangkan Gemma 23423.19 ms.
+Gemma menunjukkan rerata skor yang sedikit lebih baik dan robustness yang lebih tinggi, dengan error rate yang lebih rendah pada environment yang sama. Pada snapshot terbaru, rerata latensi respons sukses DeepSeek sedikit lebih rendah daripada Gemma, tetapi selisihnya masih berada pada orde puluhan detik karena keduanya berjalan lokal melalui Ollama dan dipengaruhi panjang prompt serta fallback.
 
 \subsection{Perilaku Berdasarkan Tahap Percakapan}
 Jumlah kemenangan total menyembunyikan perbedaan penting antar tahap. DeepSeek dan Gemma tidak mendominasi bagian workflow yang sama. Tabel \ref{tab:stage_wins_id} menunjukkan distribusi model terpilih berdasarkan tahap respons.
@@ -220,9 +251,9 @@ Jumlah kemenangan total menyembunyikan perbedaan penting antar tahap. DeepSeek d
 \hline
 \textbf{Output Terpilih} & \textbf{Follow-up} & \textbf{Recommendation} \\
 \hline
-DeepSeek-R1 7B & 34 & 0 \\
+DeepSeek-R1 7B & 39 & 0 \\
 \hline
-Gemma4 latest & 29 & 11 \\
+Gemma4 latest & 31 & 11 \\
 \hline
 Model fallback & 5 & 11 \\
 \hline
@@ -245,22 +276,25 @@ Frontend kini menampilkan metadata komparasi model seperti provider, total laten
 \hline
 \textbf{Metrik} & \textbf{DeepSeek-R1 7B} & \textbf{Gemma4 latest} \\
 \hline
-Prompt eval rate & 193.09 tok/s & 296.72 tok/s \\
+Prompt eval rate & 197.89 tok/s & 292.83 tok/s \\
 \hline
-Generation eval rate & 19.85 tok/s & 26.07 tok/s \\
+Generation eval rate & 20.27 tok/s & 26.78 tok/s \\
 \hline
-Sampel terinstrumentasi & 4 & 4 \\
+Sampel terinstrumentasi & 10 & 11 \\
 \hline
 \end{tabular}
 \end{table}
 
-Angka awal ini belum cukup besar untuk menjadi klaim throughput yang definitif, tetapi arahnya konsisten dengan latensi runtime Gemma yang lebih rendah pada snapshot log utama. Yang lebih penting, instrumentasi ini membuat benchmark ke depan dapat diaudit secara lebih baik, karena paper tidak lagi hanya bergantung pada kesan subjektif ``terasa lebih cepat''.
+Angka awal ini belum cukup besar untuk menjadi klaim throughput yang definitif. Metrik token-per-second pada Tabel \ref{tab:inference_metrics_id} hanya diperlakukan sebagai bukti bahwa instrumentasi inferensi sudah berjalan, bukan sebagai uji statistik performa model. Evaluasi throughput yang lebih kuat perlu menjalankan replay offline atau load test terkontrol terhadap 50--100 prompt historis dengan seed, model, dan mesin yang sama. Yang lebih penting pada versi ini, instrumentasi tersebut membuat benchmark ke depan dapat diaudit secara lebih baik, karena paper tidak lagi hanya bergantung pada kesan subjektif ``terasa lebih cepat''.
 
 \subsection{Outcome Humanizing dan Safety}
 Benchmark ini tidak hanya membahas model mana yang lebih cepat. Perbaikan pada level sistem juga penting. Implementasi saat ini memiliki tiga pengaman praktis yang secara langsung meningkatkan kualitas percakapan selama pengembangan:
 \begin{itemize}
 \item \textbf{anti-repetition:} kandidat follow-up diberi penalti bila menanyakan gejala atau durasi yang sudah disebut pengguna;
 \item \textbf{session synchronization:} state frontend dikirim ulang ke backend agar histori follow-up tidak hilang setelah restart;
+\item \textbf{clarification guardrail:} pesan seperti ``tidak mengerti'' tidak diproses sebagai gejala baru, tetapi dijawab dengan penjelasan ulang pertanyaan anamnesis dalam bahasa awam;
+\item \textbf{input sanity check:} angka suhu yang tidak mungkin secara fisiologis, misalnya 89 derajat, diperlakukan sebagai salah ketik dan diminta klarifikasi;
+\item \textbf{contextual short answer:} jawaban singkat seperti ``tidak ada'' ditafsirkan terhadap pertanyaan terakhir, sehingga sistem dapat menyimpan bahwa tanda bahaya tertentu sudah disangkal;
 \item \textbf{forced completion:} sistem berpindah ke final recommendation ketika tiga turn follow-up telah tercapai atau coverage informasi sudah cukup.
 \end{itemize}
 
@@ -271,14 +305,16 @@ Benchmark menunjukkan bahwa desain dual-model tetap berguna walaupun kedua model
 
 Hasil saat ini juga mendukung keputusan untuk menjalankan follow-up secara paralel dan final recommendation secara berurutan. Jika kedua tahap dijalankan dalam mode yang sama, sistem berisiko mengalami latensi yang lebih tinggi atau stabilitas yang lebih rendah pada mesin lokal. Karena itu, strategi eksekusi hibrid ini bukan sekadar kompromi engineering, melainkan keputusan desain yang dipandu oleh perilaku deployment nyata.
 
-Terdapat beberapa keterbatasan. Pertama, benchmark ini didasarkan pada runtime log operasional, bukan pada gold-standard evaluation set yang seimbang. Kedua, instrumentasi throughput baru mencakup subset awal setelah logging metrik ditambahkan. Ketiga, dataset feedback masih kecil dan belum mendukung klaim kuat mengenai perceived usefulness. Keempat, lapisan retrieval masih mengutamakan deployment lokal yang praktis, sehingga embedding medis multilingual yang lebih baik masih berpotensi meningkatkan versi berikutnya.
+Terdapat beberapa keterbatasan. Pertama, benchmark ini didasarkan pada runtime log operasional, bukan pada gold-standard evaluation set yang seimbang. Kedua, instrumentasi throughput baru mencakup subset awal setelah logging metrik ditambahkan, sehingga hasil token-per-second harus dibaca sebagai preliminary. Ketiga, dataset feedback masih kecil dan belum mendukung klaim kuat mengenai perceived usefulness. Keempat, lapisan retrieval masih mengutamakan deployment lokal yang praktis, sehingga embedding medis multilingual yang lebih baik masih berpotensi meningkatkan versi berikutnya.
+
+Keterbatasan paling penting untuk domain medis adalah belum adanya baseline evaluasi pakar. Walaupun sistem mencatat user feedback dan melakukan scoring deterministik, hal tersebut belum setara dengan penilaian klinis. Evaluasi berikutnya perlu melibatkan dokter umum, dokter penyakit tropis, atau tenaga kesehatan tradisional/herbalis terlatih untuk memberi rating terhadap keamanan triase, kecukupan anamnesis, grounding rekomendasi, dan potensi misleading advice. Desain evaluasi yang lebih kuat dapat memakai vignette klinis berlabel, inter-rater agreement, serta analisis kesalahan terhadap kasus demam, diare, ruam, batuk, dan gejala tropis yang berisiko tinggi.
 
 Walaupun demikian, purwarupa saat ini sudah menunjukkan pola deployment LLM yang layak publikasi untuk aplikasi bantuan kesehatan Indonesia: anamnesis terlebih dahulu, retrieval sebelum rekomendasi, penolakan eksplisit terhadap red flag, perankingan deterministik lintas model, dan log yang dapat digunakan kembali untuk adaptasi LoRA/QLoRA.
 
 \section{Kesimpulan}
-Paper ini menyajikan chatbot kesehatan berbahasa Indonesia yang berorientasi pada anamnesis terlebih dahulu untuk keluhan tropis ringan dan keluhan non-kritis, dengan rekomendasi herbal aman sebagai titik akhir edukatif, bukan tindakan diagnostik. Benchmark membandingkan \texttt{deepseek-r1:7b} dan \texttt{gemma4:latest} di dalam pipeline RAG yang sama. Pada snapshot runtime yang memuat 106 interaksi dan dikumpulkan pada 25 April 2026, Gemma lebih sering terpilih secara keseluruhan, memiliki successful-response rate yang lebih baik, dan menunjukkan rerata latensi yang sedikit lebih rendah. DeepSeek tetap kompetitif, terutama untuk pembangkitan pertanyaan follow-up, sehingga kekuatan model terbukti bergantung pada tahap dialognya.
+Paper ini menyajikan chatbot kesehatan berbahasa Indonesia yang berorientasi pada anamnesis terlebih dahulu untuk keluhan tropis ringan dan keluhan non-kritis, dengan rekomendasi herbal aman sebagai titik akhir edukatif, bukan tindakan diagnostik. Benchmark membandingkan \texttt{deepseek-r1:7b} dan \texttt{gemma4:latest} di dalam pipeline RAG yang sama. Pada snapshot runtime yang memuat 113 interaksi dan tersedia pada 29 April 2026, Gemma lebih sering terpilih secara keseluruhan dan memiliki successful-response rate yang lebih baik. DeepSeek tetap kompetitif, terutama untuk pembangkitan pertanyaan follow-up, sehingga kekuatan model terbukti bergantung pada tahap dialognya.
 
-Kontribusi yang lebih luas dari paper ini bersifat metodologis. Dengan menggabungkan humanizing anamnesis, kontrol anti-repetisi, grounding berbasis RAG, scoring yang deterministik, dan learning log, sistem membangun loop benchmark yang praktis antara deployment dan refinement model di masa depan. Hal ini menjadikan purwarupa sebagai landasan yang kuat untuk evaluasi yang lebih besar dengan pakar, embedding medis yang lebih kuat, dan adaptasi domain berbasis LoRA untuk chatbot kesehatan Indonesia.
+Kontribusi yang lebih luas dari paper ini bersifat metodologis. Dengan menggabungkan humanizing anamnesis, kontrol anti-repetisi, grounding berbasis RAG, scoring yang deterministik, dan learning log, sistem membangun loop benchmark yang praktis antara deployment dan refinement model di masa depan. Evaluasi pada paper ini tetap dibatasi pada arsitektur RAG dan benchmark operasional model lokal, bukan pada klaim keberhasilan fine-tuning. Hal ini menjadikan purwarupa sebagai landasan yang kuat untuk evaluasi yang lebih besar dengan pakar, embedding medis yang lebih kuat, dan adaptasi domain berbasis LoRA untuk chatbot kesehatan Indonesia.
 
 \section*{Ucapan Terima Kasih}
 Penulis mengucapkan terima kasih kepada Program Studi Informatika Program Magister Universitas Pelita Harapan atas dukungan terhadap riset ini pada pengembangan sistem chatbot kesehatan yang aman dan dapat diaudit.
@@ -297,6 +333,15 @@ Penulis mengucapkan terima kasih kepada Program Studi Informatika Program Magist
 \bibitem{b11} T. Dettmers, A. Pagnoni, A. Holtzman, and L. Zettlemoyer, ``QLoRA: Efficient finetuning of quantized LLMs,'' in \emph{Advances in Neural Information Processing Systems}, vol. 36, 2023, pp. 10088--10115.
 \bibitem{b12} DeepSeek-AI, ``DeepSeek-R1: Incentivizing reasoning capability in LLMs via reinforcement learning,'' arXiv:2501.12948, 2025.
 \bibitem{b13} Gemma Team, ``Gemma: Open models based on Gemini research and technology,'' arXiv:2403.08295, 2024.
+\bibitem{b14} Kementerian Kesehatan Republik Indonesia, ``Artikel edukasi kesehatan dan pengobatan tradisional,'' Direktorat Jenderal Kesehatan Lanjutan dan Ayo Sehat Kemenkes RI. [Online]. Available: https://keslan.kemkes.go.id/ and https://ayosehat.kemkes.go.id/. Accessed: Apr. 29, 2026.
+\bibitem{b15} Kementerian Kesehatan Republik Indonesia, ``Formularium Obat Herbal Asli Indonesia,'' JDIH Kemenkes RI. [Online]. Available: https://jdih.kemkes.go.id/monografi/formularium-obat-herbal-asli-indonesia. Accessed: Apr. 29, 2026.
+\bibitem{b16} National Center for Complementary and Integrative Health, ``Safe Use of Complementary Health Products and Practices,'' NIH. [Online]. Available: https://www.nccih.nih.gov/health/safety. Accessed: Apr. 29, 2026.
+\bibitem{b17} U.S. National Library of Medicine, ``MedlinePlus health topic XML files,'' MedlinePlus. [Online]. Available: https://medlineplus.gov/xml.html. Accessed: Apr. 29, 2026.
+\bibitem{b18} World Health Organization, ``Dengue and severe dengue,'' WHO Fact Sheet. [Online]. Available: https://www.who.int/news-room/fact-sheets/detail/dengue-and-severe-dengue. Accessed: Apr. 29, 2026.
+\bibitem{b19} Centers for Disease Control and Prevention, ``Dengue: Symptoms and testing,'' CDC. [Online]. Available: https://www.cdc.gov/dengue/signs-symptoms/index.html. Accessed: Apr. 29, 2026.
+\bibitem{b20} Y. Li, Z. Li, K. Zhang, R. Dan, S. Jiang, and Y. Zhang, ``ChatDoctor: A medical chat model fine-tuned on a large language model Meta-AI (LLaMA) using medical domain knowledge,'' arXiv:2303.14070, 2023.
+\bibitem{b21} G. Xiong, Q. Jin, Z. Lu, and A. Zhang, ``Benchmarking retrieval-augmented generation for medicine,'' in \emph{Findings of the Association for Computational Linguistics: ACL 2024}, 2024, pp. 6233--6251.
+\bibitem{b22} T. Tu \emph{et al.}, ``Towards conversational diagnostic artificial intelligence,'' \emph{Nature}, vol. 642, pp. 442--450, 2025.
 \end{thebibliography}
 
 \end{document}

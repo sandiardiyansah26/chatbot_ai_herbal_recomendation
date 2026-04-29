@@ -178,8 +178,8 @@ def build_assessment_follow_up_reply(
     max_questions: int,
 ) -> str:
     summary = anamnesis_summary or {}
-    summary_lines = _format_anamnesis_summary(summary)
     suspected = summary.get("keluhan_ringan") or ", ".join(assessment.suspected_conditions[:3]) or "beberapa dugaan kondisi ringan"
+    patient_summary = _format_doctor_style_patient_summary(summary, suspected)
     rationale = assessment.follow_up_rationale or "Pertanyaan ini dipilih untuk memperjelas dugaan kondisi dan menyingkirkan tanda bahaya."
     question = assessment.follow_up_question or "Bisa ceritakan gejala yang paling mengganggu saat ini?"
     red_flags = (
@@ -188,16 +188,13 @@ def build_assessment_follow_up_reply(
         else "Jika ada demam tinggi, sesak, nyeri hebat, perdarahan, dehidrasi, atau kondisi memburuk, segera periksa ke tenaga kesehatan."
     )
     return (
-        "Ringkasan anamnesis saat ini:\n"
-        f"Saya menangkap keluhan ini mengarah ke \"{suspected}\". "
-        "Sebelum memberi rekomendasi ramuan, saya perlu memastikan dulu apakah ada tanda bahaya dan memperjelas pola gejalanya.\n"
-        f"{summary_lines}\n"
-        f"Tahap anamnesis: pertanyaan {question_number} dari maksimal {max_questions}.\n\n"
-        "Pertanyaan anamnesis yang perlu kamu jawab:\n"
-        f"1. {question}\n\n"
-        "Jawab singkat saja, misalnya:\n"
-        "Tidak ada demam, tidak sesak, keluhan muncul sejak pagi, dan belum ada tanda bahaya lain.\n\n"
-        f"Alasan pertanyaan: {rationale} {red_flags}\n\n"
+        f"Baik, saya tangkap dulu ya. {patient_summary}\n\n"
+        "Sebelum saya menyarankan langkah awal atau ramuan pendamping, saya perlu bertanya seperti dokter saat anamnesis: "
+        "satu hal yang paling menentukan keamanan dulu.\n\n"
+        f"{question}\n\n"
+        "Jawab singkat saja sesuai yang kamu rasakan. Kalau tidak ada, cukup tulis 'tidak ada'.\n\n"
+        f"Kenapa saya tanya ini: {rationale} {red_flags}\n\n"
+        f"Tahap anamnesis: {question_number}/{max_questions}. "
         f"{DISCLAIMER}"
     )
 
@@ -207,15 +204,14 @@ def build_follow_up_reply(case: CaseEntry, questions: list[str] | None = None, s
     question_lines = "\n".join(f"{index}. {question}" for index, question in enumerate(selected_questions[:6], start=1))
     source_line = f"\n\nPertanyaan ini memakai rujukan anamnesis: {source_title}." if source_title else ""
     return (
-        f"Saya menangkap keluhan kamu mengarah ke '{case.keluhan_ringan}'. "
-        "Sebelum memberi rekomendasi ramuan, saya perlu memastikan keluhan ini masih ringan dan tidak ada tanda bahaya.\n\n"
-        "Pertanyaan anamnesis yang perlu kamu jawab:\n"
+        f"Baik, saya tangkap keluhan kamu sementara mengarah ke '{case.keluhan_ringan}'. "
+        "Sebelum membahas ramuan, saya perlu memastikan satu hal seperti dokter saat anamnesis agar sarannya tidak terburu-buru.\n\n"
         f"{question_lines}"
         f"{source_line}\n\n"
-        "Jawab singkat saja, misalnya:\n"
-        "Tidak ada demam, tidak sesak, keluhan muncul sejak pagi, dan tidak ada bengkak wajah.\n\n"
+        "Jawab singkat saja sesuai yang kamu rasakan. Kalau tidak ada, cukup tulis 'tidak ada'.\n\n"
         "Kalau ada tanda berat seperti demam tinggi, sesak, darah, dehidrasi, nyeri hebat, "
-        "atau keluhan pada bayi/kehamilan, sebaiknya prioritaskan pemeriksaan medis."
+        "atau keluhan pada bayi/kehamilan, sebaiknya prioritaskan pemeriksaan medis.\n\n"
+        f"{DISCLAIMER}"
     )
 
 
@@ -282,8 +278,9 @@ def build_red_flag_reply(red_flags: list[str]) -> str:
     flags = ", ".join(red_flags)
     return (
         f"Saya mendeteksi tanda yang perlu diwaspadai: {flags}. "
-        "Untuk keamanan, sistem ini tidak akan memposisikan ramuan herbal sebagai penanganan utama pada kondisi tersebut. "
-        "Sebaiknya segera konsultasi ke tenaga kesehatan atau fasilitas kesehatan terdekat, terutama bila gejala berat, menetap, atau memburuk.\n\n"
+        "Untuk kondisi seperti ini, saya tidak akan menyarankan ramuan herbal sebagai penanganan utama. "
+        "Sebaiknya segera konsultasi ke tenaga kesehatan atau fasilitas kesehatan terdekat, "
+        "terutama bila gejala berat, menetap, atau memburuk.\n\n"
         f"{DISCLAIMER}"
     )
 
@@ -292,17 +289,18 @@ def build_scope_referral_reply(
     assessment: ModelAssessment,
     anamnesis_summary: dict[str, object] | None = None,
 ) -> str:
-    summary_lines = _format_anamnesis_summary(anamnesis_summary or {})
-    suspected = ", ".join(assessment.suspected_conditions[:3]) or "kondisi yang perlu evaluasi medis"
-    referral_reason = assessment.scope_reason or assessment.reasoning or "Kasus ini tidak aman diposisikan sebagai keluhan ringan untuk jalur herbal mandiri."
-    warning = assessment.warning_notes or "Prioritaskan pemeriksaan tenaga kesehatan dan jangan menunda bila keluhan memburuk."
+    summary = anamnesis_summary or {}
+    suspected = _patient_friendly_suspected_conditions(assessment.suspected_conditions, summary)
+    referral_reason = _patient_friendly_referral_reason(assessment.scope_reason or assessment.reasoning, summary)
+    warning = _patient_friendly_warning(
+        assessment.warning_notes or "Prioritaskan pemeriksaan tenaga kesehatan dan jangan menunda bila keluhan memburuk."
+    )
     return (
-        "Ringkasan anamnesis:\n"
-        f"{summary_lines}\n\n"
-        f"Dari hasil penilaian model pembanding, keluhan ini lebih aman diposisikan sebagai kasus rujukan medis dengan dugaan: {suspected}.\n"
-        f"Alasan utama: {referral_reason}\n"
-        f"Arahan awal: {warning}\n\n"
-        "Untuk keamanan, chatbot ini tidak akan memaksakan rekomendasi herbal sebagai terapi utama pada kondisi tersebut.\n\n"
+        f"Baik, dari cerita kamu sejauh ini, keluhan lebih aman diposisikan sebagai {suspected}.\n\n"
+        f"Alasannya: {referral_reason}\n\n"
+        f"Yang sebaiknya kamu lakukan sekarang: {warning}\n\n"
+        "Saya belum akan memaksakan ramuan herbal sebagai solusi utama, karena pada demam atau keluhan yang masih mungkin infeksi, "
+        "yang paling penting adalah memastikan tidak ada tanda bahaya dan memantau perkembangan gejala.\n\n"
         f"{DISCLAIMER}"
     )
 
@@ -409,6 +407,64 @@ def _format_context_sources(items: list[RetrievedItem]) -> str:
         evidence = f", evidence={item.evidence_level}" if item.evidence_level else ""
         lines.append(f"- {item.type}:{item.title} (score={item.score}{evidence})")
     return "\n".join(lines)
+
+
+def _format_doctor_style_patient_summary(summary: dict[str, object], suspected: str) -> str:
+    symptoms = summary.get("present_symptoms") or summary.get("detected_symptoms") or []
+    symptom_text = ", ".join(symptoms[:4]) if isinstance(symptoms, list) and symptoms else suspected
+    duration = summary.get("duration_text") or ("durasi sudah disebut" if summary.get("has_duration_signal") else "")
+    absent = summary.get("absent_symptoms") or []
+    parts = [f"Keluhan yang sudah saya catat: {symptom_text}."]
+    if duration:
+        parts.append(f"Durasi: {duration}.")
+    if isinstance(absent, list) and absent:
+        parts.append(f"Gejala yang sudah kamu sangkal: {', '.join(absent[:4])}.")
+    if summary.get("has_safety_clearance_signal"):
+        parts.append("Sebagian tanda bahaya sudah kamu jawab tidak ada.")
+    else:
+        parts.append("Tanda bahaya belum lengkap tersaring.")
+    return " ".join(parts)
+
+
+def _patient_friendly_suspected_conditions(
+    suspected_conditions: list[str],
+    summary: dict[str, object],
+) -> str:
+    suspected_text = ", ".join(item for item in suspected_conditions[:3] if item)
+    if suspected_text:
+        lowered = suspected_text.lower()
+        if "internal_medicine" in lowered or "scope model" in lowered:
+            return "keluhan yang perlu pemeriksaan langsung"
+        return suspected_text
+    symptoms = summary.get("present_symptoms") or summary.get("detected_symptoms") or []
+    if isinstance(symptoms, list) and any(str(symptom).lower() == "demam" for symptom in symptoms):
+        return "demam atau infeksi yang masih perlu dipantau dan belum bisa dipastikan jenisnya"
+    return "keluhan yang belum bisa dipastikan aman hanya dengan perawatan mandiri"
+
+
+def _patient_friendly_referral_reason(reason: str | None, summary: dict[str, object]) -> str:
+    normalized = (reason or "").strip()
+    lowered = normalized.lower()
+    if not normalized or "scope model" in lowered or "internal_medicine" in lowered or "safety layer" in lowered:
+        symptoms = summary.get("present_symptoms") or summary.get("detected_symptoms") or []
+        symptom_text = ", ".join(symptoms[:3]) if isinstance(symptoms, list) and symptoms else "keluhan yang kamu sebutkan"
+        return (
+            f"gejala seperti {symptom_text} perlu dilihat polanya dulu. Jika menetap, memburuk, "
+            "atau muncul tanda bahaya, pemeriksaan langsung lebih aman daripada hanya mengandalkan ramuan."
+        )
+    cleaned = normalized.replace("scope model: internal_medicine", "perlu evaluasi medis")
+    cleaned = cleaned.replace("scope model: critical", "ada tanda yang perlu perhatian segera")
+    return cleaned[:260]
+
+
+def _patient_friendly_warning(warning: str) -> str:
+    normalized = warning.strip()
+    lowered = normalized.lower()
+    if not normalized:
+        return "Pantau suhu dan perkembangan keluhan. Periksa ke tenaga kesehatan bila demam bertahan lebih dari 3 hari, suhu makin tinggi, keluhan memburuk, atau muncul tanda bahaya."
+    if "herbal tidak diposisikan" in lowered and "tanda bahaya" in lowered:
+        return "Pantau suhu dan perkembangan keluhan. Periksa ke tenaga kesehatan bila demam bertahan lebih dari 3 hari, suhu makin tinggi, keluhan memburuk, atau muncul tanda bahaya."
+    return normalized
 
 
 def _format_anamnesis_summary(summary: dict[str, object]) -> str:
